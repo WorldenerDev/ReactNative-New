@@ -1,4 +1,4 @@
-package com.wapp
+package com.worldener
 
 import android.app.Application
 import com.facebook.react.PackageList
