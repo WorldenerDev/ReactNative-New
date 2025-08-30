@@ -44,7 +44,15 @@ const SignInScreen = ({ navigation }) => {
   };
 
   const onPressSignin = async () => {
-    navigation.navigate(navigationStrings.OTPSCREEN);
+    if (!data.phoneNumber.trim()) {
+      showToast("error", "Please enter your phone number");
+      return;
+    }
+
+    navigation.navigate(navigationStrings.OTPSCREEN, {
+      fromScreen: "signin",
+      phoneNumber: data.countryCode + data.phoneNumber,
+    });
     return;
   };
 

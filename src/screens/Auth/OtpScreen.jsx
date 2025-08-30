@@ -102,15 +102,25 @@ const OtpScreen = ({ navigation, route }) => {
     return phone;
   };
 
+  const getScreenTitle = () => {
+    if (fromScreen === "signup") {
+      return "Confirm your phone number";
+    }
+    return "Verify your phone number";
+  };
+
+  const getScreenSubtitle = () => {
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    if (fromScreen === "signup") {
+      return `We've sent a 4-digit verification code to your phone number : ${formattedPhone}`;
+    }
+    return `We've sent a 4-digit verification code to ${formattedPhone}`;
+  };
+
   return (
     <ResponsiveContainer>
       <Header />
-      <StepTitle
-        title="Confirm your phone number"
-        subtitle={`We've sent a 4-digit verification code to your phone number : ${formatPhoneNumber(
-          phoneNumber
-        )}`}
-      />
+      <StepTitle title={getScreenTitle()} subtitle={getScreenSubtitle()} />
 
       <View style={styles.formContainer}>
         <View style={styles.codeContainer}>
@@ -161,7 +171,6 @@ export default OtpScreen;
 const styles = StyleSheet.create({
   formContainer: {
     flex: 1,
-    paddingHorizontal: getHoriPadding(16),
     marginTop: getVertiPadding(40),
     alignItems: "center",
   },
@@ -202,11 +211,11 @@ const styles = StyleSheet.create({
   },
   resendText: {
     fontSize: getFontSize(14),
-    color: colors.placeholderText,
+    color: colors.secondary,
     fontFamily: fonts.RobotoRegular,
   },
   resendTextActive: {
-    color: colors.secondary,
+    color: colors.black,
     fontFamily: fonts.RobotoMedium,
   },
 });
