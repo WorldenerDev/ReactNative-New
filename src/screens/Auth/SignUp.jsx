@@ -1,203 +1,253 @@
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
-import React, { useState } from 'react';
-import ResponsiveContainer from '@components/container/ResponsiveContainer';
-import Header from '@components/Header';
-import StepTitle from '@components/StepTitle';
-import CustomInput from '@components/CustomInput';
-import { getFontSize, getHeight, getHoriPadding, getVertiPadding, getWidth } from '@utils/responsive';
-import ButtonComp from '@components/ButtonComp';
-import colors from '@assets/colors';
-import fonts from '@assets/fonts';
-// import CustomCheckbox from '@components/CustomCheckbox';
-import imagePath from '@assets/icons';
-import navigationStrings from '@navigation/navigationStrings';
-import { validateEmail, validateForm, validateLetter, validatePasswordAndConfirm } from '@utils/validators';
-import { showToast } from '@components/AppToast';
-import { useDispatch } from 'react-redux';
-import { getDeviceType } from '@utils/uiUtils';
-import { signupUser } from '@redux/slices/authSlice';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import React, { useState } from "react";
+import ResponsiveContainer from "@components/container/ResponsiveContainer";
+import Header from "@components/Header";
+import StepTitle from "@components/StepTitle";
+import CustomInput from "@components/CustomInput";
+import PhoneInput from "@components/PhoneInput";
+import {
+  getFontSize,
+  getHeight,
+  getHoriPadding,
+  getRadius,
+  getVertiPadding,
+  getWidth,
+} from "@utils/responsive";
+import ButtonComp from "@components/ButtonComp";
+import colors from "@assets/colors";
+import fonts from "@assets/fonts";
+import imagePath from "@assets/icons";
+import navigationStrings from "@navigation/navigationStrings";
+import { validateLetter } from "@utils/validators";
+import { showToast } from "@components/AppToast";
+import { useDispatch } from "react-redux";
+import { getDeviceType } from "@utils/uiUtils";
+import { signupUser } from "@redux/slices/authSlice";
 
 const SignUp = ({ navigation, route }) => {
-    const { role } = route?.params || {};
-    const dispatch = useDispatch();
+  const { role } = route?.params || {};
+  const dispatch = useDispatch();
 
-    const [data, setData] = useState({
-        name: 'Alex Johnson',
-        email: 'a@yopmail.com',
-        password: 'Test@123',
-        confirmPassword: 'Test@123',
-        agree: false,
+  const [data, setData] = useState({
+    name: "",
+    phoneNumber: "",
+    countryCode: "+1",
+    agree: false,
+  });
+
+  const handlePhoneNumberChange = (text) => {
+    setData((prev) => ({ ...prev, phoneNumber: text }));
+  };
+
+  const handleCountryCodeChange = (code) => {
+    setData((prev) => ({ ...prev, countryCode: code }));
+  };
+
+  const onClickContinue = () => {
+    if (!data.name.trim()) {
+      showToast("error", "Please enter your name");
+      return;
+    }
+
+    if (!data.phoneNumber.trim()) {
+      showToast("error", "Please enter your phone number");
+      return;
+    }
+
+    if (!data.agree) {
+      showToast("error", "Please accept the terms and conditions");
+      return;
+    }
+
+    // Navigate to OTP screen
+    navigation.navigate(navigationStrings.OTPSCREEN, {
+      fromScreen: "signup",
+      phoneNumber: data.countryCode + data.phoneNumber,
+      fullName: data.name,
     });
+  };
 
-    const onClickContinue = () => {
-        const error = validateForm([
-            { values: [data?.name, "Name"], validator: validateLetter },
-            { values: [data?.email], validator: validateEmail },
-            { values: [data?.password, data?.confirmPassword], validator: validatePasswordAndConfirm },
-        ]);
+  return (
+    <ResponsiveContainer>
+      <Header />
+      <StepTitle
+        title="Create Account"
+        subtitle="Enter your name and phone number to get started"
+      />
 
-        if (error) {
-            showToast('error', error);
-        } else {
-            const newData = {
-                fullName: data?.name,
-                email: data?.email,
-                password: data?.password,
-                deviceType: getDeviceType(),
-                userType: role,
-            };
+      <View style={styles.formContainer}>
+        <CustomInput
+          placeholder="Enter Your Name"
+          value={data.name}
+          onChangeText={(txt) => setData({ ...data, name: txt })}
+        />
 
-            dispatch(signupUser(newData))
-                .then((res) => {
-                    console.log(res);
-                    if (res?.payload?.success) {
-                        setData({
-                            name: '',
-                            email: '',
-                            password: '',
-                            confirmPassword: '',
-                            agree: false,
-                        });
-                        navigation.navigate(navigationStrings.OTPSCREEN, {
-                            fromScreen: 'signup',
-                            email: res?.payload?.data?.user?.email, // pass email from API response
-                        });
-                    }
-                });
-        }
-    };
+        <PhoneInput
+          placeholder="Enter Your Number"
+          value={data.phoneNumber}
+          onChangeText={handlePhoneNumberChange}
+          countryCode={data.countryCode}
+          onCountryCodeChange={handleCountryCodeChange}
+        />
 
-    return (
-        <ResponsiveContainer>
-            <Header
-                rightLabel="Sign In"
-                rightAction={() => navigation.navigate(navigationStrings.SIGNINSCREEN)}
-            />
-            <StepTitle title="Create Your Employer Account" />
+        <TouchableOpacity
+          style={styles.signinContainer}
+          onPress={() => navigation.navigate(navigationStrings.SIGNINSCREEN)}
+        >
+          <Text style={styles.signinText}>
+            Have an account? <Text style={styles.signinLink}>Sign in</Text>
+          </Text>
+        </TouchableOpacity>
 
-            <CustomInput
-                label="Full Name"
-                placeholder="Enter full name"
-                value={data.name}
-                onChangeText={(txt) => setData({ ...data, name: txt })}
-            />
+        <View style={styles.checkboxContainer}>
+          <TouchableOpacity
+            style={[styles.checkbox, data.agree && styles.checkboxChecked]}
+            onPress={() => setData({ ...data, agree: !data.agree })}
+          >
+            {data.agree && <Text style={styles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          <Text style={styles.termsText}>
+            I accept the <Text style={styles.link}>Terms and Conditions</Text> &{" "}
+            <Text style={styles.link}>Privacy Policy</Text>.
+          </Text>
+        </View>
 
-            <CustomInput
-                label="Email"
-                placeholder="Enter email address"
-                value={data.email}
-                onChangeText={(txt) => setData({ ...data, email: txt })}
-            />
+        <ButtonComp
+          title="Continue"
+          disabled={false}
+          onPress={onClickContinue}
+          containerStyle={styles.continueBtn}
+        />
 
-            <CustomInput
-                label="Password"
-                placeholder="Enter password"
-                secure
-                value={data.password}
-                onChangeText={(txt) => setData({ ...data, password: txt })}
-            />
+        <View style={styles.separatorWrapper}>
+          <View style={styles.separator} />
+          <Text style={styles.orText}>or connect with</Text>
+          <View style={styles.separator} />
+        </View>
 
-            <CustomInput
-                label="Confirm Password"
-                placeholder="Enter confirm password"
-                secure
-                value={data.confirmPassword}
-                onChangeText={(txt) => setData({ ...data, confirmPassword: txt })}
-            />
+        <View style={styles.socialWrapper}>
+          <TouchableOpacity style={styles.socialButton}>
+            <Image source={imagePath.GOOGLE_ICON} style={styles.socialIcon} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.socialButton}>
+            <Image source={imagePath.APPLE_ICON} style={styles.socialIcon} />
+          </TouchableOpacity>
+        </View>
 
-            <View style={styles.checkboxContainer}>
-                {/* <CustomCheckbox
-                    checked={data.agree}
-                    onToggle={() => setData({ ...data, agree: !data.agree })}
-                /> */}
-                <Text style={styles.termsText}>
-                    Yes, I understand and agree to the{' '}
-                    <Text style={styles.link}>Staffflow AI Terms of Service</Text>, including the{' '}
-                    <Text style={styles.link}>User Agreement</Text> and{' '}
-                    <Text style={styles.link}>Privacy Policy</Text>.
-                </Text>
-            </View>
-
-            <View style={styles.bottomActions}>
-                <ButtonComp
-                    title="Continue"
-                    disabled={!data?.agree}
-                    onPress={onClickContinue}
-                    containerStyle={styles.signUpBtn}
-                />
-
-                <View style={styles.separatorWrapper}>
-                    <View style={styles.separator} />
-                    <Text style={styles.orText}>or connect with</Text>
-                    <View style={styles.separator} />
-                </View>
-
-                <View style={styles.socialWrapper}>
-                    <TouchableOpacity>
-                        <Image source={imagePath.GOOGLE_ICON} style={styles.socialIcon} />
-                    </TouchableOpacity>
-                    <TouchableOpacity>
-                        <Image source={imagePath.APPLE_ICON} style={styles.socialIcon} />
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </ResponsiveContainer>
-    );
+        <TouchableOpacity style={styles.guestButton}>
+          <Text style={styles.guestText}>Continue as guest</Text>
+        </TouchableOpacity>
+      </View>
+    </ResponsiveContainer>
+  );
 };
 
 export default SignUp;
 
 const styles = StyleSheet.create({
-    checkboxContainer: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginVertical: getHeight(16),
-        paddingRight: getHeight(20),
-    },
-    termsText: {
-        flex: 1,
-        fontSize: getFontSize(12),
-        color: colors.bodyText,
-        lineHeight: getHeight(18),
-        fontFamily: fonts.RobotoRegular,
-    },
-    link: {
-        color: colors.secondary,
-        fontFamily: fonts.RobotoMedium,
-        fontSize: getFontSize(12),
-    },
-    separatorWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: getVertiPadding(20),
-    },
-    separator: {
-        flex: 1,
-        height: getHeight(2),
-        backgroundColor: colors.border,
-    },
-    orText: {
-        marginHorizontal: getHoriPadding(10),
-        fontSize: getFontSize(15),
-        color: colors.placeholderText,
-        fontFamily: fonts.RobotoBold,
-        fontWeight: '600',
-    },
-    bottomActions: {
-        marginTop: 'auto',
-        paddingBottom: getVertiPadding(30),
-    },
-    signUpBtn: {
-        marginBottom: getVertiPadding(20),
-    },
-    socialWrapper: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: getWidth(20),
-    },
-    socialIcon: {
-        width: getWidth(50),
-        height: getHeight(50),
-        resizeMode: 'contain',
-    },
+  formContainer: {
+    flex: 1,
+    marginTop: getVertiPadding(20),
+  },
+  signinContainer: {
+    alignItems: "flex-end",
+    marginTop: getVertiPadding(10),
+    marginBottom: getVertiPadding(20),
+  },
+  signinText: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+  },
+  signinLink: {
+    color: colors.black,
+    fontFamily: fonts.RobotoMedium,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: getVertiPadding(30),
+    paddingRight: getHoriPadding(20),
+  },
+  checkbox: {
+    width: getWidth(20),
+    height: getHeight(20),
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: getRadius(4),
+    marginRight: getHoriPadding(12),
+    marginTop: getVertiPadding(2),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  checkmark: {
+    color: colors.white,
+    fontSize: getFontSize(12),
+    fontWeight: "bold",
+  },
+  termsText: {
+    flex: 1,
+    fontSize: getFontSize(14),
+    color: colors.lightText,
+    lineHeight: getHeight(20),
+    fontFamily: fonts.RobotoRegular,
+  },
+  link: {
+    color: colors.black,
+    fontFamily: fonts.RobotoMedium,
+    fontSize: getFontSize(14),
+  },
+  continueBtn: {
+    marginBottom: getVertiPadding(30),
+  },
+  separatorWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: getVertiPadding(20),
+  },
+  separator: {
+    flex: 1,
+    height: getHeight(1),
+    backgroundColor: colors.border,
+  },
+  orText: {
+    marginHorizontal: getHoriPadding(15),
+    fontSize: getFontSize(14),
+    color: colors.placeholderText,
+    fontFamily: fonts.RobotoMedium,
+  },
+  socialWrapper: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: getWidth(20),
+    marginBottom: getVertiPadding(30),
+  },
+  socialButton: {
+    width: getWidth(50),
+    height: getHeight(50),
+    borderRadius: getRadius(25),
+    backgroundColor: colors.input,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  socialIcon: {
+    width: getWidth(24),
+    height: getHeight(24),
+    resizeMode: "contain",
+  },
+  guestButton: {
+    alignItems: "center",
+    paddingVertical: getVertiPadding(10),
+  },
+  guestText: {
+    fontSize: getFontSize(14),
+    color: colors.bodyText,
+    fontFamily: fonts.RobotoRegular,
+  },
 });

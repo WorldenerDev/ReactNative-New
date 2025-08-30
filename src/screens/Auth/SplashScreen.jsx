@@ -1,11 +1,11 @@
-import { Image, ImageBackground, StyleSheet, View } from 'react-native';
-import React, { useEffect } from 'react';
-import colors from '@assets/colors';
-import imagePath from '@assets/icons';
-import navigationStrings from '@navigation/navigationStrings';
-import { getItem } from '@utils/storage';
-import { STORAGE_KEYS } from '@utils/storageKeys';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image, ImageBackground, StyleSheet, View } from "react-native";
+import React, { useEffect } from "react";
+import colors from "@assets/colors";
+import imagePath from "@assets/icons";
+import navigationStrings from "@navigation/navigationStrings";
+import { getItem } from "@utils/storage";
+import { STORAGE_KEYS } from "@utils/storageKeys";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SplashScreen = ({ navigation }) => {
   useEffect(() => {
@@ -17,7 +17,6 @@ const SplashScreen = ({ navigation }) => {
 
         setTimeout(() => {
           navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
-
           // if (!hasLaunched) {
           //     navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
           // } else if (!notifGranted) {
@@ -29,7 +28,7 @@ const SplashScreen = ({ navigation }) => {
           // }
         }, 3000);
       } catch (error) {
-        console.error('Error reading storage:', error);
+        console.error("Error reading storage:", error);
         navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
       }
     };
@@ -38,14 +37,14 @@ const SplashScreen = ({ navigation }) => {
   }, [navigation]);
 
   return (
-    <ImageBackground source={imagePath.BACKGROUND} style={styles.container}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.centered}>
         <Image
           source={imagePath.LOGO_TRANSPARENT}
-          style={{ resizeMode: 'contain' }}
+          style={{ resizeMode: "contain" }}
         />
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 };
 
@@ -53,13 +52,13 @@ export default SplashScreen;
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.primary,
+    width: "100%",
+    height: "100%",
+    backgroundColor: colors.white,
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

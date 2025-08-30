@@ -1,11 +1,10 @@
 export default {
-    SPLASHSCREEN: "SplashScreen",
-    ONBOARDINGSCREEN: "OnboardingScreen",
-    ENABLENOTIFICATIONSCREEN: "EnableNotification",
-    ENABLELOCATIONSCREEN: "EnableLocation",
-    SIGNINSCREEN: "SignInScreen",
-    PHONELOGINSCREEN: "PhoneLoginScreen",
-    PHONESIGNUPSCREEN: "PhoneSignupScreen",
-    SIGNUP: "SignUp",
-    OTPSCREEN: "OtpScreen",
-}
+  SPLASHSCREEN: "SplashScreen",
+  ONBOARDINGSCREEN: "OnboardingScreen",
+  ENABLENOTIFICATIONSCREEN: "EnableNotification",
+  SIGNINSCREEN: "SignInScreen",
+  SIGNUPSCREEN: "SignUpScreen",
+  OTPSCREEN: "OtpScreen",
+  NOTIFICATIONSCREEN: "NotificationScreen",
+  FORGOTPASSWORDSCREEN: "ForgotPasswordScreen",
+};
