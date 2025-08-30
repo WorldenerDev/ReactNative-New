@@ -5,6 +5,5 @@ export default {
   SIGNINSCREEN: "SignInScreen",
   SIGNUPSCREEN: "SignUpScreen",
   OTPSCREEN: "OtpScreen",
-  NOTIFICATIONSCREEN: "NotificationScreen",
   FORGOTPASSWORDSCREEN: "ForgotPasswordScreen",
 };

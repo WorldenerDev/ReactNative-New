@@ -64,7 +64,7 @@ const OnboardingScreen = ({ navigation }) => {
       });
     } else {
       await setItem(STORAGE_KEYS.HAS_LAUNCHED, "true");
-      navigation.navigate(navigationStrings.SIGNINSCREEN);
+      navigation.navigate(navigationStrings.ENABLENOTIFICATIONSCREEN);
     }
   };
 
@@ -79,7 +79,7 @@ const OnboardingScreen = ({ navigation }) => {
 
   const handleSkip = async () => {
     await setItem(STORAGE_KEYS.HAS_LAUNCHED, "true");
-    navigation.navigate(navigationStrings.SIGNINSCREEN);
+    navigation.navigate(navigationStrings.ENABLENOTIFICATIONSCREEN);
   };
 
   const renderItem = ({ item }) => (
