@@ -2,36 +2,17 @@
   "compilerOptions": {
     "baseUrl": "./src",
     "paths": {
-      "@api/*": [
-        "api/*"
-      ],
-      "@assets/*": [
-        "assets/*"
-      ],
-      "@components/*": [
-        "components/*"
-      ],
-      "@context/*": [
-        "context/*"
-      ],
-      "@hooks/*": [
-        "hooks/*"
-      ],
-      "@navigation/*": [
-        "navigation/*"
-      ],
-      "@redux/*": [
-        "redux/*"
-      ],
-      "@screens/*": [
-        "screens/*"
-      ],
-      "@utils/*": [
-        "utils/*"
-      ],
+      "@api/*": ["api/*"],
+      "@assets/*": ["assets/*"],
+      "@components/*": ["components/*"],
+      "@context/*": ["context/*"],
+      "@config/*": ["config/*"],
+      "@hooks/*": ["hooks/*"],
+      "@navigation/*": ["navigation/*"],
+      "@redux/*": ["redux/*"],
+      "@screens/*": ["screens/*"],
+      "@utils/*": ["utils/*"]
     }
   },
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

@@ -11,6 +11,7 @@ import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
+import googleSignInService from "@api/services/googleSignInService";
 
 // ----------------- Thunks -----------------
 export const loginUser = createAsyncThunk(
@@ -102,6 +103,32 @@ export const createFreelancerProfile = createAsyncThunk(
   }
 );
 
+export const googleSignIn = createAsyncThunk(
+  "auth/googleSignIn",
+  async (_, { rejectWithValue }) => {
+    try {
+      const result = await googleSignInService.signIn();
+      console.log("Google Signin Result:redux ", result);
+      if (result.success) {
+        // You can customize this based on your backend API
+        const userData = {
+          id: result.data.user.id,
+          email: result.data.user.email,
+          name: result.data.user.name,
+          photo: result.data.user.photo,
+          token: result.data.idToken, // Google ID token
+          isGoogleUser: true,
+        };
+        return userData;
+      } else {
+        return rejectWithValue(result.error);
+      }
+    } catch (err) {
+      return rejectWithValue(err.message || "Google Sign-In failed");
+    }
+  }
+);
+
 // ----------------- Slice -----------------
 const authSlice = createSlice({
   name: "auth",
@@ -150,6 +177,12 @@ const authSlice = createSlice({
     handleAsyncCases(builder, createFreelancerProfile, {
       onFulfilled: (state, action) => {
         state.user = action.payload.user;
+        state.token = action.payload.token;
+      },
+    });
+    handleAsyncCases(builder, googleSignIn, {
+      onFulfilled: (state, action) => {
+        state.user = action.payload;
         state.token = action.payload.token;
       },
     });

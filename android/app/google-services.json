@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "40888803291",
+    "project_id": "worldener-7eaf1",
+    "storage_bucket": "worldener-7eaf1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:40888803291:android:499afc7808c9f92c0311fe",
+        "android_client_info": {
+          "package_name": "com.worldener"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKjJptVlsssSONqDpg4gSMNLrTfJYudY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

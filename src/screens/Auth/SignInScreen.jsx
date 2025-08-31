@@ -23,10 +23,11 @@ import {
 } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
-import { loginUser, setUser } from "@redux/slices/authSlice";
+import { loginUser, setUser, googleSignIn } from "@redux/slices/authSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import PhoneInput from "@components/PhoneInput";
+import googleSignInService from "@api/services/googleSignInService";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -54,6 +55,23 @@ const SignInScreen = ({ navigation }) => {
       phoneNumber: data.countryCode + data.phoneNumber,
     });
     return;
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await googleSignInService.signIn();
+      console.log("Google Signin Result: ", result);
+      if (result.success) {
+        showToast("success", "Google Sign-In successful!");
+
+        // You can navigate to main screen or handle as needed
+        // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
+      } else {
+        showToast("error", result.error || "Google Sign-In failed");
+      }
+    } catch (error) {
+      showToast("error", error?.message || "Google Sign-In failed");
+    }
   };
 
   return (
@@ -99,7 +117,7 @@ const SignInScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.socialWrapper}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleGoogleSignIn}>
             <Image source={imagePath.GOOGLE_ICON} style={styles.socialIcon} />
           </TouchableOpacity>
           <TouchableOpacity>
