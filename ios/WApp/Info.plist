@@ -32,6 +32,16 @@
 				<string>com.googleusercontent.apps.37468621091-2o02lnch59re6n7dt6264l9asktu2lkv</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>apple</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>live.worldener.app</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>

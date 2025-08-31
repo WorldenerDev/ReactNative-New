@@ -22,7 +22,8 @@ import { validateLetter } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
 import { getDeviceType } from "@utils/uiUtils";
-import { signupUser } from "@redux/slices/authSlice";
+import { signupUser, setUser } from "@redux/slices/authSlice";
+import SocialLoginButtons from "@components/SocialLoginButtons";
 
 const SignUp = ({ navigation, route }) => {
   const { role } = route?.params || {};
@@ -65,6 +66,20 @@ const SignUp = ({ navigation, route }) => {
       phoneNumber: data.countryCode + data.phoneNumber,
       fullName: data.name,
     });
+  };
+
+  const handleSocialLoginSuccess = (result) => {
+    showToast("success", `${result.provider} Sign-In successful!`);
+
+    // Store user data in Redux
+    dispatch(setUser(result.userData));
+
+    // You can navigate to main screen or handle as needed
+    // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
+  };
+
+  const handleSocialLoginError = (error) => {
+    showToast("error", error.error || "Social login failed");
   };
 
   return (
@@ -125,14 +140,10 @@ const SignUp = ({ navigation, route }) => {
           <View style={styles.separator} />
         </View>
 
-        <View style={styles.socialWrapper}>
-          <TouchableOpacity style={styles.socialButton}>
-            <Image source={imagePath.GOOGLE_ICON} style={styles.socialIcon} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <Image source={imagePath.APPLE_ICON} style={styles.socialIcon} />
-          </TouchableOpacity>
-        </View>
+        <SocialLoginButtons
+          onLoginSuccess={handleSocialLoginSuccess}
+          onLoginError={handleSocialLoginError}
+        />
 
         <TouchableOpacity style={styles.guestButton}>
           <Text style={styles.guestText}>Continue as guest</Text>
@@ -211,35 +222,15 @@ const styles = StyleSheet.create({
   },
   separator: {
     flex: 1,
-    height: getHeight(1),
+    height: getHeight(2),
     backgroundColor: colors.border,
   },
   orText: {
-    marginHorizontal: getHoriPadding(15),
-    fontSize: getFontSize(14),
+    marginHorizontal: 10,
+    fontSize: getFontSize(15),
     color: colors.placeholderText,
-    fontFamily: fonts.RobotoMedium,
-  },
-  socialWrapper: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: getWidth(20),
-    marginBottom: getVertiPadding(30),
-  },
-  socialButton: {
-    width: getWidth(50),
-    height: getHeight(50),
-    borderRadius: getRadius(25),
-    backgroundColor: colors.input,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  socialIcon: {
-    width: getWidth(24),
-    height: getHeight(24),
-    resizeMode: "contain",
+    fontFamily: fonts.RobotoBold,
+    fontWeight: "600",
   },
   guestButton: {
     alignItems: "center",

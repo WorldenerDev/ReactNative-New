@@ -27,7 +27,7 @@ import { loginUser, setUser, googleSignIn } from "@redux/slices/authSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import PhoneInput from "@components/PhoneInput";
-import googleSignInService from "@api/services/googleSignInService";
+import SocialLoginButtons from "@components/SocialLoginButtons";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -57,21 +57,18 @@ const SignInScreen = ({ navigation }) => {
     return;
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const result = await googleSignInService.signIn();
-      console.log("Google Signin Result: ", result);
-      if (result.success) {
-        showToast("success", "Google Sign-In successful!");
+  const handleSocialLoginSuccess = (result) => {
+    showToast("success", `${result.provider} Sign-In successful!`);
 
-        // You can navigate to main screen or handle as needed
-        // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
-      } else {
-        showToast("error", result.error || "Google Sign-In failed");
-      }
-    } catch (error) {
-      showToast("error", error?.message || "Google Sign-In failed");
-    }
+    // Store user data in Redux
+    dispatch(setUser(result.userData));
+
+    // You can navigate to main screen or handle as needed
+    // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
+  };
+
+  const handleSocialLoginError = (error) => {
+    showToast("error", error.error || "Social login failed");
   };
 
   return (
@@ -116,14 +113,10 @@ const SignInScreen = ({ navigation }) => {
           <View style={styles.separator} />
         </View>
 
-        <View style={styles.socialWrapper}>
-          <TouchableOpacity onPress={handleGoogleSignIn}>
-            <Image source={imagePath.GOOGLE_ICON} style={styles.socialIcon} />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Image source={imagePath.APPLE_ICON} style={styles.socialIcon} />
-          </TouchableOpacity>
-        </View>
+        <SocialLoginButtons
+          onLoginSuccess={handleSocialLoginSuccess}
+          onLoginError={handleSocialLoginError}
+        />
       </View>
     </ResponsiveContainer>
   );
@@ -170,15 +163,5 @@ const styles = StyleSheet.create({
     color: colors.placeholderText,
     fontFamily: fonts.RobotoBold,
     fontWeight: "600",
-  },
-  socialWrapper: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: getWidth(20),
-  },
-  socialIcon: {
-    width: getWidth(40),
-    height: getHeight(40),
-    resizeMode: "contain",
   },
 });
