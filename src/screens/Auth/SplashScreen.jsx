@@ -16,16 +16,13 @@ const SplashScreen = ({ navigation }) => {
         const locationGranted = await getItem(STORAGE_KEYS.LOCATION_GRANTED);
 
         setTimeout(() => {
-          navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
-          // if (!hasLaunched) {
-          //     navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
-          // } else if (!notifGranted) {
-          //     navigation.navigate(navigationStrings.ENABLENOTIFICATIONSCREEN);
-          // } else if (!locationGranted) {
-          //     navigation.navigate(navigationStrings.ENABLELOCATIONSCREEN);
-          // } else {
-          //     navigation.navigate(navigationStrings.SIGNINSCREEN);
-          // }
+          if (!hasLaunched) {
+            navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
+          } else if (!notifGranted) {
+            navigation.navigate(navigationStrings.ENABLENOTIFICATIONSCREEN);
+          } else {
+            navigation.navigate(navigationStrings.SIGNINSCREEN);
+          }
         }, 3000);
       } catch (error) {
         console.error("Error reading storage:", error);

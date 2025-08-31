@@ -16,14 +16,10 @@ import {
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
-import {
-  validateEmail,
-  validateForm,
-  validatePassword,
-} from "@utils/validators";
+import { validateForm, validateMobileNumber } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
-import { loginUser, setUser, googleSignIn } from "@redux/slices/authSlice";
+import { loginUser, setUser } from "@redux/slices/authSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import PhoneInput from "@components/PhoneInput";
@@ -45,11 +41,18 @@ const SignInScreen = ({ navigation }) => {
   };
 
   const onPressSignin = async () => {
-    if (!data.phoneNumber.trim()) {
-      showToast("error", "Please enter your phone number");
+    const error = validateForm([
+      { validator: validateMobileNumber, values: [data?.phoneNumber] },
+    ]);
+    if (error) {
+      showToast("error", error);
       return;
+    } else {
+      const res = await loginUser(data.countryCode + data.phoneNumber);
+      console.log("responce", res);
+      try {
+      } catch (error) {}
     }
-
     navigation.navigate(navigationStrings.OTPSCREEN, {
       fromScreen: "signin",
       phoneNumber: data.countryCode + data.phoneNumber,
@@ -59,16 +62,15 @@ const SignInScreen = ({ navigation }) => {
 
   const handleSocialLoginSuccess = (result) => {
     showToast("success", `${result.provider} Sign-In successful!`);
-
-    // Store user data in Redux
     dispatch(setUser(result.userData));
-
-    // You can navigate to main screen or handle as needed
-    // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
   };
 
   const handleSocialLoginError = (error) => {
     showToast("error", error.error || "Social login failed");
+  };
+
+  const handleGuestPress = () => {
+    showToast("info", "Continuing as guest");
   };
 
   return (
@@ -90,7 +92,7 @@ const SignInScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.SignupBtn}>
-        <Text style={styles.SignupText}>Don’t have an account?</Text>
+        <Text style={styles.SignupText}>Don't have an account?</Text>
         <Text
           onPress={() => navigation.navigate(navigationStrings.SIGNUPSCREEN)}
           style={{ color: colors.black, fontFamily: fonts.RobotoMedium }}
@@ -107,15 +109,10 @@ const SignInScreen = ({ navigation }) => {
           containerStyle={styles.signInBtn}
         />
 
-        <View style={styles.separatorWrapper}>
-          <View style={styles.separator} />
-          <Text style={styles.orText}>or connect with</Text>
-          <View style={styles.separator} />
-        </View>
-
         <SocialLoginButtons
           onLoginSuccess={handleSocialLoginSuccess}
           onLoginError={handleSocialLoginError}
+          onGuestPress={handleGuestPress}
         />
       </View>
     </ResponsiveContainer>
@@ -146,22 +143,5 @@ const styles = StyleSheet.create({
   },
   signInBtn: {
     marginBottom: getVertiPadding(100),
-  },
-  separatorWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: getVertiPadding(20),
-  },
-  separator: {
-    flex: 1,
-    height: getHeight(2),
-    backgroundColor: colors.border,
-  },
-  orText: {
-    marginHorizontal: 10,
-    fontSize: getFontSize(15),
-    color: colors.placeholderText,
-    fontFamily: fonts.RobotoBold,
-    fontWeight: "600",
   },
 });

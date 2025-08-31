@@ -1,5 +1,5 @@
 import { Image, StyleSheet, Text, View } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
@@ -9,8 +9,38 @@ import ButtonComp from "@components/ButtonComp";
 import fonts from "@assets/fonts";
 import colors from "@assets/colors";
 import navigationStrings from "@navigation/navigationStrings";
+import usePermissions from "@hooks/usePermissions";
+import { setItem } from "@utils/storage";
+import { STORAGE_KEYS } from "@utils/storageKeys";
 
 const Notification = ({ navigation }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { requestNotificationPermission } = usePermissions();
+
+  const handleEnableNotification = async () => {
+    setIsLoading(true);
+    try {
+      const permissionGranted = await requestNotificationPermission();
+
+      if (permissionGranted) {
+        await setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, "true");
+        navigation.navigate(navigationStrings.SIGNINSCREEN);
+      } else {
+        await setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, "false");
+        navigation.navigate(navigationStrings.SIGNINSCREEN);
+      }
+    } catch (error) {
+      await setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, "false");
+      navigation.navigate(navigationStrings.SIGNINSCREEN);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSkip = () => {
+    navigation.navigate(navigationStrings.SIGNINSCREEN);
+  };
+
   return (
     <ResponsiveContainer>
       <StepTitle
@@ -23,14 +53,14 @@ const Notification = ({ navigation }) => {
         resizeMode="contain"
       />
       <ButtonComp
-        title="Enable Notification"
+        title={isLoading ? "Checking Permission..." : "Enable Notification"}
         containerStyle={styles.buttonStyle}
-        onPress={() => {
-          navigation.navigate(navigationStrings.SIGNINSCREEN);
-        }}
-        disabled={false}
+        onPress={handleEnableNotification}
+        disabled={isLoading}
       />
-      <Text style={styles.notificationText}>Skip for now</Text>
+      <Text style={styles.notificationText} onPress={handleSkip}>
+        Skip for now
+      </Text>
     </ResponsiveContainer>
   );
 };

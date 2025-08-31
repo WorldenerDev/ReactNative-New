@@ -18,6 +18,7 @@ export const loginUser = createAsyncThunk(
   endpoints?.auth.login,
   async (payload, { rejectWithValue }) => {
     try {
+      console.log("Login Payload: ", payload);
       const res = await login(payload);
       console.log("Login Response: ", res);
 
@@ -38,6 +39,7 @@ export const loginUser = createAsyncThunk(
 
       return res;
     } catch (err) {
+      console.log("Login Error: ", err);
       return rejectWithValue(err.message);
     }
   }
@@ -72,30 +74,6 @@ export const requestOtp = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       const res = await resendOtp(payload);
-      return res;
-    } catch (err) {
-      return rejectWithValue(err.message);
-    }
-  }
-);
-
-export const createNewPass = createAsyncThunk(
-  endpoints?.auth?.resetPass,
-  async (payload, { rejectWithValue }) => {
-    try {
-      const res = await newPass(payload);
-      return res;
-    } catch (err) {
-      return rejectWithValue(err.message);
-    }
-  }
-);
-
-export const createFreelancerProfile = createAsyncThunk(
-  endpoints?.auth?.freelancer?.profile,
-  async (payload, { rejectWithValue }) => {
-    try {
-      const res = await freelancerProfile(payload);
       return res;
     } catch (err) {
       return rejectWithValue(err.message);
@@ -168,18 +146,7 @@ const authSlice = createSlice({
         state.token = action.payload.token;
       },
     });
-    handleAsyncCases(builder, createNewPass, {
-      onFulfilled: (state, action) => {
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-      },
-    });
-    handleAsyncCases(builder, createFreelancerProfile, {
-      onFulfilled: (state, action) => {
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-      },
-    });
+
     handleAsyncCases(builder, googleSignIn, {
       onFulfilled: (state, action) => {
         state.user = action.payload;

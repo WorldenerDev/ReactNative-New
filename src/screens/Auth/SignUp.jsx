@@ -82,6 +82,13 @@ const SignUp = ({ navigation, route }) => {
     showToast("error", error.error || "Social login failed");
   };
 
+  const handleGuestPress = () => {
+    // Handle guest mode - navigate to main screen or show appropriate message
+    showToast("info", "Continuing as guest");
+    // You can navigate to main screen or handle guest mode as needed
+    // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
+  };
+
   return (
     <ResponsiveContainer>
       <Header />
@@ -134,20 +141,11 @@ const SignUp = ({ navigation, route }) => {
           containerStyle={styles.continueBtn}
         />
 
-        <View style={styles.separatorWrapper}>
-          <View style={styles.separator} />
-          <Text style={styles.orText}>or connect with</Text>
-          <View style={styles.separator} />
-        </View>
-
         <SocialLoginButtons
           onLoginSuccess={handleSocialLoginSuccess}
           onLoginError={handleSocialLoginError}
+          onGuestPress={handleGuestPress}
         />
-
-        <TouchableOpacity style={styles.guestButton}>
-          <Text style={styles.guestText}>Continue as guest</Text>
-        </TouchableOpacity>
       </View>
     </ResponsiveContainer>
   );
@@ -214,31 +212,5 @@ const styles = StyleSheet.create({
   },
   continueBtn: {
     marginBottom: getVertiPadding(30),
-  },
-  separatorWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: getVertiPadding(20),
-  },
-  separator: {
-    flex: 1,
-    height: getHeight(2),
-    backgroundColor: colors.border,
-  },
-  orText: {
-    marginHorizontal: 10,
-    fontSize: getFontSize(15),
-    color: colors.placeholderText,
-    fontFamily: fonts.RobotoBold,
-    fontWeight: "600",
-  },
-  guestButton: {
-    alignItems: "center",
-    paddingVertical: getVertiPadding(10),
-  },
-  guestText: {
-    fontSize: getFontSize(14),
-    color: colors.bodyText,
-    fontFamily: fonts.RobotoRegular,
   },
 });
