@@ -6,6 +6,7 @@ export const validateEmail = (email) => {
   if (!emailRegex.test(email)) return "Please enter a valid email";
   return null;
 };
+
 export const validateMobileNumber = (mobile) => {
   if (!mobile) return "Mobile number is required";
   const mobileRegex = /^[6-9]\d{9}$/;
@@ -14,29 +15,10 @@ export const validateMobileNumber = (mobile) => {
   return null;
 };
 
-export const validatePassword = (password) => {
-  if (!password) return "Password is required";
-  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-  if (!regex.test(password))
-    return "Password must be at least 8 characters, include 1 uppercase, 1 lowercase, and 1 special character";
-  return null;
-};
-
-export const validatePasswordAndConfirm = (password, confirmPassword) => {
-  if (!password) return "Password is required";
-  const passwordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-  if (!passwordRegex.test(password))
-    return "Password must be at least 8 characters, include 1 uppercase, 1 lowercase, and 1 special character";
-  if (!confirmPassword) return "Confirm password is required";
-  if (password !== confirmPassword) return "Passwords do not match";
-  return null;
-};
-
 export const validateOtp = (otp) => {
   if (!otp) return "OTP is required";
-  const otpRegex = /^\d{4}$/;
-  if (!otpRegex.test(otp)) return "OTP must be exactly 4 digits";
+  const otpRegex = /^\d{6}$/;
+  if (!otpRegex.test(otp)) return "OTP must be exactly 6 digits";
   return null;
 };
 

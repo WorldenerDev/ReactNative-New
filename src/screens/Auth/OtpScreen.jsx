@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
@@ -22,14 +23,14 @@ import {
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch } from "react-redux";
-import { onOtp, requestOtp } from "@redux/slices/authSlice";
+import { loginUser, onOtp, requestOtp } from "@redux/slices/authSlice";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { setItem } from "@utils/storage";
 
 const OtpScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const { fromScreen, email, phoneNumber, fullName } = route?.params || {};
-  const [code, setCode] = useState(["", "", "", ""]);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
 
@@ -58,32 +59,45 @@ const OtpScreen = ({ navigation, route }) => {
     newCode[index] = text;
     setCode(newCode);
 
-    if (text && index < 3) {
+    if (text && index < 5) {
       const nextInput = `input_${index + 1}`;
       inputs[nextInput]?.focus();
     }
   };
 
-  const handleResend = () => {
-    if (!canResend) return;
+  const handleResend = async () => {
+    try {
+      if (!canResend) return;
+      setCanResend(false);
+      setTimer(60);
+      const sendData = {
+        phone_number: phoneNumber,
+        device_type: Platform.OS,
+      };
+      const result = await dispatch(loginUser(sendData));
+      console.log("Resend OTP result:", result);
+    } catch (error) {
+      console.log("Error resending OTP:", error);
+    }
+
     // Implement resend logic here
-    setCanResend(false);
-    setTimer(60);
   };
 
   const verifyCode = async () => {
-    const codeString = code.join("");
-    if (codeString.length !== 4) {
-      return;
-    }
+    try {
+      const codeString = code.join("");
+      if (codeString.length !== 6) {
+        return;
+      }
 
-    // For now, just navigate to next screen
-    if (fromScreen === "signup") {
-      // Navigate based on user type or next step
-      navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
-    } else {
-      // Navigate for signin flow
-      navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
+      const sendData = {
+        phone_number: phoneNumber,
+        otp: codeString,
+      };
+      const result = await dispatch(onOtp(sendData));
+      console.log("OTP result:", result);
+    } catch (error) {
+      console.log("Error verifying code:", error);
     }
   };
 
@@ -112,9 +126,9 @@ const OtpScreen = ({ navigation, route }) => {
   const getScreenSubtitle = () => {
     const formattedPhone = formatPhoneNumber(phoneNumber);
     if (fromScreen === "signup") {
-      return `We've sent a 4-digit verification code to your phone number : ${formattedPhone}`;
+      return `We've sent a 6-digit verification code to your phone number : ${formattedPhone}`;
     }
-    return `We've sent a 4-digit verification code to ${formattedPhone}`;
+    return `We've sent a 6-digit verification code to ${formattedPhone}`;
   };
 
   return (
@@ -176,23 +190,26 @@ const styles = StyleSheet.create({
   },
   codeContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    flexWrap: "nowrap",
     marginBottom: getVertiPadding(40),
     width: "100%",
     paddingHorizontal: getHoriPadding(10),
-    gap: getWidth(8),
+    gap: getWidth(6),
   },
   codeInput: {
-    width: getWidth(65),
-    height: getHeight(65),
+    width: getWidth(45),
+    height: getHeight(50),
     borderRadius: getRadius(8),
     backgroundColor: colors.white,
     textAlign: "center",
-    fontSize: getFontSize(20),
+    fontSize: getFontSize(16),
     fontFamily: fonts.RobotoMedium,
     color: colors.darkText,
     borderWidth: 1,
     borderColor: colors.border,
+    minWidth: getWidth(40),
+    maxWidth: getWidth(50),
   },
   resendTimer: {
     fontSize: getFontSize(14),

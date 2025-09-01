@@ -2,13 +2,8 @@
 export const endpoints = {
   auth: {
     login: "/login",
-    signup: "auth/register",
-    otp: "auth/verify-otp",
-    resendOtp: "auth/resend-otp",
-    resetPass: "auth/reset-password",
-    freelancer: {
-      profile: "auth/freelancer/profile",
-    },
+    signup: "/signup",
+    otp: "/verifyOtp",
     // logout: 'auth/logout',
     // session: 'auth/session',
   },

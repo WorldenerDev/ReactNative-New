@@ -1,16 +1,14 @@
 // Sign in screen
 import fonts from "@assets/fonts";
 import colors from "@assets/colors";
-import imagePath from "@assets/icons";
 import ButtonComp from "@components/ButtonComp";
 import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import {
   getFontSize,
   getHeight,
-  getHoriPadding,
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
@@ -20,18 +18,15 @@ import { validateForm, validateMobileNumber } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
 import { loginUser, setUser } from "@redux/slices/authSlice";
-import { setItem } from "@utils/storage";
-import { STORAGE_KEYS } from "@utils/storageKeys";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const [data, setData] = useState({
-    countryCode: "+1",
-    phoneNumber: "",
+    countryCode: "+91",
+    phoneNumber: "9891678848",
   });
-
   const handlePhoneNumberChange = (text) => {
     setData((prev) => ({ ...prev, phoneNumber: text }));
   };
@@ -41,23 +36,37 @@ const SignInScreen = ({ navigation }) => {
   };
 
   const onPressSignin = async () => {
-    const error = validateForm([
-      { validator: validateMobileNumber, values: [data?.phoneNumber] },
-    ]);
-    if (error) {
-      showToast("error", error);
-      return;
-    } else {
-      const res = await loginUser(data.countryCode + data.phoneNumber);
-      console.log("responce", res);
-      try {
-      } catch (error) {}
+    try {
+      const error = validateForm([
+        { validator: validateMobileNumber, values: [data?.phoneNumber] },
+      ]);
+      if (error) {
+        showToast("error", error);
+        return;
+      }
+
+      const sendData = {
+        phone_number: data?.countryCode + data?.phoneNumber,
+        device_type: Platform.OS,
+      };
+      const result = await dispatch(loginUser(sendData));
+      console.log("Login result:", result);
+      if (result?.payload?.success) {
+        navigation.navigate(navigationStrings.OTPSCREEN, {
+          fromScreen: "signin",
+          phoneNumber: data?.countryCode + data?.phoneNumber,
+        });
+      } else {
+        showToast("error", result?.payload?.error);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      const errorMessage =
+        error?.message || "An error occurred during login. Please try again.";
+      showToast("error", errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-    navigation.navigate(navigationStrings.OTPSCREEN, {
-      fromScreen: "signin",
-      phoneNumber: data.countryCode + data.phoneNumber,
-    });
-    return;
   };
 
   const handleSocialLoginSuccess = (result) => {

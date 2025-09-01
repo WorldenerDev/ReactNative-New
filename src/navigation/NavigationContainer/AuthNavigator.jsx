@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import navigationStrings from "@navigation/navigationStrings";
 import {
+  Interests,
   Notification,
   OnboardingScreen,
   OtpScreen,
@@ -16,7 +17,7 @@ const AuthNavigator = () => {
   return (
     <>
       <Stack.Navigator
-        initialRouteName={navigationStrings.SPLASHSCREEN}
+        initialRouteName={navigationStrings.INTERESTS}
         screenOptions={{
           headerShown: false,
         }}
@@ -44,6 +45,10 @@ const AuthNavigator = () => {
         <Stack.Screen
           name={navigationStrings.OTPSCREEN}
           component={OtpScreen}
+        />
+        <Stack.Screen
+          name={navigationStrings.INTERESTS}
+          component={Interests}
         />
       </Stack.Navigator>
     </>

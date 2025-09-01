@@ -22,6 +22,18 @@ export const loginUser = createAsyncThunk(
       const res = await login(payload);
       console.log("Login Response: ", res);
 
+      // Check if the API response indicates an error
+      if (res && res.statusCode && res.statusCode >= 400) {
+        // API returned an error response
+        return rejectWithValue(res.message || "Login failed");
+      }
+
+      // Check if the API response has error status
+      if (res && res.status === 0) {
+        // API returned error status
+        return rejectWithValue(res.message || "Login failed");
+      }
+
       // const userData = {
       //     ...res?.data?.user,
       //     token: res?.data?.token,

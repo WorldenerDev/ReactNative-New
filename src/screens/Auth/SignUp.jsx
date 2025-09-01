@@ -1,4 +1,11 @@
-import { StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Image,
+  Platform,
+} from "react-native";
 import React, { useState } from "react";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import Header from "@components/Header";
@@ -16,23 +23,24 @@ import {
 import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
-import imagePath from "@assets/icons";
 import navigationStrings from "@navigation/navigationStrings";
-import { validateLetter } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
-import { getDeviceType } from "@utils/uiUtils";
-import { signupUser, setUser } from "@redux/slices/authSlice";
+import { signupUser, setUser, loginUser } from "@redux/slices/authSlice";
 import SocialLoginButtons from "@components/SocialLoginButtons";
+import {
+  validateForm,
+  validateLetter,
+  validateMobileNumber,
+} from "@utils/validators";
 
-const SignUp = ({ navigation, route }) => {
-  const { role } = route?.params || {};
+const SignUp = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const [data, setData] = useState({
     name: "",
-    phoneNumber: "",
-    countryCode: "+1",
+    phoneNumber: "9891678848",
+    countryCode: "+91",
     agree: false,
   });
 
@@ -44,28 +52,29 @@ const SignUp = ({ navigation, route }) => {
     setData((prev) => ({ ...prev, countryCode: code }));
   };
 
-  const onClickContinue = () => {
-    if (!data.name.trim()) {
-      showToast("error", "Please enter your name");
-      return;
-    }
+  const onClickContinue = async () => {
+    try {
+      const error = validateForm([
+        { validator: validateLetter, values: [data?.name, "Name", 4] },
+        { validator: validateMobileNumber, values: [data?.phoneNumber] },
+      ]);
 
-    if (!data.phoneNumber.trim()) {
-      showToast("error", "Please enter your phone number");
+      if (error) {
+        showToast("error", error);
+        return;
+      } else if (!data.agree) {
+        showToast("error", "Please accept the terms and conditions");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("name", data?.name);
+      formData.append("phone_number", data?.countryCode + data?.phoneNumber);
+      formData.append("device_type", Platform.OS);
+      const result = await dispatch(signupUser(formData));
       return;
+    } catch (error) {
+      showToast("error", error);
     }
-
-    if (!data.agree) {
-      showToast("error", "Please accept the terms and conditions");
-      return;
-    }
-
-    // Navigate to OTP screen
-    navigation.navigate(navigationStrings.OTPSCREEN, {
-      fromScreen: "signup",
-      phoneNumber: data.countryCode + data.phoneNumber,
-      fullName: data.name,
-    });
   };
 
   const handleSocialLoginSuccess = (result) => {

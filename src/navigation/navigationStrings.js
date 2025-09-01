@@ -6,4 +6,5 @@ export default {
   SIGNUPSCREEN: "SignUpScreen",
   OTPSCREEN: "OtpScreen",
   FORGOTPASSWORDSCREEN: "ForgotPasswordScreen",
+  INTERESTS: "Interests",
 };
