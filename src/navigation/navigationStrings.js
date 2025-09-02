@@ -7,4 +7,5 @@ export default {
   OTPSCREEN: "OtpScreen",
   FORGOTPASSWORDSCREEN: "ForgotPasswordScreen",
   INTERESTS: "Interests",
+  BOTTOM_TAB: "BottomTab",
 };

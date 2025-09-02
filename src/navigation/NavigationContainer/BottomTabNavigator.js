@@ -1,0 +1,152 @@
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+  Image,
+} from "react-native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Svg, { Path } from "react-native-svg";
+import colors from "@assets/colors";
+import imagePath from "@assets/icons";
+import {
+  getFontSize,
+  getHeight,
+  getVertiPadding,
+  getWidth,
+} from "@utils/responsive";
+
+const Tab = createBottomTabNavigator();
+
+const { width } = Dimensions.get("window");
+const tabWidth = width / 5;
+
+const tabIcons = {
+  Home: imagePath.GOOGLE_ICON,
+  Gigs: imagePath.GOOGLE_ICON,
+  Contracts: imagePath.GOOGLE_ICON,
+  Messages: imagePath.GOOGLE_ICON,
+  Settings: imagePath.GOOGLE_ICON,
+};
+
+const DummyScreen = ({ label }) => (
+  <View style={styles.screen}>
+    <Text style={{ fontSize: 20, fontWeight: "bold" }}>Dummy Screen</Text>
+  </View>
+);
+
+const CustomTabBar = ({ state, descriptors, navigation }) => {
+  const activeIndex = state.index;
+  const activeX = tabWidth * activeIndex;
+
+  return (
+    <View style={{ width, height: 70, backgroundColor: colors.white }}>
+      <Svg width={width} height={70} style={StyleSheet.absoluteFill}>
+        <Path
+          fill={colors.secondary}
+          d={`
+            M0 0
+            H${activeX}
+            C${activeX + tabWidth * 0.25} 0, ${activeX + tabWidth * 0.25} 0, ${
+            activeX + tabWidth / 2
+          } 10
+            C${activeX + tabWidth * 0.75} 0, ${activeX + tabWidth * 0.75} 0, ${
+            activeX + tabWidth
+          } 0
+            H${width}
+            V70
+            H0
+            Z
+          `}
+        />
+      </Svg>
+
+      <View style={styles.tabRow}>
+        {state.routes.map((route, index) => {
+          const isFocused = state.index === index;
+          const label =
+            descriptors[route.key].options.tabBarLabel ||
+            descriptors[route.key].options.title ||
+            route.name;
+
+          const onPress = () => {
+            if (!isFocused) navigation.navigate(route.name);
+          };
+
+          return (
+            <TouchableOpacity
+              key={route.name}
+              style={styles.tabButton}
+              onPress={onPress}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={tabIcons[route.name]} // ✅ JS: no TypeScript casting
+                style={[
+                  styles.icon,
+                  { tintColor: isFocused ? colors.white : colors.primary },
+                ]}
+              />
+              <Text
+                style={[styles.label, isFocused && { color: colors.white }]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+const BottomTabNavigator = () => {
+  return (
+    <Tab.Navigator
+      initialRouteName="Home"
+      detachInactiveScreens={false}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <CustomTabBar {...props} />}
+    >
+      <Tab.Screen name="Home" component={DummyScreen} />
+      <Tab.Screen name="Gigs" component={DummyScreen} />
+      <Tab.Screen name="Contracts" component={DummyScreen} />
+      <Tab.Screen name="Messages" component={DummyScreen} />
+      <Tab.Screen name="Settings" component={DummyScreen} />
+    </Tab.Navigator>
+  );
+};
+
+export default BottomTabNavigator;
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.white,
+  },
+  tabRow: {
+    flexDirection: "row",
+    height: getHeight(65),
+    backgroundColor: "transparent",
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: getVertiPadding(6),
+  },
+  icon: {
+    width: getWidth(22),
+    height: getHeight(22),
+    resizeMode: "contain",
+  },
+  label: {
+    fontSize: getFontSize(10),
+    color: colors.primary,
+    marginTop: 2,
+  },
+});
