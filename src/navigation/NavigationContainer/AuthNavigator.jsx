@@ -17,7 +17,7 @@ const AuthNavigator = () => {
   return (
     <>
       <Stack.Navigator
-        initialRouteName={navigationStrings.INTERESTS}
+        initialRouteName={navigationStrings.SPLASHSCREEN}
         screenOptions={{
           headerShown: false,
         }}

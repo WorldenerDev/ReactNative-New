@@ -26,13 +26,20 @@ import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
-import { signupUser, setUser, loginUser } from "@redux/slices/authSlice";
+import {
+  signupUser,
+  setUser,
+  loginUser,
+  googleAppleSignIn,
+} from "@redux/slices/authSlice";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 import {
   validateForm,
   validateLetter,
   validateMobileNumber,
 } from "@utils/validators";
+import { objectToFormData } from "@utils/formDataHelper";
+import { getDeviceId, getDeviceType } from "@utils/uiUtils";
 
 const SignUp = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -54,6 +61,7 @@ const SignUp = ({ navigation }) => {
 
   const onClickContinue = async () => {
     try {
+      const deviceId = await getDeviceId();
       const error = validateForm([
         { validator: validateLetter, values: [data?.name, "Name", 4] },
         { validator: validateMobileNumber, values: [data?.phoneNumber] },
@@ -66,25 +74,72 @@ const SignUp = ({ navigation }) => {
         showToast("error", "Please accept the terms and conditions");
         return;
       }
-      const formData = new FormData();
-      formData.append("name", data?.name);
-      formData.append("phone_number", data?.countryCode + data?.phoneNumber);
-      formData.append("device_type", Platform.OS);
+      const newData = {
+        name: data?.name,
+        phone_number: data?.countryCode + data?.phoneNumber,
+        device_type: Platform.OS,
+        device_id: deviceId,
+      };
+      const formData = objectToFormData(newData);
       const result = await dispatch(signupUser(formData));
-      return;
+      console.log("Signup result:", result);
+      if (result?.payload?.success) {
+        navigation.navigate(navigationStrings.OTPSCREEN, {
+          fromScreen: "signup",
+          phoneNumber: data?.countryCode + data?.phoneNumber,
+        });
+      }
     } catch (error) {
       showToast("error", error);
     }
   };
 
-  const handleSocialLoginSuccess = (result) => {
-    showToast("success", `${result.provider} Sign-In successful!`);
+  const handleSocialLoginSuccess = async (result, provider) => {
+    console.log("Social login result receiveddd:", result, provider);
 
-    // Store user data in Redux
-    dispatch(setUser(result.userData));
-
-    // You can navigate to main screen or handle as needed
-    // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
+    const deviceId = await getDeviceId();
+    try {
+      if (result?.provider === "google") {
+        console.log("google provider result ", result);
+        const data = {
+          name: result?.userData?.givenName,
+          email: result?.userData?.email,
+          device_type: getDeviceType(),
+          social_id: result?.userData?.id,
+          device_id: deviceId,
+          fcm_token: "not given",
+        };
+        const loginResult = await dispatch(googleAppleSignIn(data));
+        console.log("Google login result in signup", loginResult);
+        const userInfo = {
+          ...loginResult?.payload,
+          token: loginResult?.payload?.accessToken,
+        };
+        console.log(userInfo);
+        dispatch(setUser(userInfo));
+      } else {
+        ///This one is pending sometimes email not received
+        const data = {
+          name: result?.userData?.givenName,
+          email: result?.userData?.email,
+          device_type: getDeviceType(),
+          social_id: result?.userData?.id,
+          device_id: deviceId,
+          fcm_token: "not given",
+        };
+        const loginResult = await dispatch(googleAppleSignIn(data));
+        console.log("Google login result in signin", loginResult);
+        const userInfo = {
+          ...loginResult?.payload,
+          token: loginResult?.payload?.accessToken,
+        };
+        console.log(userInfo);
+        dispatch(setUser(userInfo));
+      }
+    } catch (error) {
+      console.error("Social login error:", error);
+      showToast("error", error.message || "Login failed");
+    }
   };
 
   const handleSocialLoginError = (error) => {

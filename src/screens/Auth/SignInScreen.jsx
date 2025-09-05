@@ -17,9 +17,10 @@ import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import { validateForm, validateMobileNumber } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
-import { loginUser, setUser } from "@redux/slices/authSlice";
+import { googleAppleSignIn, loginUser, setUser } from "@redux/slices/authSlice";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
+import { getDeviceId, getDeviceType } from "@utils/uiUtils";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -37,6 +38,7 @@ const SignInScreen = ({ navigation }) => {
 
   const onPressSignin = async () => {
     try {
+      const deviceId = await getDeviceId();
       const error = validateForm([
         { validator: validateMobileNumber, values: [data?.phoneNumber] },
       ]);
@@ -48,6 +50,7 @@ const SignInScreen = ({ navigation }) => {
       const sendData = {
         phone_number: data?.countryCode + data?.phoneNumber,
         device_type: Platform.OS,
+        device_id: deviceId,
       };
       const result = await dispatch(loginUser(sendData));
       console.log("Login result:", result);
@@ -57,21 +60,62 @@ const SignInScreen = ({ navigation }) => {
           phoneNumber: data?.countryCode + data?.phoneNumber,
         });
       } else {
-        showToast("error", result?.payload?.error);
+        showToast("error", result?.payload);
       }
     } catch (error) {
       console.error("Login error:", error);
       const errorMessage =
         error?.message || "An error occurred during login. Please try again.";
       showToast("error", errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleSocialLoginSuccess = (result) => {
-    showToast("success", `${result.provider} Sign-In successful!`);
-    dispatch(setUser(result.userData));
+  const handleSocialLoginSuccess = async (result, provider) => {
+    console.log("Social login result receiveddd:", result, provider);
+
+    const deviceId = await getDeviceId();
+    try {
+      if (result?.provider === "google") {
+        console.log("google provider result ", result);
+        const data = {
+          name: result?.userData?.givenName,
+          email: result?.userData?.email,
+          device_type: getDeviceType(),
+          social_id: result?.userData?.id,
+          device_id: deviceId,
+          fcm_token: "not given",
+        };
+        const loginResult = await dispatch(googleAppleSignIn(data));
+        console.log("Google login result in signin", loginResult);
+        const userInfo = {
+          ...loginResult?.payload,
+          token: loginResult?.payload?.accessToken,
+        };
+        console.log(userInfo);
+        dispatch(setUser(userInfo));
+      } else {
+        ///This one is pending sometimes email not received
+        const data = {
+          name: result?.userData?.givenName,
+          email: result?.userData?.email,
+          device_type: getDeviceType(),
+          social_id: result?.userData?.id,
+          device_id: deviceId,
+          fcm_token: "not given",
+        };
+        const loginResult = await dispatch(googleAppleSignIn(data));
+        console.log("Google login result in signin", loginResult);
+        const userInfo = {
+          ...loginResult?.payload,
+          token: loginResult?.payload?.accessToken,
+        };
+        console.log(userInfo);
+        dispatch(setUser(userInfo));
+      }
+    } catch (error) {
+      console.error("Social login error:", error);
+      showToast("error", error.message || "Login failed");
+    }
   };
 
   const handleSocialLoginError = (error) => {

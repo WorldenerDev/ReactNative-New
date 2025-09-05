@@ -4,6 +4,7 @@ export const endpoints = {
     login: "/login",
     signup: "/signup",
     otp: "/verifyOtp",
+    socialLogin: "/socialLoginAndSignUp",
     // logout: 'auth/logout',
     // session: 'auth/session',
   },

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import AuthNavigator from "./NavigationContainer/AuthNavigator";
-import { getItem } from "@utils/storage";
+import { clearStorage, getItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "@redux/slices/authSlice";
@@ -14,7 +14,7 @@ const Routes = () => {
 
   useEffect(() => {
     const loadUserFromStorage = async () => {
-      // let clear = await clearStorage()
+      //let clear = await clearStorage();
       try {
         const savedUser = await getItem(STORAGE_KEYS.USER_DATA);
         console.log("Loaded user from storage:", savedUser);
@@ -33,19 +33,16 @@ const Routes = () => {
   if (!bootstrapped) {
     return null; // Or <Loader /> if you want to show loader until ready
   }
-
+  console.log("Token", token);
+  console.log("user", user);
   return (
     <NavigationContainer>
-      {/* {token && user?.email ? (
-                user?.userType === 'freelancer' ? (
-                    <FreelancerMainNavigator />
-                ) : (
-                    <EmployerMainNavigator />
-                )
-            ) : (
-                <AuthNavigator />
-                )} */}
       <MainNavigator />
+      {/* {token && user?.email !== undefined ? (
+        <MainNavigator />
+      ) : (
+        <AuthNavigator />
+      )} */}
     </NavigationContainer>
   );
 };

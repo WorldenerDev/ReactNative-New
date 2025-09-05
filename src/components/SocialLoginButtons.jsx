@@ -31,15 +31,11 @@ const SocialLoginButtons = ({ onLoginSuccess, onLoginError, onGuestPress }) => {
   };
 
   const handleSocialLogin = async (provider) => {
-    if (isLoading) return;
-
-    setIsLoading(true);
     try {
       const result = await socialLoginService.signIn(provider);
 
       if (result.success) {
-        console.log(`${provider} login successful:`, result.userData);
-        onLoginSuccess?.(result);
+        onLoginSuccess?.(result, provider);
       } else {
         console.error(`${provider} login failed:`, result.error);
         onLoginError?.(result);
@@ -49,8 +45,6 @@ const SocialLoginButtons = ({ onLoginSuccess, onLoginError, onGuestPress }) => {
       console.error(`${provider} login error:`, error);
       onLoginError?.({ success: false, error: error.message, provider });
       Alert.alert("Login Error", error.message);
-    } finally {
-      setIsLoading(false);
     }
   };
 

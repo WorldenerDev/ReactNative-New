@@ -23,13 +23,13 @@ import {
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch } from "react-redux";
-import { loginUser, onOtp, requestOtp } from "@redux/slices/authSlice";
+import { loginUser, onOtp, requestOtp, setUser } from "@redux/slices/authSlice";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { setItem } from "@utils/storage";
 
 const OtpScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
-  const { fromScreen, email, phoneNumber, fullName } = route?.params || {};
+  const { fromScreen, phoneNumber } = route?.params || {};
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -75,6 +75,7 @@ const OtpScreen = ({ navigation, route }) => {
         device_type: Platform.OS,
       };
       const result = await dispatch(loginUser(sendData));
+
       console.log("Resend OTP result:", result);
     } catch (error) {
       console.log("Error resending OTP:", error);
@@ -95,7 +96,14 @@ const OtpScreen = ({ navigation, route }) => {
         otp: codeString,
       };
       const result = await dispatch(onOtp(sendData));
-      console.log("OTP result:", result);
+      if (result?.payload?.success && fromScreen === "signin") {
+        await setItem(STORAGE_KEYS?.USER_DATA, result?.payload?.data);
+        dispatch(setUser(result?.payload?.data));
+      } else {
+        navigation.navigate(navigationStrings.INTERESTS, {
+          userData: result?.payload?.data,
+        });
+      }
     } catch (error) {
       console.log("Error verifying code:", error);
     }
