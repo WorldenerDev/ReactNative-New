@@ -46,22 +46,20 @@ const forYou = Array.from({ length: 8 }, (_, i) => ({
 }));
 
 const Home = ({ navigation }) => {
-  const { user } = useSelector((state) => state.auth);
+  const { user, categories } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const [categoryData, setCategoryData] = useState([]);
-  // useEffect(() => {
-  //   getCategory();
-  // }, [dispatch]);
 
-  // const getCategory = async () => {
-  //   try {
-  //     const result = await dispatch(category());
-  //     console.log("category result on home", result);
-  //     setCategoryData(result?.payload?.data);
-  //   } catch (err) {
-  //     console.error("Failed to fetch category on home Screen ", err);
-  //   }
-  // };
+  useEffect(() => {
+    getCategory();
+  }, [dispatch]);
+
+  const getCategory = async () => {
+    try {
+      const result = await dispatch(category());
+    } catch (err) {
+      console.error("Failed to fetch category on home Screen ", err);
+    }
+  };
 
   const renderForYou = ({ item }) => (
     <View style={styles.forYouCard}>
@@ -109,7 +107,10 @@ const Home = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.categoryCard}>
-            <Image source={{ uri: item.image }} style={styles.image} />
+            <Image
+              source={{ uri: item?.cover_image_url }}
+              style={styles.image}
+            />
             <View style={styles.cardOverlay}>
               <Text style={styles.cardTitle}>{item.name}</Text>
             </View>

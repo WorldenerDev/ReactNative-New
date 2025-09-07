@@ -118,7 +118,13 @@ export const postCategory = createAsyncThunk(
 // ----------------- Slice -----------------
 const authSlice = createSlice({
   name: "auth",
-  initialState: { user: null, token: null, loading: false, error: null },
+  initialState: {
+    user: null,
+    token: null,
+    loading: false,
+    error: null,
+    categories: [],
+  },
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
@@ -163,8 +169,7 @@ const authSlice = createSlice({
     });
     handleAsyncCases(builder, category, {
       onFulfilled: (state, action) => {
-        state.user = action.payload;
-        state.token = action.payload.token;
+        state.categories = action.payload?.data || action.payload || [];
       },
     });
     handleAsyncCases(builder, postCategory, {
