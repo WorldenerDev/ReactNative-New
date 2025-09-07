@@ -96,10 +96,22 @@ const OtpScreen = ({ navigation, route }) => {
         otp: codeString,
       };
       const result = await dispatch(onOtp(sendData));
+      console.log("signup Otp Verify result ", result);
       if (result?.payload?.success && fromScreen === "signin") {
-        await setItem(STORAGE_KEYS?.USER_DATA, result?.payload?.data);
-        dispatch(setUser(result?.payload?.data));
+        if (result?.payload?.data?.isPreference) {
+          await setItem(STORAGE_KEYS?.USER_DATA, result?.payload?.data);
+          dispatch(setUser(result?.payload?.data));
+        } else {
+          await setItem(
+            STORAGE_KEYS?.TOKEN,
+            result?.payload?.data?.accessToken
+          );
+          navigation.navigate(navigationStrings.INTERESTS, {
+            userData: result?.payload?.data,
+          });
+        }
       } else {
+        await setItem(STORAGE_KEYS?.TOKEN, result?.payload?.data?.accessToken);
         navigation.navigate(navigationStrings.INTERESTS, {
           userData: result?.payload?.data,
         });

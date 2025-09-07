@@ -2,22 +2,29 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import navigationStrings from "@navigation/navigationStrings";
 import BottomTabNavigator from "./BottomTabNavigator";
+import { SearchCity } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
 const MainNavigator = () => {
-    return (
-        <>
-            <MainStack.Navigator
-                initialRouteName={navigationStrings.BOTTOM_TAB}
-                screenOptions={{
-                    headerShown: false,
-                }}
-            >
-                <MainStack.Screen name={navigationStrings.BOTTOM_TAB} component={BottomTabNavigator} />
-
-            </MainStack.Navigator>
-        </>
-    );
+  return (
+    <>
+      <MainStack.Navigator
+        initialRouteName={navigationStrings.BOTTOM_TAB}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <MainStack.Screen
+          name={navigationStrings.BOTTOM_TAB}
+          component={BottomTabNavigator}
+        />
+        <MainStack.Screen
+          name={navigationStrings.SEARCH_CITY}
+          component={SearchCity}
+        />
+      </MainStack.Navigator>
+    </>
+  );
 };
 
 export default MainNavigator;

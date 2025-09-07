@@ -14,8 +14,9 @@ apiClient.defaults.headers.post["Content-Type"] = undefined;
 apiClient.defaults.headers.put["Content-Type"] = undefined;
 
 apiClient.interceptors.request.use(async (config) => {
-  const user = store.getState()?.auth;
-  const storedToken = user?.token || (await getItem(STORAGE_KEYS?.TOKEN));
+  const { user } = store.getState()?.auth;
+  console.log("user", user);
+  const storedToken = user?.accessToken || (await getItem(STORAGE_KEYS?.TOKEN));
 
   console.log("Stored Token API client header:", storedToken);
 

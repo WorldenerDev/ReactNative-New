@@ -7,6 +7,8 @@ import {
   newPass,
   freelancerProfile,
   SocialLogin,
+  getCategory,
+  SelectCategory,
 } from "@api/services/authService";
 import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
@@ -90,6 +92,29 @@ export const googleAppleSignIn = createAsyncThunk(
   }
 );
 
+export const category = createAsyncThunk(
+  endpoints?.auth?.getCategory,
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await getCategory(payload);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+export const postCategory = createAsyncThunk(
+  endpoints?.auth?.selectCategory,
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await SelectCategory(payload);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
 // ----------------- Slice -----------------
 const authSlice = createSlice({
   name: "auth",
@@ -97,7 +122,7 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
-      state.token = action.payload.token || null;
+      state.token = action.payload.accessToken || null;
     },
     logout: (state) => {
       state.user = null;
@@ -131,6 +156,18 @@ const authSlice = createSlice({
     });
 
     handleAsyncCases(builder, googleAppleSignIn, {
+      onFulfilled: (state, action) => {
+        state.user = action.payload;
+        state.token = action.payload.token;
+      },
+    });
+    handleAsyncCases(builder, category, {
+      onFulfilled: (state, action) => {
+        state.user = action.payload;
+        state.token = action.payload.token;
+      },
+    });
+    handleAsyncCases(builder, postCategory, {
       onFulfilled: (state, action) => {
         state.user = action.payload;
         state.token = action.payload.token;

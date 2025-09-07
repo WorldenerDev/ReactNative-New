@@ -17,6 +17,8 @@ import {
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
+import navigationStrings from "@navigation/navigationStrings";
+import { Account, Chat, Group, Home, Trips } from "@screens/index";
 
 const Tab = createBottomTabNavigator();
 
@@ -24,18 +26,12 @@ const { width } = Dimensions.get("window");
 const tabWidth = width / 5;
 
 const tabIcons = {
-  Home: imagePath.GOOGLE_ICON,
-  Gigs: imagePath.GOOGLE_ICON,
-  Contracts: imagePath.GOOGLE_ICON,
-  Messages: imagePath.GOOGLE_ICON,
-  Settings: imagePath.GOOGLE_ICON,
+  Home: imagePath.HOME,
+  Group: imagePath.GROUP,
+  Trips: imagePath.TRIP,
+  Chat: imagePath.CHAT,
+  Account: imagePath.ACCOUNT,
 };
-
-const DummyScreen = ({ label }) => (
-  <View style={styles.screen}>
-    <Text style={{ fontSize: 20, fontWeight: "bold" }}>Dummy Screen</Text>
-  </View>
-);
 
 const CustomTabBar = ({ state, descriptors, navigation }) => {
   const activeIndex = state.index;
@@ -110,11 +106,11 @@ const BottomTabNavigator = () => {
       screenOptions={{ headerShown: false }}
       tabBar={(props) => <CustomTabBar {...props} />}
     >
-      <Tab.Screen name="Home" component={DummyScreen} />
-      <Tab.Screen name="Gigs" component={DummyScreen} />
-      <Tab.Screen name="Contracts" component={DummyScreen} />
-      <Tab.Screen name="Messages" component={DummyScreen} />
-      <Tab.Screen name="Settings" component={DummyScreen} />
+      <Tab.Screen name={navigationStrings.HOME} component={Home} />
+      <Tab.Screen name={navigationStrings.GROUP} component={Group} />
+      <Tab.Screen name={navigationStrings.TRIPS} component={Trips} />
+      <Tab.Screen name={navigationStrings.CHAT} component={Chat} />
+      <Tab.Screen name={navigationStrings.ACCOUNT} component={Account} />
     </Tab.Navigator>
   );
 };
@@ -122,12 +118,6 @@ const BottomTabNavigator = () => {
 export default BottomTabNavigator;
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.white,
-  },
   tabRow: {
     flexDirection: "row",
     height: getHeight(65),

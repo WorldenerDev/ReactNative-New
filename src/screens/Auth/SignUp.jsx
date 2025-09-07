@@ -45,7 +45,7 @@ const SignUp = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const [data, setData] = useState({
-    name: "",
+    name: "Gaurav",
     phoneNumber: "9891678848",
     countryCode: "+91",
     agree: false,

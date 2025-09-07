@@ -8,4 +8,12 @@ export default {
   FORGOTPASSWORDSCREEN: "ForgotPasswordScreen",
   INTERESTS: "Interests",
   BOTTOM_TAB: "BottomTab",
+
+  //===============Main Screens =======
+  HOME: "Home",
+  GROUP: "Group",
+  TRIPS: "Trips",
+  CHAT: "Chat",
+  ACCOUNT: "Account",
+  SEARCH_CITY: "SearchCity",
 };

@@ -8,8 +8,9 @@ import { setUser } from "@redux/slices/authSlice";
 import MainNavigator from "./NavigationContainer/MainNavigator";
 
 const Routes = () => {
-  const { token, user } = useSelector((state) => state.auth);
+  const { accessToken, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  console.log("Access token ", accessToken);
   const [bootstrapped, setBootstrapped] = useState(false);
 
   useEffect(() => {
@@ -17,8 +18,7 @@ const Routes = () => {
       //let clear = await clearStorage();
       try {
         const savedUser = await getItem(STORAGE_KEYS.USER_DATA);
-        console.log("Loaded user from storage:", savedUser);
-        if (savedUser?.token) {
+        if (savedUser?.accessToken) {
           dispatch(setUser(savedUser));
         }
       } catch (err) {
@@ -33,16 +33,10 @@ const Routes = () => {
   if (!bootstrapped) {
     return null; // Or <Loader /> if you want to show loader until ready
   }
-  console.log("Token", token);
-  console.log("user", user);
   return (
     <NavigationContainer>
-      <MainNavigator />
-      {/* {token && user?.email !== undefined ? (
-        <MainNavigator />
-      ) : (
-        <AuthNavigator />
-      )} */}
+      {/* <MainNavigator /> */}
+      {user?.accessToken ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 };

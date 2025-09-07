@@ -4,8 +4,10 @@ import {
   View,
   FlatList,
   TouchableOpacity,
+  Image,
+  Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import StepTitle from "@components/StepTitle";
 import ButtonComp from "@components/ButtonComp";
@@ -19,70 +21,36 @@ import {
   getHoriPadding,
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
+import Routes from "@navigation/Routes";
+import { useDispatch } from "react-redux";
+import { category, postCategory, setUser } from "@redux/slices/authSlice";
+import { setItem } from "@utils/storage";
+import { STORAGE_KEYS } from "@utils/storageKeys";
 
-const Interests = ({ navigation }) => {
+const Interests = ({ navigation, route }) => {
+  const dispatch = useDispatch();
+  const { userData } = route?.params;
   const [selectedInterests, setSelectedInterests] = useState([]);
 
-  const interestsData = [
-    {
-      id: 1,
-      title: "Food & Drinks",
-      emoji: "🍔",
-      color: "#FF6B6B",
-      selected: false,
-    },
-    {
-      id: 2,
-      title: "Travel & Adventure",
-      emoji: "✈️",
-      color: "#4ECDC4",
-      selected: false,
-    },
-    {
-      id: 3,
-      title: "Sports & Fitness",
-      emoji: "⚽",
-      color: "#45B7D1",
-      selected: false,
-    },
-    {
-      id: 4,
-      title: "Music & Entertainment",
-      emoji: "🎵",
-      color: "#96CEB4",
-      selected: false,
-    },
-    {
-      id: 5,
-      title: "Technology & Gaming",
-      emoji: "🎮",
-      color: "#FFEAA7",
-      selected: false,
-    },
-    {
-      id: 6,
-      title: "Fashion & Beauty",
-      emoji: "👗",
-      color: "#DDA0DD",
-      selected: false,
-    },
-    {
-      id: 7,
-      title: "Art & Culture",
-      emoji: "🎨",
-      color: "#FFB6C1",
-      selected: false,
-    },
-    {
-      id: 8,
-      title: "Health & Wellness",
-      emoji: "🧘",
-      color: "#98D8C8",
-      selected: false,
-    },
-  ];
+  const [interests, setInterests] = useState([]);
+  useEffect(() => {
+    const getCategory = async () => {
+      try {
+        const result = await dispatch(category());
+        console.log("category result payload", result);
+        const formattedData = result?.payload?.data?.map((item) => ({
+          ...item,
+          cover_image_url: item.event_image_url,
+          selected: false,
+        }));
 
-  const [interests, setInterests] = useState(interestsData);
+        setInterests(formattedData);
+      } catch (err) {
+        console.error("Failed to fetch category", err);
+      }
+    };
+    getCategory();
+  }, [dispatch]);
 
   const toggleInterest = (id) => {
     setInterests((prevInterests) =>
@@ -94,12 +62,32 @@ const Interests = ({ navigation }) => {
     );
 
     setSelectedInterests((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
+      if (prev.includes(String(id))) {
+        return prev.filter((item) => item !== String(id));
       } else {
-        return [...prev, id];
+        return [...prev, String(id)];
       }
     });
+  };
+
+  const handleContinue = async () => {
+    try {
+      const data = {
+        preferences: selectedInterests,
+      };
+      const result = await dispatch(postCategory(data));
+      console.log("Post category result ", result);
+      if (result?.payload?.success) {
+        const loginData = {
+          ...userData,
+          isPreference: true,
+        };
+        await setItem(STORAGE_KEYS?.USER_DATA, loginData);
+        dispatch(setUser(loginData));
+      }
+    } catch (error) {
+      console.log("error on post category on interest screen ");
+    }
   };
 
   const renderInterestItem = ({ item }) => (
@@ -108,24 +96,24 @@ const Interests = ({ navigation }) => {
       onPress={() => toggleInterest(item.id)}
       activeOpacity={0.8}
     >
-      <View style={[styles.imageContainer, { backgroundColor: item.color }]}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
+      <View style={[styles.imageContainer, { backgroundColor: "cyan" }]}>
+        <Image
+          source={{
+            uri: item?.cover_image_url
+              ? item?.cover_image_url
+              : "https://picsum.photos/200",
+          }}
+          style={styles.image}
+        />
         {item.selected && (
           <View style={styles.checkmarkContainer}>
             <Text style={styles.checkmark}>✓</Text>
           </View>
         )}
       </View>
-      <Text style={styles.interestTitle}>{item.title}</Text>
+      <Text style={styles.interestTitle}>{item?.name}</Text>
     </TouchableOpacity>
   );
-
-  const handleContinue = () => {
-    if (selectedInterests.length > 0) {
-      // Navigate to next screen with selected interests
-      navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
-    }
-  };
 
   return (
     <MainContainer>
@@ -150,6 +138,7 @@ const Interests = ({ navigation }) => {
       {selectedInterests.length > 0 && (
         <View style={styles.floatingButton}>
           <ButtonComp
+            disabled={false}
             title="Continue"
             onPress={handleContinue}
             containerStyle={styles.continueButtonStyle}
@@ -199,8 +188,11 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  emoji: {
-    fontSize: getFontSize(40),
+  image: {
+    resizeMode: "cover",
+    width: getWidth(120),
+    height: getWidth(120),
+    borderRadius: getWidth(60),
   },
   checkmarkContainer: {
     position: "absolute",

@@ -15,6 +15,11 @@ const imagePath = {
   BACKGROUND: require("./source/bg.png"),
   LOGO_TRANSPARENT: require("./source/logo_transparent.png"),
   NOTIFICATION_IMAGE: require("./source/notification_image.png"),
+  HOME: require("./source/home.png"),
+  GROUP: require("./source/group.png"),
+  TRIP: require("./source/trip.png"),
+  CHAT: require("./source/chat.png"),
+  ACCOUNT: require("./source/account.png"),
 };
 
 export default imagePath;

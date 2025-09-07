@@ -5,6 +5,8 @@ export const endpoints = {
     signup: "/signup",
     otp: "/verifyOtp",
     socialLogin: "/socialLoginAndSignUp",
+    getCategory: "/getCategories",
+    selectCategory: "/selectCategory",
     // logout: 'auth/logout',
     // session: 'auth/session',
   },

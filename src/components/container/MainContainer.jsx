@@ -17,7 +17,7 @@ const MainContainer = React.memo(({ children, loader = false }) => {
 
   return (
     <View style={styles.root}>
-      <StatusBar backgroundColor={colors.white} barStyle="light-content" />
+      <StatusBar backgroundColor={colors.white} barStyle="dark-content" />
       <SafeAreaView style={styles.safe}>
         <View style={styles.innerContainer}>
           {children}
@@ -42,6 +42,6 @@ const styles = StyleSheet.create({
   innerContainer: {
     flex: 1,
     backgroundColor: colors.white,
-    paddingHorizontal: getHoriPadding(20),
+    paddingHorizontal: getHoriPadding(15),
   },
 });
