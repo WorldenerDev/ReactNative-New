@@ -101,7 +101,7 @@ const OtpScreen = ({ navigation, route }) => {
         if (result?.payload?.data?.isPreference) {
           await setItem(STORAGE_KEYS?.USER_DATA, result?.payload?.data);
           dispatch(setUser(result?.payload?.data));
-        } else {
+        } else if (result?.payload?.success) {
           await setItem(
             STORAGE_KEYS?.TOKEN,
             result?.payload?.data?.accessToken
@@ -110,7 +110,7 @@ const OtpScreen = ({ navigation, route }) => {
             userData: result?.payload?.data,
           });
         }
-      } else {
+      } else if (result?.payload?.success) {
         await setItem(STORAGE_KEYS?.TOKEN, result?.payload?.data?.accessToken);
         navigation.navigate(navigationStrings.INTERESTS, {
           userData: result?.payload?.data,

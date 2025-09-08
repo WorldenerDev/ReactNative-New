@@ -91,7 +91,6 @@ const SignInScreen = ({ navigation }) => {
           ...loginResult?.payload,
           token: loginResult?.payload?.accessToken,
         };
-        console.log(userInfo);
         dispatch(setUser(userInfo));
       } else {
         ///This one is pending sometimes email not received
@@ -109,7 +108,6 @@ const SignInScreen = ({ navigation }) => {
           ...loginResult?.payload,
           token: loginResult?.payload?.accessToken,
         };
-        console.log(userInfo);
         dispatch(setUser(userInfo));
       }
     } catch (error) {

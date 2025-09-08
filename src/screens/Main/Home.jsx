@@ -21,37 +21,34 @@ import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch, useSelector } from "react-redux";
 import { category } from "@redux/slices/authSlice";
-
-const destinations = [
-  { id: "1", name: "Paris", image: "https://picsum.photos/id/1011/400/400" },
-  { id: "2", name: "London", image: "https://picsum.photos/id/1012/400/400" },
-  { id: "3", name: "Dubai", image: "https://picsum.photos/id/1013/400/400" },
-];
-
-const categories = [
-  {
-    id: "1",
-    name: "Adventure",
-    image: "https://picsum.photos/id/1015/400/400",
-  },
-  { id: "2", name: "Nature", image: "https://picsum.photos/id/1016/400/400" },
-  { id: "3", name: "Culture", image: "https://picsum.photos/id/1016/400/400" },
-];
-
-const forYou = Array.from({ length: 8 }, (_, i) => ({
-  id: String(i + 1),
-  title: "Rovaniemi",
-  subtitle: "Night safari",
-  image: "https://picsum.photos/id/1025/600/400",
-}));
+import imagePath from "@assets/icons";
+import { fetchAllCity, fetchEventForYou } from "@redux/slices/cityTripSlice";
 
 const Home = ({ navigation }) => {
   const { user, categories } = useSelector((state) => state.auth);
+  const { city, eventForYou } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
+  console.log("first", city);
 
   useEffect(() => {
+    getCity();
     getCategory();
+    getForYou();
   }, [dispatch]);
+  const getCity = async () => {
+    try {
+      const result = await dispatch(fetchAllCity());
+    } catch (error) {
+      console.error("Failed to fetch City on home Screen ", error);
+    }
+  };
+  const getForYou = async () => {
+    try {
+      const result = await dispatch(fetchEventForYou());
+    } catch (error) {
+      console.error("Failed to fetch Event For You on home Screen ", error);
+    }
+  };
 
   const getCategory = async () => {
     try {
@@ -63,10 +60,11 @@ const Home = ({ navigation }) => {
 
   const renderForYou = ({ item }) => (
     <View style={styles.forYouCard}>
-      <Image source={{ uri: item.image }} style={styles.forYouImage} />
+      <Image source={{ uri: item?.image }} style={styles.forYouImage} />
       <View style={styles.overlay}>
-        <Text style={styles.forYouTitle}>{item.title}</Text>
-        <Text style={styles.forYouSubtitle}>{item.subtitle}</Text>
+        <Text numberOfLines={2} style={styles.forYouTitle}>
+          {item.name}
+        </Text>
       </View>
     </View>
   );
@@ -79,23 +77,31 @@ const Home = ({ navigation }) => {
         <TouchableOpacity
           onPress={() => navigation.navigate(navigationStrings.SEARCH_CITY)}
         >
-          <Text style={styles.search}>🔍</Text>
+          <Image style={styles.search} source={imagePath.SEARCH_ICON} />
         </TouchableOpacity>
       </View>
 
       {/* Where to next */}
       <Text style={styles.sectionTitle}>Where to next?</Text>
       <FlatList
-        data={destinations}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image source={{ uri: item.image }} style={styles.image} />
-            <View style={styles.cardOverlay}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
-            </View>
-          </View>
-        )}
+        data={city.slice(0, 10)}
+        initialNumToRender={6}
+        windowSize={5}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => {
+          return (
+            <TouchableOpacity
+              onPress={() => navigation.navigate(navigationStrings.CITY_DETAIL)}
+              activeOpacity={0.7}
+              style={styles.card}
+            >
+              <Image source={{ uri: item?.image }} style={styles.image} />
+              <View style={styles.cardOverlay}>
+                <Text style={styles.cardTitle}>{item?.name}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
         horizontal
         showsHorizontalScrollIndicator={false}
       />
@@ -128,7 +134,7 @@ const Home = ({ navigation }) => {
   return (
     <MainContainer>
       <FlatList
-        data={forYou}
+        data={eventForYou}
         renderItem={renderForYou}
         keyExtractor={(item) => item.id}
         numColumns={2}
@@ -159,7 +165,9 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   search: {
-    fontSize: getFontSize(20),
+    resizeMode: "contain",
+    height: getHeight(25),
+    width: getWidth(25),
   },
   sectionTitle: {
     fontSize: getFontSize(16),
@@ -170,7 +178,7 @@ const styles = StyleSheet.create({
   },
   row: {
     justifyContent: "space-between",
-    marginBottom: getVertiPadding(20),
+    marginBottom: getVertiPadding(10),
   },
   card: {
     marginRight: getWidth(15),

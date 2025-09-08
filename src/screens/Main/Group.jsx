@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
 import React from "react";
+import MainContainer from "@components/container/MainContainer";
 
 const Group = () => {
   return (
-    <View>
+    <MainContainer>
       <Text>Group</Text>
-    </View>
+    </MainContainer>
   );
 };
 

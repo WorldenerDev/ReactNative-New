@@ -16,4 +16,5 @@ export default {
   CHAT: "Chat",
   ACCOUNT: "Account",
   SEARCH_CITY: "SearchCity",
+  CITY_DETAIL: "CityDetail",
 };

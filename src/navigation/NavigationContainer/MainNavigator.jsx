@@ -2,7 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import navigationStrings from "@navigation/navigationStrings";
 import BottomTabNavigator from "./BottomTabNavigator";
-import { SearchCity } from "@screens/index";
+import { CityDetail, SearchCity } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
 const MainNavigator = () => {
@@ -21,6 +21,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.SEARCH_CITY}
           component={SearchCity}
+        />
+        <MainStack.Screen
+          name={navigationStrings.CITY_DETAIL}
+          component={CityDetail}
         />
       </MainStack.Navigator>
     </>

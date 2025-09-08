@@ -7,7 +7,9 @@ export const endpoints = {
     socialLogin: "/socialLoginAndSignUp",
     getCategory: "/getCategories",
     selectCategory: "/selectCategory",
-    // logout: 'auth/logout',
-    // session: 'auth/session',
+  },
+  main: {
+    getAllCity: "/getAllCities",
+    getEventForYou: "/getEventsForYou",
   },
 };

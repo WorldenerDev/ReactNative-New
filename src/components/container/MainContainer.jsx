@@ -7,26 +7,31 @@ import {
   getVertiPadding,
 } from "@utils/responsive";
 import React from "react";
-import { View, StatusBar, StyleSheet } from "react-native";
+import { View, StatusBar, StyleSheet, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
-const MainContainer = React.memo(({ children, loader = false }) => {
-  const { loading: reduxLoading } = useSelector((state) => state.auth);
-  const showLoader = loader || reduxLoading;
+const MainContainer = React.memo(
+  ({ children, loader = false, androidbar = 25, iosbar = 55 }) => {
+    const { loading: reduxLoading } = useSelector((state) => state.auth);
+    const showLoader = loader || reduxLoading;
 
-  return (
-    <View style={styles.root}>
-      <StatusBar backgroundColor={colors.white} barStyle="dark-content" />
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.innerContainer}>
-          {children}
-          {showLoader && <Loader />}
+    return (
+      <View style={styles.root}>
+        <StatusBar backgroundColor={colors.white} barStyle="dark-content" />
+        <View style={styles.safe}>
+          <View
+            style={{ height: Platform.OS === "android" ? androidbar : iosbar }}
+          />
+          <View style={styles.innerContainer}>
+            {children}
+            {showLoader && <Loader />}
+          </View>
         </View>
-      </SafeAreaView>
-    </View>
-  );
-});
+      </View>
+    );
+  }
+);
 
 export default MainContainer;
 
@@ -38,6 +43,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.white,
+    // backgroundColor: "red",
   },
   innerContainer: {
     flex: 1,

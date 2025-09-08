@@ -20,6 +20,7 @@ const imagePath = {
   TRIP: require("./source/trip.png"),
   CHAT: require("./source/chat.png"),
   ACCOUNT: require("./source/account.png"),
+  SEARCH_ICON: require("./source/Search.png"),
 };
 
 export default imagePath;

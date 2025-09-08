@@ -18,8 +18,6 @@ apiClient.interceptors.request.use(async (config) => {
   console.log("user", user);
   const storedToken = user?.accessToken || (await getItem(STORAGE_KEYS?.TOKEN));
 
-  console.log("Stored Token API client header:", storedToken);
-
   if (storedToken) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${storedToken}`;

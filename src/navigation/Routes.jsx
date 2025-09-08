@@ -10,7 +10,6 @@ import MainNavigator from "./NavigationContainer/MainNavigator";
 const Routes = () => {
   const { accessToken, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  console.log("Access token ", accessToken);
   const [bootstrapped, setBootstrapped] = useState(false);
 
   useEffect(() => {
