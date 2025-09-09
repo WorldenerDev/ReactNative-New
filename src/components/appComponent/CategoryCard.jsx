@@ -1,0 +1,51 @@
+// components/CategoryCard.js
+import React from "react";
+import { TouchableOpacity, Image, View, Text, StyleSheet } from "react-native";
+import {
+  getWidth,
+  getFontSize,
+  getVertiPadding,
+  getHoriPadding,
+} from "@utils/responsive";
+import colors from "@assets/colors";
+import fonts from "@assets/fonts";
+
+const CategoryCard = ({ item, onPress }) => (
+  <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
+    <Image source={{ uri: item?.cover_image_url }} style={styles.image} />
+    <View style={styles.cardOverlay}>
+      <Text numberOfLines={2} style={styles.cardTitle}>
+        {item?.name}
+      </Text>
+    </View>
+  </TouchableOpacity>
+);
+
+export default CategoryCard;
+
+const styles = StyleSheet.create({
+  card: {
+    marginRight: getWidth(15),
+    borderRadius: getWidth(10),
+    overflow: "hidden",
+  },
+  image: {
+    width: getWidth(120),
+    height: getWidth(120),
+    borderRadius: getWidth(10),
+  },
+  cardOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingVertical: getVertiPadding(5),
+    paddingHorizontal: getHoriPadding(5),
+    alignItems: "center",
+  },
+  cardTitle: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.white,
+  },
+});

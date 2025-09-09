@@ -6,15 +6,13 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import MainContainer from "@components/container/MainContainer";
 import {
-  getWidth,
   getHeight,
+  getWidth,
   getFontSize,
   getVertiPadding,
-  getHoriPadding,
-  getRadius,
 } from "@utils/responsive";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
@@ -23,28 +21,32 @@ import { useDispatch, useSelector } from "react-redux";
 import { category } from "@redux/slices/authSlice";
 import imagePath from "@assets/icons";
 import { fetchAllCity, fetchEventForYou } from "@redux/slices/cityTripSlice";
+import ForYouCard from "@components/appComponent/ForYouCard";
+import CityCard from "@components/appComponent/CityCard";
+import CategoryCard from "@components/appComponent/CategoryCard";
 
 const Home = ({ navigation }) => {
   const { user, categories } = useSelector((state) => state.auth);
   const { city, eventForYou } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
-  console.log("first", city);
 
   useEffect(() => {
     getCity();
     getCategory();
     getForYou();
   }, [dispatch]);
+
   const getCity = async () => {
     try {
-      const result = await dispatch(fetchAllCity());
+      await dispatch(fetchAllCity());
     } catch (error) {
       console.error("Failed to fetch City on home Screen ", error);
     }
   };
+
   const getForYou = async () => {
     try {
-      const result = await dispatch(fetchEventForYou());
+      await dispatch(fetchEventForYou());
     } catch (error) {
       console.error("Failed to fetch Event For You on home Screen ", error);
     }
@@ -52,22 +54,11 @@ const Home = ({ navigation }) => {
 
   const getCategory = async () => {
     try {
-      const result = await dispatch(category());
+      await dispatch(category());
     } catch (err) {
       console.error("Failed to fetch category on home Screen ", err);
     }
   };
-
-  const renderForYou = ({ item }) => (
-    <View style={styles.forYouCard}>
-      <Image source={{ uri: item?.image }} style={styles.forYouImage} />
-      <View style={styles.overlay}>
-        <Text numberOfLines={2} style={styles.forYouTitle}>
-          {item.name}
-        </Text>
-      </View>
-    </View>
-  );
 
   const ListHeader = () => (
     <View>
@@ -85,23 +76,17 @@ const Home = ({ navigation }) => {
       <Text style={styles.sectionTitle}>Where to next?</Text>
       <FlatList
         data={city.slice(0, 10)}
-        initialNumToRender={6}
-        windowSize={5}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          return (
-            <TouchableOpacity
-              onPress={() => navigation.navigate(navigationStrings.CITY_DETAIL)}
-              activeOpacity={0.7}
-              style={styles.card}
-            >
-              <Image source={{ uri: item?.image }} style={styles.image} />
-              <View style={styles.cardOverlay}>
-                <Text style={styles.cardTitle}>{item?.name}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
+        renderItem={({ item }) => (
+          <CityCard
+            item={item}
+            onPress={() =>
+              navigation.navigate(navigationStrings.CITY_DETAIL, {
+                cityData: item,
+              })
+            }
+          />
+        )}
         horizontal
         showsHorizontalScrollIndicator={false}
       />
@@ -111,17 +96,7 @@ const Home = ({ navigation }) => {
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.categoryCard}>
-            <Image
-              source={{ uri: item?.cover_image_url }}
-              style={styles.image}
-            />
-            <View style={styles.cardOverlay}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
-            </View>
-          </View>
-        )}
+        renderItem={({ item }) => <CategoryCard item={item} />}
         horizontal
         showsHorizontalScrollIndicator={false}
       />
@@ -135,7 +110,7 @@ const Home = ({ navigation }) => {
     <MainContainer>
       <FlatList
         data={eventForYou}
-        renderItem={renderForYou}
+        renderItem={({ item }) => <ForYouCard item={item} />}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}
@@ -179,65 +154,5 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: "space-between",
     marginBottom: getVertiPadding(10),
-  },
-  card: {
-    marginRight: getWidth(15),
-    borderRadius: getWidth(10),
-    overflow: "hidden",
-  },
-  categoryCard: {
-    marginRight: getWidth(15),
-    borderRadius: getWidth(10),
-    overflow: "hidden",
-  },
-  image: {
-    width: getWidth(120),
-    height: getWidth(120),
-    borderRadius: getWidth(10),
-  },
-  cardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: getVertiPadding(5),
-    alignItems: "center",
-  },
-  cardTitle: {
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.white,
-  },
-  forYouCard: {
-    flex: 1,
-    marginBottom: getVertiPadding(15),
-    marginHorizontal: getWidth(5),
-    borderRadius: getWidth(12),
-    overflow: "hidden",
-  },
-  forYouImage: {
-    width: "100%",
-    height: getHeight(150),
-    borderRadius: getWidth(12),
-  },
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: getHoriPadding(8),
-    backgroundColor: colors.light_white,
-    borderTopRightRadius: getRadius(20),
-    borderTopLeftRadius: getRadius(20),
-  },
-  forYouTitle: {
-    color: colors.white,
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoBold,
-  },
-  forYouSubtitle: {
-    color: colors.white,
-    fontSize: getFontSize(12),
-    fontFamily: fonts.RobotoRegular,
   },
 });

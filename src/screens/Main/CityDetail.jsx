@@ -19,6 +19,8 @@ import {
   getRadius,
 } from "@utils/responsive";
 import imagePath from "@assets/icons";
+import Header from "@components/Header";
+import navigationStrings from "@navigation/navigationStrings";
 
 /** --- mock data --- */
 const POPULAR = [
@@ -62,7 +64,9 @@ const FOR_YOU = [
 ];
 
 /** --- screen --- */
-const CityDetail = () => {
+const CityDetail = ({ route, navigation }) => {
+  const { cityData } = route.params || {};
+  // console.log("City Data on city detail screen ", cityData);
   /* Popular card */
   const renderPopularItem = ({ item }) => (
     <View style={styles.card}>
@@ -106,25 +110,39 @@ const CityDetail = () => {
         <View style={styles.listContainer}>
           {/* Banner */}
           <View>
-            <Image
-              source={{ uri: "https://picsum.photos/seed/banner/1200/800" }}
-              style={styles.banner}
-            />
+            <Image source={{ uri: cityData?.image }} style={styles.banner} />
 
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.iconBtn}
+            >
+              <Image source={imagePath.BACK_ICON} style={styles.iconStyle} />
+            </TouchableOpacity>
             {/* City name button */}
-            <TouchableOpacity style={styles.cityBtn} activeOpacity={0.7}>
-              <Text style={styles.cityName}>Paris ⌄</Text>
+            <TouchableOpacity
+              style={styles.cityBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(navigationStrings.SEARCH_CITY)}
+            >
+              <Text style={styles.cityName}>{cityData.name} ⌄</Text>
             </TouchableOpacity>
 
             {/* Search */}
-            <View style={styles.searchWrap}>
-              <TextInput
-                placeholder="Search activities and experiences"
-                placeholderTextColor={colors.lightText}
+            <TouchableOpacity
+              onPress={() => navigation.navigate(navigationStrings.SEARCH_CITY)}
+              activeOpacity={0.9}
+              style={styles.searchWrap}
+            >
+              <View
+                //placeholderTextColor={colors.lightText}
                 style={styles.searchInput}
-              />
+              >
+                <Text style={{ color: colors.lightText }}>
+                  Search activities and experiences
+                </Text>
+              </View>
               <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Popular */}
@@ -175,18 +193,36 @@ const styles = StyleSheet.create({
     width: "100%",
     height: getHeight(230),
   },
+  iconBtn: {
+    width: getWidth(32),
+    height: getHeight(32),
+    borderRadius: getRadius(16),
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.border,
+    position: "absolute",
+    top: getVertiPadding(45),
+    left: getHoriPadding(16),
+    paddingVertical: getVertiPadding(6),
+    paddingHorizontal: getHoriPadding(10),
+  },
+  iconStyle: {
+    height: getHeight(20),
+    width: getWidth(20),
+    resizeMode: "contain",
+  },
   cityBtn: {
     position: "absolute",
-    top: getVertiPadding(52),
-    left: getHoriPadding(16),
+    top: getVertiPadding(48),
+    left: getHoriPadding(56),
     paddingVertical: getVertiPadding(6),
     paddingHorizontal: getHoriPadding(10),
     borderRadius: getRadius(20),
   },
   cityName: {
     color: colors.white,
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoMedium,
+    fontSize: getFontSize(15),
+    fontFamily: fonts.RobotoBold,
   },
 
   searchWrap: {

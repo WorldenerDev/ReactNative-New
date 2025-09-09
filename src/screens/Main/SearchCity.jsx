@@ -5,6 +5,7 @@ import {
   FlatList,
   Image,
   TextInput,
+  TouchableOpacity,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import MainContainer from "@components/container/MainContainer";
@@ -17,61 +18,25 @@ import {
 } from "@utils/responsive";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import { useSelector } from "react-redux";
+import navigationStrings from "@navigation/navigationStrings";
 
-const destinations = [
-  {
-    id: "1",
-    city: "Paris",
-    country: "France",
-    image: "https://picsum.photos/id/1011/200/200",
-  },
-  {
-    id: "2",
-    city: "Dubai",
-    country: "United Arab Emirates",
-    image: "https://picsum.photos/id/1012/200/200",
-  },
-  {
-    id: "3",
-    city: "London",
-    country: "United Kingdom",
-    image: "https://picsum.photos/id/1013/200/200",
-  },
-  {
-    id: "4",
-    city: "Rome",
-    country: "Italy",
-    image: "https://picsum.photos/id/1015/200/200",
-  },
-  {
-    id: "5",
-    city: "New York",
-    country: "USA",
-    image: "https://picsum.photos/id/1016/200/200",
-  },
-  {
-    id: "6",
-    city: "Tokyo",
-    country: "Japan",
-    image: "https://picsum.photos/id/1017/200/200",
-  },
-];
-
-const SearchCity = () => {
+const SearchCity = ({ navigation }) => {
+  const { city } = useSelector((state) => state.cityTrip);
   const [query, setQuery] = useState("");
-  const [filteredData, setFilteredData] = useState(destinations);
+  const [filteredData, setFilteredData] = useState(city);
 
   // 🔹 Debounce search
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (query.trim() === "") {
-        setFilteredData(destinations);
+        setFilteredData(city);
       } else {
         const lowerQuery = query.toLowerCase();
-        const results = destinations.filter(
+        const results = city.filter(
           (item) =>
-            item.city.toLowerCase().includes(lowerQuery) ||
-            item.country.toLowerCase().includes(lowerQuery)
+            item?.name.toLowerCase().includes(lowerQuery) ||
+            item?.country_name.toLowerCase().includes(lowerQuery)
         );
         setFilteredData(results);
       }
@@ -81,13 +46,21 @@ const SearchCity = () => {
   }, [query]);
 
   const renderItem = ({ item }) => (
-    <View style={styles.row}>
+    <TouchableOpacity
+      onPress={() =>
+        navigation.navigate(navigationStrings.CITY_DETAIL, {
+          cityData: item,
+        })
+      }
+      activeOpacity={0.7}
+      style={styles.row}
+    >
       <Image source={{ uri: item.image }} style={styles.image} />
       <View style={styles.textContainer}>
-        <Text style={styles.city}>{item.city}</Text>
-        <Text style={styles.country}>{item.country}</Text>
+        <Text style={styles.city}>{item?.name}</Text>
+        <Text style={styles.country}>{item?.country_name}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -110,7 +83,7 @@ const SearchCity = () => {
       {/* List */}
       <FlatList
         data={filteredData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
       />
