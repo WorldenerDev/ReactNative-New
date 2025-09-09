@@ -17,7 +17,6 @@ apiClient.interceptors.request.use(async (config) => {
   const { user } = store.getState()?.auth;
   console.log("user", user);
   const storedToken = user?.accessToken || (await getItem(STORAGE_KEYS?.TOKEN));
-
   if (storedToken) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${storedToken}`;

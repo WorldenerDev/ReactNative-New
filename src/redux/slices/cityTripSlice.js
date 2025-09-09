@@ -7,7 +7,12 @@ import {
 } from "@api/services/cityTripService"; // 👈 your API calls here
 import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
-import { getAllCity, getEventForYou } from "@api/services/mainServices";
+import {
+  getAllCity,
+  getEventForYou,
+  getEventForYouCityId,
+  getPopularEvents,
+} from "@api/services/mainServices";
 
 // ----------------- Thunks -----------------
 
@@ -28,8 +33,32 @@ export const fetchEventForYou = createAsyncThunk(
   endpoints?.main?.getEventForYou,
   async (payload, { rejectWithValue }) => {
     try {
-      const res = await getEventForYou();
+      const res = await getEventForYou(payload);
       //   console.log("All event for you respnce", res);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+export const fetchEventForYouCityID = createAsyncThunk(
+  "cityTrip/fetchEventForYouCityID",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await getEventForYouCityId(payload);
+      console.log("Event for you by city ID response", res);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+export const fetchPopularEvent = createAsyncThunk(
+  endpoints?.main?.getPopularEvents,
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await getPopularEvents(payload);
+      console.log("Popular event by city Id response", res);
       return res;
     } catch (err) {
       return rejectWithValue(err.message);

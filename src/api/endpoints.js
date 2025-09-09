@@ -11,5 +11,6 @@ export const endpoints = {
   main: {
     getAllCity: "/getAllCities",
     getEventForYou: "/getEventsForYou",
+    getPopularEvents: "/getPopularEvents",
   },
 };

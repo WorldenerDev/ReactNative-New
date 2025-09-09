@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -21,27 +21,14 @@ import {
 import imagePath from "@assets/icons";
 import Header from "@components/Header";
 import navigationStrings from "@navigation/navigationStrings";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchEventForYouCityID,
+  fetchPopularEvent,
+} from "@redux/slices/cityTripSlice";
+import CategoryCard from "@components/appComponent/CategoryCard";
 
 /** --- mock data --- */
-const POPULAR = [
-  {
-    id: "1",
-    title: "Rovaniemi",
-    subtitle: "Night safari",
-    image: "https://picsum.photos/seed/p1/600/400",
-  },
-  {
-    id: "2",
-    title: "Rovaniemi",
-    subtitle: "Night safari",
-    image: "https://picsum.photos/seed/p2/600/400",
-  },
-];
-const CATEGORIES = [
-  { id: "1", name: "Category", image: "https://picsum.photos/seed/c1/400/400" },
-  { id: "2", name: "Category", image: "https://picsum.photos/seed/c2/400/400" },
-  { id: "3", name: "Category", image: "https://picsum.photos/seed/c3/400/400" },
-];
 const FOR_YOU = [
   {
     id: "1",
@@ -66,14 +53,56 @@ const FOR_YOU = [
 /** --- screen --- */
 const CityDetail = ({ route, navigation }) => {
   const { cityData } = route.params || {};
+  const dispatch = useDispatch();
+  const { categories } = useSelector((state) => state.auth);
+  const [popularThing, setPopularThings] = useState([]);
+  const [eventByCity, setEventByCity] = useState([]);
   // console.log("City Data on city detail screen ", cityData);
-  /* Popular card */
+
+  useEffect(() => {
+    PopularEvents();
+    getEvent_by_city();
+  }, [route]);
+
+  const PopularEvents = async () => {
+    try {
+      const result = await dispatch(
+        fetchPopularEvent({
+          cityId: cityData?.city_id,
+          sortBy: "rating",
+          limit: 2,
+        })
+      );
+      setPopularThings(result?.payload?.data);
+      console.log("fetchPopularEvent result:", result);
+    } catch (error) {
+      console.warn("fetchPopularEvent error:", error);
+    }
+  };
+
+  const getEvent_by_city = async () => {
+    try {
+      const result = await dispatch(
+        fetchEventForYouCityID({
+          city: cityData?.city_id,
+        })
+      );
+      result?.payload?.success && setEventByCity(result?.payload?.data);
+      console.log("fetchEventForYouCityID result:", result);
+    } catch (error) {
+      console.warn("fetchEventForYouCityID error:", error);
+    }
+  };
+
   const renderPopularItem = ({ item }) => (
     <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <Image
+        source={{ uri: item?.city_data?.cover_image_url }}
+        style={styles.image}
+      />
       <View style={styles.overlay}>
         <Text numberOfLines={2} style={styles.forYouTitle}>
-          {item.title}
+          {item.name}
         </Text>
       </View>
     </View>
@@ -94,8 +123,8 @@ const CityDetail = ({ route, navigation }) => {
     <View style={styles.forYouCard}>
       <Image source={{ uri: item.image }} style={styles.forYouImage} />
       <View style={styles.overlay}>
-        <Text style={styles.forYouTitle}>{item.title}</Text>
-        <Text style={styles.forYouSubtitle}>{item.subtitle}</Text>
+        <Text style={styles.forYouTitle}>{item.name}</Text>
+        {/* <Text style={styles.forYouSubtitle}>{item.subtitle}</Text> */}
       </View>
     </View>
   );
@@ -149,7 +178,7 @@ const CityDetail = ({ route, navigation }) => {
           <Text style={styles.sectionTitle}>Popular things to do</Text>
           <FlatList
             horizontal
-            data={POPULAR}
+            data={popularThing}
             renderItem={renderPopularItem}
             keyExtractor={(it) => it.id}
             showsHorizontalScrollIndicator={false}
@@ -160,8 +189,8 @@ const CityDetail = ({ route, navigation }) => {
           <Text style={styles.sectionTitle}>Browse by Category</Text>
           <FlatList
             horizontal
-            data={CATEGORIES}
-            renderItem={renderCategoryItem}
+            data={categories}
+            renderItem={({ item }) => <CategoryCard item={item} />}
             keyExtractor={(it) => it.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.hListPad}
@@ -170,7 +199,7 @@ const CityDetail = ({ route, navigation }) => {
           {/* For You */}
           <Text style={styles.sectionTitle}>For You</Text>
           <FlatList
-            data={FOR_YOU}
+            data={eventByCity}
             renderItem={renderForYouItem}
             keyExtractor={(it) => it.id}
             numColumns={2}
