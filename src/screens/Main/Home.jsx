@@ -24,6 +24,7 @@ import { fetchAllCity, fetchEventForYou } from "@redux/slices/cityTripSlice";
 import ForYouCard from "@components/appComponent/ForYouCard";
 import CityCard from "@components/appComponent/CityCard";
 import CategoryCard from "@components/appComponent/CategoryCard";
+import { preloadScreenImages } from "@utils/imagePreloader";
 
 const Home = ({ navigation }) => {
   const { user, categories } = useSelector((state) => state.auth);
@@ -35,6 +36,14 @@ const Home = ({ navigation }) => {
     getCategory();
     getForYou();
   }, [dispatch]);
+
+  // Preload images when data changes
+  useEffect(() => {
+    if (city.length > 0 || eventForYou.length > 0) {
+      const allData = [...city, ...eventForYou];
+      preloadScreenImages(allData, ["image"]);
+    }
+  }, [city, eventForYou]);
 
   const getCity = async () => {
     try {

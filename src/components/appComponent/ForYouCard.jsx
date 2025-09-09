@@ -1,6 +1,8 @@
 // components/ForYouCard.js
 import React from "react";
 import { View, Image, Text, StyleSheet, TouchableOpacity } from "react-native";
+import OptimizedImage from "@components/OptimizedImage";
+import ImagePlaceholder from "@components/ImagePlaceholder";
 import {
   getWidth,
   getHeight,
@@ -14,7 +16,11 @@ import fonts from "@assets/fonts";
 
 const ForYouCard = ({ item, onPress }) => (
   <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
-    <Image source={{ uri: item?.image }} style={styles.image} />
+    <OptimizedImage
+      source={{ uri: item?.image }}
+      style={styles.image}
+      placeholder={<ImagePlaceholder style={styles.image} text="Loading..." />}
+    />
     <View style={styles.overlay}>
       <Text numberOfLines={2} style={styles.title}>
         {item?.name}

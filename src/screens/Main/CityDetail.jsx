@@ -8,6 +8,9 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import OptimizedImage from "@components/OptimizedImage";
+import ImagePlaceholder from "@components/ImagePlaceholder";
+import { preloadScreenImages } from "@utils/imagePreloader";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import {
@@ -28,28 +31,6 @@ import {
 } from "@redux/slices/cityTripSlice";
 import CategoryCard from "@components/appComponent/CategoryCard";
 
-/** --- mock data --- */
-const FOR_YOU = [
-  {
-    id: "1",
-    title: "Aurora Night",
-    subtitle: "Finland",
-    image: "https://picsum.photos/seed/f1/700/500",
-  },
-  {
-    id: "2",
-    title: "City Walk",
-    subtitle: "Paris",
-    image: "https://picsum.photos/seed/f2/700/500",
-  },
-  {
-    id: "3",
-    title: "Beach View",
-    subtitle: "Goa",
-    image: "https://picsum.photos/seed/f3/700/500",
-  },
-];
-
 /** --- screen --- */
 const CityDetail = ({ route, navigation }) => {
   const { cityData } = route.params || {};
@@ -63,6 +44,14 @@ const CityDetail = ({ route, navigation }) => {
     PopularEvents();
     getEvent_by_city();
   }, [route]);
+
+  // Preload images when data changes
+  useEffect(() => {
+    if (popularThing.length > 0 || eventByCity.length > 0) {
+      const allData = [...popularThing, ...eventByCity];
+      preloadScreenImages(allData, ["cover_image_url", "image"]);
+    }
+  }, [popularThing, eventByCity]);
 
   const PopularEvents = async () => {
     try {
@@ -96,9 +85,13 @@ const CityDetail = ({ route, navigation }) => {
 
   const renderPopularItem = ({ item }) => (
     <View style={styles.card}>
-      <Image
+      <OptimizedImage
         source={{ uri: item?.city_data?.cover_image_url }}
         style={styles.image}
+        placeholder={
+          <ImagePlaceholder style={styles.image} text="Loading..." />
+        }
+        priority="high"
       />
       <View style={styles.overlay}>
         <Text numberOfLines={2} style={styles.forYouTitle}>
@@ -111,7 +104,13 @@ const CityDetail = ({ route, navigation }) => {
   /* Category card */
   const renderCategoryItem = ({ item }) => (
     <View style={styles.categoryCard}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <OptimizedImage
+        source={{ uri: item.image }}
+        style={styles.image}
+        placeholder={
+          <ImagePlaceholder style={styles.image} text="Loading..." />
+        }
+      />
       <View style={styles.cardOverlay}>
         <Text style={styles.cardTitle}>{item.name}</Text>
       </View>
@@ -121,7 +120,13 @@ const CityDetail = ({ route, navigation }) => {
   /* For You card */
   const renderForYouItem = ({ item }) => (
     <View style={styles.forYouCard}>
-      <Image source={{ uri: item.image }} style={styles.forYouImage} />
+      <OptimizedImage
+        source={{ uri: item.image }}
+        style={styles.forYouImage}
+        placeholder={
+          <ImagePlaceholder style={styles.forYouImage} text="Loading..." />
+        }
+      />
       <View style={styles.overlay}>
         <Text style={styles.forYouTitle}>{item.name}</Text>
         {/* <Text style={styles.forYouSubtitle}>{item.subtitle}</Text> */}
@@ -139,7 +144,17 @@ const CityDetail = ({ route, navigation }) => {
         <View style={styles.listContainer}>
           {/* Banner */}
           <View>
-            <Image source={{ uri: cityData?.image }} style={styles.banner} />
+            <OptimizedImage
+              source={{ uri: cityData?.image }}
+              style={styles.banner}
+              placeholder={
+                <ImagePlaceholder
+                  style={styles.banner}
+                  text="Loading city image..."
+                />
+              }
+              priority="high"
+            />
 
             <TouchableOpacity
               onPress={() => navigation.goBack()}

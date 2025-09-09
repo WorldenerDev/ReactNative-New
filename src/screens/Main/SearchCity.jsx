@@ -7,6 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import OptimizedImage from "@components/OptimizedImage";
+import ImagePlaceholder from "@components/ImagePlaceholder";
 import React, { useState, useEffect } from "react";
 import MainContainer from "@components/container/MainContainer";
 import {
@@ -55,7 +57,13 @@ const SearchCity = ({ navigation }) => {
       activeOpacity={0.7}
       style={styles.row}
     >
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <OptimizedImage
+        source={{ uri: item.image }}
+        style={styles.image}
+        placeholder={
+          <ImagePlaceholder style={styles.image} text="Loading..." />
+        }
+      />
       <View style={styles.textContainer}>
         <Text style={styles.city}>{item?.name}</Text>
         <Text style={styles.country}>{item?.country_name}</Text>

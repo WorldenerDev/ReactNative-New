@@ -1,6 +1,8 @@
 // components/CityCard.js
 import React from "react";
 import { TouchableOpacity, Image, View, Text, StyleSheet } from "react-native";
+import OptimizedImage from "@components/OptimizedImage";
+import ImagePlaceholder from "@components/ImagePlaceholder";
 import {
   getWidth,
   getHeight,
@@ -12,7 +14,11 @@ import fonts from "@assets/fonts";
 
 const CityCard = ({ item, onPress }) => (
   <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
-    <Image source={{ uri: item?.image }} style={styles.image} />
+    <OptimizedImage
+      source={{ uri: item?.image }}
+      style={styles.image}
+      placeholder={<ImagePlaceholder style={styles.image} text="Loading..." />}
+    />
     <View style={styles.cardOverlay}>
       <Text style={styles.cardTitle}>{item?.name}</Text>
     </View>
