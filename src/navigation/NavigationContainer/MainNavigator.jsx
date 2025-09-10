@@ -2,7 +2,12 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import navigationStrings from "@navigation/navigationStrings";
 import BottomTabNavigator from "./BottomTabNavigator";
-import { BrouseByCategory, CityDetail, SearchCity } from "@screens/index";
+import {
+  ActivityDetails,
+  BrouseByCategory,
+  CityDetail,
+  SearchCity,
+} from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
 const MainNavigator = () => {
@@ -29,6 +34,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.BROUSE_BY_CATEGORY}
           component={BrouseByCategory}
+        />
+        <MainStack.Screen
+          name={navigationStrings.ACTIVITY_DETAILS}
+          component={ActivityDetails}
         />
       </MainStack.Navigator>
     </>

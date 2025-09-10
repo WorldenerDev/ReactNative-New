@@ -126,7 +126,14 @@ const Home = ({ navigation }) => {
     <MainContainer>
       <FlatList
         data={eventForYou}
-        renderItem={({ item }) => <ForYouCard item={item} />}
+        renderItem={({ item }) => (
+          <ForYouCard
+            item={item}
+            onPress={() =>
+              navigation.navigate(navigationStrings.ACTIVITY_DETAILS)
+            }
+          />
+        )}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.row}

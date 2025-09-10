@@ -18,4 +18,5 @@ export default {
   SEARCH_CITY: "SearchCity",
   CITY_DETAIL: "CityDetail",
   BROUSE_BY_CATEGORY: "BrouseByCategory",
+  ACTIVITY_DETAILS: "ActivityDetails",
 };

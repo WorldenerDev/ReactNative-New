@@ -85,7 +85,10 @@ const CityDetail = ({ route, navigation }) => {
   };
 
   const renderPopularItem = ({ item }) => (
-    <View style={styles.card}>
+    <TouchableOpacity
+      onPress={() => navigation.navigate(navigationStrings.ACTIVITY_DETAILS)}
+      style={styles.card}
+    >
       <OptimizedImage
         source={{ uri: item?.city_data?.cover_image_url }}
         style={styles.image}
@@ -99,7 +102,7 @@ const CityDetail = ({ route, navigation }) => {
           {item.name}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   /* For You card */
