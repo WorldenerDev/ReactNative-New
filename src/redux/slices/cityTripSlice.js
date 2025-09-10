@@ -93,6 +93,12 @@ const cityTripSlice = createSlice({
         state.eventForYou = action.payload?.data || action.payload || [];
       },
     });
+
+    // Handle popular events by city (CityDetail)
+    handleAsyncCases(builder, fetchPopularEvent);
+
+    // Handle events for you by city id (CityDetail)
+    handleAsyncCases(builder, fetchEventForYouCityID);
   },
 });
 

@@ -30,6 +30,7 @@ import {
   fetchPopularEvent,
 } from "@redux/slices/cityTripSlice";
 import CategoryCard from "@components/appComponent/CategoryCard";
+import ScreenWapper from "@components/container/ScreenWapper";
 
 /** --- screen --- */
 const CityDetail = ({ route, navigation }) => {
@@ -119,96 +120,105 @@ const CityDetail = ({ route, navigation }) => {
   );
 
   return (
-    <FlatList
-      data={[1]} // dummy
-      keyExtractor={(_, i) => String(i)}
-      showsVerticalScrollIndicator={false}
-      renderItem={null}
-      ListHeaderComponent={
-        <View style={styles.listContainer}>
-          {/* Banner */}
-          <View>
-            <OptimizedImage
-              source={{ uri: cityData?.image }}
-              style={styles.banner}
-              placeholder={
-                <ImagePlaceholder
-                  style={styles.banner}
-                  text="Loading city image..."
+    <ScreenWapper>
+      <FlatList
+        data={[1]} // dummy
+        keyExtractor={(_, i) => String(i)}
+        showsVerticalScrollIndicator={false}
+        renderItem={null}
+        ListHeaderComponent={
+          <View style={styles.listContainer}>
+            {/* Banner */}
+            <View>
+              <OptimizedImage
+                source={{ uri: cityData?.image }}
+                style={styles.banner}
+                placeholder={
+                  <ImagePlaceholder
+                    style={styles.banner}
+                    text="Loading city image..."
+                  />
+                }
+                priority="high"
+              />
+
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.iconBtn}
+              >
+                <Image source={imagePath.BACK_ICON} style={styles.iconStyle} />
+              </TouchableOpacity>
+              {/* City name button */}
+              <TouchableOpacity
+                style={styles.cityBtn}
+                activeOpacity={0.7}
+                onPress={() =>
+                  navigation.navigate(navigationStrings.SEARCH_CITY)
+                }
+              >
+                <Text style={styles.cityName}>{cityData.name} ⌄</Text>
+              </TouchableOpacity>
+
+              {/* Search */}
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate(navigationStrings.SEARCH_CITY)
+                }
+                activeOpacity={0.9}
+                style={styles.searchWrap}
+              >
+                <View
+                  //placeholderTextColor={colors.lightText}
+                  style={styles.searchInput}
+                >
+                  <Text style={{ color: colors.lightText }}>
+                    Search activities and experiences
+                  </Text>
+                </View>
+                <Image
+                  source={imagePath.SEARCH_ICON}
+                  style={styles.searchIcon}
                 />
-              }
-              priority="high"
+              </TouchableOpacity>
+            </View>
+
+            {/* Popular */}
+            <Text style={styles.sectionTitle}>Popular things to do</Text>
+            <FlatList
+              horizontal
+              data={popularThing}
+              renderItem={renderPopularItem}
+              keyExtractor={(it) => it.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hListPad}
             />
 
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.iconBtn}
-            >
-              <Image source={imagePath.BACK_ICON} style={styles.iconStyle} />
-            </TouchableOpacity>
-            {/* City name button */}
-            <TouchableOpacity
-              style={styles.cityBtn}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate(navigationStrings.SEARCH_CITY)}
-            >
-              <Text style={styles.cityName}>{cityData.name} ⌄</Text>
-            </TouchableOpacity>
+            {/* Categories */}
+            <Text style={styles.sectionTitle}>Browse by Category</Text>
+            <FlatList
+              horizontal
+              data={categories}
+              renderItem={({ item }) => <CategoryCard item={item} />}
+              keyExtractor={(it) => it.id}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hListPad}
+            />
 
-            {/* Search */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate(navigationStrings.SEARCH_CITY)}
-              activeOpacity={0.9}
-              style={styles.searchWrap}
-            >
-              <View
-                //placeholderTextColor={colors.lightText}
-                style={styles.searchInput}
-              >
-                <Text style={{ color: colors.lightText }}>
-                  Search activities and experiences
-                </Text>
-              </View>
-              <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
-            </TouchableOpacity>
+            {/* For You */}
+            <Text style={styles.sectionTitle}>For You</Text>
+            <FlatList
+              data={eventByCity}
+              renderItem={renderForYouItem}
+              keyExtractor={(it) => it.id}
+              numColumns={2}
+              columnWrapperStyle={styles.row}
+              scrollEnabled={false}
+              contentContainerStyle={{ paddingHorizontal: getHoriPadding(16) }}
+            />
           </View>
-
-          {/* Popular */}
-          <Text style={styles.sectionTitle}>Popular things to do</Text>
-          <FlatList
-            horizontal
-            data={popularThing}
-            renderItem={renderPopularItem}
-            keyExtractor={(it) => it.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.hListPad}
-          />
-
-          {/* Categories */}
-          <Text style={styles.sectionTitle}>Browse by Category</Text>
-          <FlatList
-            horizontal
-            data={categories}
-            renderItem={({ item }) => <CategoryCard item={item} />}
-            keyExtractor={(it) => it.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.hListPad}
-          />
-
-          {/* For You */}
-          <Text style={styles.sectionTitle}>For You</Text>
-          <FlatList
-            data={eventByCity}
-            renderItem={renderForYouItem}
-            keyExtractor={(it) => it.id}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            scrollEnabled={false}
-            contentContainerStyle={{ paddingHorizontal: getHoriPadding(16) }}
-          />
-        </View>
-      }
-    />
+        }
+      />
+    </ScreenWapper>
   );
 };
 
