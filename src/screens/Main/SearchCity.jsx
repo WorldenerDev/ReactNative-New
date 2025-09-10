@@ -2,7 +2,7 @@ import {
   StyleSheet,
   Text,
   View,
-  FlatList,
+  SectionList,
   Image,
   TextInput,
   TouchableOpacity,
@@ -20,56 +20,98 @@ import {
 } from "@utils/responsive";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
-import { useSelector } from "react-redux";
 import navigationStrings from "@navigation/navigationStrings";
+import { searchCityByName, getEventForYou } from "@api/services/mainServices";
 
 const SearchCity = ({ navigation }) => {
-  const { city } = useSelector((state) => state.cityTrip);
   const [query, setQuery] = useState("");
-  const [filteredData, setFilteredData] = useState(city);
+  const [loading, setLoading] = useState(false);
+  const [citiesData, setCitiesData] = useState([]);
+  const [eventsData, setEventsData] = useState([]);
 
-  // 🔹 Debounce search
+  // When query empty, clear lists (don’t use cached Redux city data)
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (query.trim() === "") {
-        setFilteredData(city);
-      } else {
-        const lowerQuery = query.toLowerCase();
-        const results = city.filter(
-          (item) =>
-            item?.name.toLowerCase().includes(lowerQuery) ||
-            item?.country_name.toLowerCase().includes(lowerQuery)
-        );
-        setFilteredData(results);
+    if (!query.trim()) {
+      setCitiesData([]);
+      setEventsData([]);
+    }
+  }, [query]);
+
+  // 🔹 Debounced server search (cities + events)
+  useEffect(() => {
+    const timeout = setTimeout(async () => {
+      const searchText = query.trim();
+      if (!searchText) return; // handled by initial list effect
+      try {
+        setLoading(true);
+        const [citiesRes, eventsRes] = await Promise.all([
+          // Backend accepts POST for cities; pass body { search }
+          searchCityByName({ search: searchText }),
+          // Events supports GET with params { search }
+          getEventForYou({ search: searchText }),
+        ]);
+
+        const nextCities = citiesRes?.data || citiesRes || [];
+        const nextEvents = eventsRes?.data || eventsRes || [];
+        setCitiesData(Array.isArray(nextCities) ? nextCities : []);
+        setEventsData(Array.isArray(nextEvents) ? nextEvents : []);
+      } catch (err) {
+        setCitiesData([]);
+        setEventsData([]);
+      } finally {
+        setLoading(false);
       }
     }, 400);
 
     return () => clearTimeout(timeout);
   }, [query]);
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      onPress={() =>
-        navigation.navigate(navigationStrings.CITY_DETAIL, {
-          cityData: item,
-        })
-      }
-      activeOpacity={0.7}
-      style={styles.row}
-    >
-      <OptimizedImage
-        source={{ uri: item.image }}
-        style={styles.image}
-        placeholder={
-          <ImagePlaceholder style={styles.image} text="Loading..." />
-        }
-      />
-      <View style={styles.textContainer}>
-        <Text style={styles.city}>{item?.name}</Text>
-        <Text style={styles.country}>{item?.country_name}</Text>
+  const renderItem = ({ item, section }) => {
+    if (section?.title === "Cities") {
+      return (
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate(navigationStrings.CITY_DETAIL, {
+              cityData: item,
+            })
+          }
+          activeOpacity={0.7}
+          style={styles.row}
+        >
+          <OptimizedImage
+            source={{ uri: item?.image }}
+            style={styles.image}
+            placeholder={
+              <ImagePlaceholder style={styles.image} text="Loading..." />
+            }
+          />
+          <View style={styles.textContainer}>
+            <Text style={styles.city}>{item?.name}</Text>
+            <Text style={styles.country}>{item?.country_name}</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    // event item
+    return (
+      <View style={styles.row}>
+        <OptimizedImage
+          source={{ uri: item?.image }}
+          style={styles.image}
+          placeholder={
+            <ImagePlaceholder style={styles.image} text="Loading..." />
+          }
+        />
+        <View style={styles.textContainer}>
+          <Text style={styles.city}>{item?.name || item?.title}</Text>
+          {!!item?.city_name && (
+            <Text style={styles.country}>{item?.city_name}</Text>
+          )}
+        </View>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <MainContainer>
@@ -85,16 +127,30 @@ const SearchCity = ({ navigation }) => {
         <Text style={styles.searchIcon}>🔍</Text>
       </View>
 
-      {/* Popular Searches */}
-      <Text style={styles.sectionTitle}>Popular searches</Text>
-
       {/* List */}
-      <FlatList
-        data={filteredData}
-        keyExtractor={(item) => item._id}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <Text style={styles.loading}>Searching...</Text>
+      ) : !query.trim() ? null : citiesData.length === 0 &&
+        eventsData.length === 0 ? (
+        <Text style={styles.empty}>No results</Text>
+      ) : (
+        <SectionList
+          sections={[
+            ...(citiesData.length
+              ? [{ title: "Cities", data: citiesData }]
+              : []),
+            ...(eventsData.length
+              ? [{ title: "Events", data: eventsData }]
+              : []),
+          ]}
+          keyExtractor={(item, index) => `${item?._id || item?.id || index}`}
+          renderItem={renderItem}
+          renderSectionHeader={({ section: { title } }) => (
+            <Text style={styles.sectionTitle}>{title}</Text>
+          )}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </MainContainer>
   );
 };
