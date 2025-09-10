@@ -23,11 +23,12 @@ import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
 import { searchCityByName, getEventForYou } from "@api/services/mainServices";
 
-const SearchCity = ({ navigation }) => {
+const SearchCity = ({ navigation, route }) => {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [citiesData, setCitiesData] = useState([]);
   const [eventsData, setEventsData] = useState([]);
+  const mode = route?.params?.mode; // 'cityOnly' from CityDetail, otherwise undefined
 
   // When query empty, clear lists (don’t use cached Redux city data)
   useEffect(() => {
@@ -37,24 +38,28 @@ const SearchCity = ({ navigation }) => {
     }
   }, [query]);
 
-  // 🔹 Debounced server search (cities + events)
+  // 🔹 Debounced server search (cities + events, or cities-only when mode=cityOnly)
   useEffect(() => {
     const timeout = setTimeout(async () => {
       const searchText = query.trim();
       if (!searchText) return; // handled by initial list effect
       try {
         setLoading(true);
-        const [citiesRes, eventsRes] = await Promise.all([
-          // Backend accepts POST for cities; pass body { search }
-          searchCityByName({ search: searchText }),
-          // Events supports GET with params { search }
-          getEventForYou({ search: searchText }),
-        ]);
-
-        const nextCities = citiesRes?.data || citiesRes || [];
-        const nextEvents = eventsRes?.data || eventsRes || [];
-        setCitiesData(Array.isArray(nextCities) ? nextCities : []);
-        setEventsData(Array.isArray(nextEvents) ? nextEvents : []);
+        if (mode === "cityOnly") {
+          const citiesRes = await searchCityByName({ search: searchText });
+          const nextCities = citiesRes?.data || citiesRes || [];
+          setCitiesData(Array.isArray(nextCities) ? nextCities : []);
+          setEventsData([]);
+        } else {
+          const [citiesRes, eventsRes] = await Promise.all([
+            searchCityByName({ search: searchText }),
+            getEventForYou({ search: searchText }),
+          ]);
+          const nextCities = citiesRes?.data || citiesRes || [];
+          const nextEvents = eventsRes?.data || eventsRes || [];
+          setCitiesData(Array.isArray(nextCities) ? nextCities : []);
+          setEventsData(Array.isArray(nextEvents) ? nextEvents : []);
+        }
       } catch (err) {
         setCitiesData([]);
         setEventsData([]);
@@ -64,7 +69,7 @@ const SearchCity = ({ navigation }) => {
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [query]);
+  }, [query, mode]);
 
   const renderItem = ({ item, section }) => {
     if (section?.title === "Cities") {
@@ -131,7 +136,7 @@ const SearchCity = ({ navigation }) => {
       {loading ? (
         <Text style={styles.loading}>Searching...</Text>
       ) : !query.trim() ? null : citiesData.length === 0 &&
-        eventsData.length === 0 ? (
+        (mode === "cityOnly" ? true : eventsData.length === 0) ? (
         <Text style={styles.empty}>No results</Text>
       ) : (
         <SectionList
@@ -139,7 +144,9 @@ const SearchCity = ({ navigation }) => {
             ...(citiesData.length
               ? [{ title: "Cities", data: citiesData }]
               : []),
-            ...(eventsData.length
+            ...(mode === "cityOnly"
+              ? []
+              : eventsData.length
               ? [{ title: "Events", data: eventsData }]
               : []),
           ]}

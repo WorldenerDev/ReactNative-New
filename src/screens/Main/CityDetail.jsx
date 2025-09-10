@@ -153,7 +153,9 @@ const CityDetail = ({ route, navigation }) => {
                 style={styles.cityBtn}
                 activeOpacity={0.7}
                 onPress={() =>
-                  navigation.navigate(navigationStrings.SEARCH_CITY)
+                  navigation.navigate(navigationStrings.SEARCH_CITY, {
+                    mode: "cityOnly",
+                  })
                 }
               >
                 <Text style={styles.cityName}>{cityData.name} ⌄</Text>
