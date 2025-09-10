@@ -200,7 +200,14 @@ const CityDetail = ({ route, navigation }) => {
             <FlatList
               horizontal
               data={categories}
-              renderItem={({ item }) => <CategoryCard item={item} />}
+              renderItem={({ item }) => (
+                <CategoryCard
+                  item={item}
+                  onPress={() =>
+                    navigation.navigate(navigationStrings.BROUSE_BY_CATEGORY)
+                  }
+                />
+              )}
               keyExtractor={(it) => it.id}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.hListPad}

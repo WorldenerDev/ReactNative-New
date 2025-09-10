@@ -12,3 +12,7 @@ export const getEventForYouCityId = (params) =>
   apiGet(endpoints?.main?.getEventForYou, params);
 export const getPopularEvents = (params) =>
   apiGet(endpoints?.main?.getPopularEvents, params);
+
+// Browse by Category - GET with query params
+export const getEventBrowserByCategory = (params) =>
+  apiGet(endpoints?.main?.getEventBrowserByCategory, params);

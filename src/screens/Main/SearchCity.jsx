@@ -17,11 +17,13 @@ import {
   getWidth,
   getVertiPadding,
   getHoriPadding,
+  getRadius,
 } from "@utils/responsive";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
 import { searchCityByName, getEventForYou } from "@api/services/mainServices";
+import imagePath from "@assets/icons";
 
 const SearchCity = ({ navigation, route }) => {
   const [query, setQuery] = useState("");
@@ -129,7 +131,7 @@ const SearchCity = ({ navigation, route }) => {
           value={query}
           onChangeText={setQuery}
         />
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
       </View>
 
       {/* List */}
@@ -166,24 +168,30 @@ export default SearchCity;
 
 const styles = StyleSheet.create({
   searchWrapper: {
+    height: getHeight(44),
+    borderRadius: getRadius(8),
+    backgroundColor: colors.input,
+    paddingHorizontal: getHoriPadding(14),
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.input, // White like in screenshot
-    borderRadius: getWidth(10),
-    paddingHorizontal: getHoriPadding(12),
-    marginVertical: getVertiPadding(10),
+    justifyContent: "space-between",
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: "row",
+    marginVertical: getVertiPadding(15),
   },
   searchBar: {
     flex: 1,
-    fontSize: getFontSize(14),
+    marginRight: getWidth(12),
+    fontSize: getFontSize(13),
     fontFamily: fonts.RobotoRegular,
-    paddingVertical: getVertiPadding(10),
     color: colors.black,
   },
   searchIcon: {
-    fontSize: getFontSize(18),
-    color: colors.grey, // Softer icon color like screenshot
-    marginLeft: getWidth(6),
+    resizeMode: "contain",
+    height: getHeight(15),
+    width: getWidth(15),
   },
   sectionTitle: {
     fontSize: getFontSize(16),

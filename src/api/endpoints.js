@@ -12,5 +12,6 @@ export const endpoints = {
     getAllCity: "/getAllCities",
     getEventForYou: "/getEventsForYou",
     getPopularEvents: "/getPopularEvents",
+    getEventBrowserByCategory: "/getEventBrowserByCategory",
   },
 };
