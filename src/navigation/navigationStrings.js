@@ -17,4 +17,5 @@ export default {
   ACCOUNT: "Account",
   SEARCH_CITY: "SearchCity",
   CITY_DETAIL: "CityDetail",
+  BROUSE_BY_CATEGORY: "BrouseByCategory",
 };

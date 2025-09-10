@@ -14,7 +14,8 @@ import { useSelector } from "react-redux";
 const MainContainer = React.memo(
   ({ children, loader = false, androidbar = 25, iosbar = 55 }) => {
     const { loading: reduxLoading } = useSelector((state) => state.auth);
-    const showLoader = loader || reduxLoading;
+    const { loading: cityTripLoading } = useSelector((state) => state.cityTrip);
+    const showLoader = loader || reduxLoading || cityTripLoading;
 
     return (
       <View style={styles.root}>

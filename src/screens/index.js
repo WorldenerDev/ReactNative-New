@@ -15,3 +15,4 @@ export { default as Chat } from "./Main/Chat";
 export { default as Account } from "./Main/Account";
 export { default as SearchCity } from "./Main/SearchCity";
 export { default as CityDetail } from "./Main/CityDetail";
+export { default as BrouseByCategory } from "./Main/BrouseByCategory";

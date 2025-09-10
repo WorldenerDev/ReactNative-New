@@ -101,22 +101,6 @@ const CityDetail = ({ route, navigation }) => {
     </View>
   );
 
-  /* Category card */
-  const renderCategoryItem = ({ item }) => (
-    <View style={styles.categoryCard}>
-      <OptimizedImage
-        source={{ uri: item.image }}
-        style={styles.image}
-        placeholder={
-          <ImagePlaceholder style={styles.image} text="Loading..." />
-        }
-      />
-      <View style={styles.cardOverlay}>
-        <Text style={styles.cardTitle}>{item.name}</Text>
-      </View>
-    </View>
-  );
-
   /* For You card */
   const renderForYouItem = ({ item }) => (
     <View style={styles.forYouCard}>

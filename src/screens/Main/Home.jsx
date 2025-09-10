@@ -105,7 +105,14 @@ const Home = ({ navigation }) => {
       <FlatList
         data={categories}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <CategoryCard item={item} />}
+        renderItem={({ item }) => (
+          <CategoryCard
+            item={item}
+            onPress={() =>
+              navigation.navigate(navigationStrings.BROUSE_BY_CATEGORY)
+            }
+          />
+        )}
         horizontal
         showsHorizontalScrollIndicator={false}
       />
