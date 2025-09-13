@@ -5,7 +5,12 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-const Header = ({ showBack = true, title = "" }) => {
+const Header = ({
+  showBack = true,
+  title = "",
+  rightIconImage = null,
+  onRightIconPress = null,
+}) => {
   const navigation = useNavigation();
 
   return (
@@ -23,8 +28,16 @@ const Header = ({ showBack = true, title = "" }) => {
 
       <Text style={styles.title}>{title}</Text>
 
-      {/* Placeholder to balance layout */}
-      <View style={styles.iconBtnr} />
+      {rightIconImage ? (
+        <TouchableOpacity
+          onPress={onRightIconPress}
+          style={[, { backgroundColor: colors.white }]}
+        >
+          <Image source={rightIconImage} style={styles.iconStyle} />
+        </TouchableOpacity>
+      ) : (
+        <View style={[, { backgroundColor: colors.white }]} />
+      )}
     </View>
   );
 };
@@ -51,15 +64,27 @@ const styles = StyleSheet.create({
     height: getHeight(32),
     // round background for back button
   },
+  iconBtnNoBorder: {
+    width: getWidth(32),
+    height: getHeight(32),
+    alignItems: "center",
+    justifyContent: "center",
+    // No background color or border for three dots
+  },
   iconStyle: {
     height: getHeight(20),
     width: getWidth(20),
     resizeMode: "contain",
-    tintColor: colors.black, // make back icon black
+    // tintColor: colors.black, // make back icon black
   },
   title: {
     fontSize: getHeight(18),
     fontWeight: "600",
     color: colors.black,
+  },
+  threeDotsText: {
+    fontSize: getHeight(20),
+    color: colors.black,
+    fontWeight: "bold",
   },
 });

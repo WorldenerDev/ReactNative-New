@@ -21,6 +21,10 @@ const imagePath = {
   CHAT: require("./source/chat.png"),
   ACCOUNT: require("./source/account.png"),
   SEARCH_ICON: require("./source/Search.png"),
+  PLUS_ICON_BORDER: require("./source/plus_border.png"),
+  THREE_DOTS_ICON: require("./source/more.png"),
+  LOCATION_ON_ICON: require("./source/location_on.png"),
+  CALENDER_ICON: require("./source/Calendar.png"),
 };
 
 export default imagePath;

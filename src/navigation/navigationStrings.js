@@ -19,4 +19,5 @@ export default {
   CITY_DETAIL: "CityDetail",
   BROUSE_BY_CATEGORY: "BrouseByCategory",
   ACTIVITY_DETAILS: "ActivityDetails",
+  CREATE_TRIP: "CreateTrip",
 };

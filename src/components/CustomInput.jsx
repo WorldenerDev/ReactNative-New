@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     marginBottom: getVertiPadding(6),
   },
   inputWrapper: {
-    backgroundColor: colors.input,
+    backgroundColor: colors.secondary,
     borderRadius: getRadius(10),
     paddingHorizontal: getHoriPadding(16),
     flexDirection: "row",

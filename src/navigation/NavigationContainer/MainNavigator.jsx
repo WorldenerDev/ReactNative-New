@@ -7,6 +7,7 @@ import {
   BrouseByCategory,
   CityDetail,
   SearchCity,
+  CreateTrip,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -38,6 +39,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.ACTIVITY_DETAILS}
           component={ActivityDetails}
+        />
+        <MainStack.Screen
+          name={navigationStrings.CREATE_TRIP}
+          component={CreateTrip}
         />
       </MainStack.Navigator>
     </>
