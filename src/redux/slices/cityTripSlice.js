@@ -12,6 +12,7 @@ import {
   getEventForYou,
   getEventForYouCityId,
   getPopularEvents,
+  getTrip,
 } from "@api/services/mainServices";
 
 // ----------------- Thunks -----------------
@@ -65,12 +66,25 @@ export const fetchPopularEvent = createAsyncThunk(
     }
   }
 );
+export const fetchUserTrip = createAsyncThunk(
+  endpoints?.main?.getTrips,
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await getTrip(payload);
+      console.log("getTrip response", res);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 const cityTripSlice = createSlice({
   name: "cityTrip",
   initialState: {
     city: [],
     eventForYou: [],
+    trip: [],
     loading: false,
     error: null,
   },
@@ -99,6 +113,11 @@ const cityTripSlice = createSlice({
 
     // Handle events for you by city id (CityDetail)
     handleAsyncCases(builder, fetchEventForYouCityID);
+    handleAsyncCases(builder, fetchUserTrip, {
+      onFulfilled: (state, action) => {
+        state.trip = action.payload?.data || action.payload || [];
+      },
+    });
   },
 });
 

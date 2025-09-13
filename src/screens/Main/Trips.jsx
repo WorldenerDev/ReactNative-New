@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, FlatList, Alert } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TripCard from "@components/TripCard";
@@ -7,9 +7,18 @@ import { getHeight, getWidth } from "@utils/responsive";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import navigationStrings from "@navigation/navigationStrings";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUserTrip } from "@redux/slices/cityTripSlice";
 
 const Trips = ({ navigation }) => {
-  // Sample trip data - in a real app, this would come from an API or state management
+  const { trip } = useSelector((state) => state.cityTrip);
+
+  console.log("Trips data from Redux:", trip); // Debugging line
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    getAllTrips();
+  }, [dispatch]);
   const [trips, setTrips] = useState([
     {
       id: 1,
@@ -66,6 +75,13 @@ const Trips = ({ navigation }) => {
       endDate: "20 Oct 2025",
     },
   ]);
+  const getAllTrips = async () => {
+    try {
+      const response = await dispatch(fetchUserTrip());
+    } catch (error) {
+      console.error("Failed to fetch trips: ", error);
+    }
+  };
 
   const handleAddTrip = () => {
     navigation.navigate(navigationStrings.CREATE_TRIP);

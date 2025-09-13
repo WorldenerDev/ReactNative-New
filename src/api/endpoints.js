@@ -13,5 +13,6 @@ export const endpoints = {
     getEventForYou: "/getEventsForYou",
     getPopularEvents: "/getPopularEvents",
     getEventBrowserByCategory: "/getEventBrowserByCategory",
+    getTrips: "/getTrips",
   },
 };
