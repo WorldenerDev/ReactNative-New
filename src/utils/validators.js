@@ -32,6 +32,57 @@ export const validateLetter = (value, text, minLength = 2) => {
   return null;
 };
 
+// Trip validation functions
+export const validateCity = (cityName) => {
+  if (!cityName || cityName.trim() === "") {
+    return "Please select a city";
+  }
+  return null;
+};
+
+export const validateFromDate = (date) => {
+  if (!date) {
+    return "Please select a start date";
+  }
+
+  const today = new Date();
+  const selectedDate = new Date(date);
+  today.setHours(0, 0, 0, 0);
+  selectedDate.setHours(0, 0, 0, 0);
+
+  if (selectedDate < today) {
+    return "Start date cannot be in the past";
+  }
+  return null;
+};
+
+export const validateToDate = (date, fromDateValue) => {
+  if (!date) {
+    return "Please select an end date";
+  }
+
+  if (fromDateValue && date < fromDateValue) {
+    return "End date must be after start date";
+  }
+
+  const today = new Date();
+  const selectedDate = new Date(date);
+  today.setHours(0, 0, 0, 0);
+  selectedDate.setHours(0, 0, 0, 0);
+
+  if (selectedDate < today) {
+    return "End date cannot be in the past";
+  }
+  return null;
+};
+
+export const validateTripMembers = (selectedMembers) => {
+  if (!selectedMembers || selectedMembers.length === 0) {
+    return "Please add at least one member to the trip";
+  }
+  return null;
+};
+
 export const validateForm = (fields) => {
   for (let field of fields) {
     const error = field.validator(...field.values);

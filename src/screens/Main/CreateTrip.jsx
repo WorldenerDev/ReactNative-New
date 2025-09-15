@@ -16,6 +16,14 @@ import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import StepTitle from "@components/StepTitle";
 import navigationStrings from "@navigation/navigationStrings";
+import { showToast } from "@components/AppToast";
+import {
+  validateForm,
+  validateCity,
+  validateFromDate,
+  validateToDate,
+  validateTripMembers,
+} from "@utils/validators";
 
 const CreateTrip = ({ navigation, route }) => {
   const [fromDate, setFromDate] = useState("");
@@ -25,9 +33,34 @@ const CreateTrip = ({ navigation, route }) => {
 
   // Get city name directly from route params
   const city = route?.params?.cityData?.name || "";
+  const selectedBuddyPhones = route?.params?.selectedBuddyPhones || [];
 
-  const handleContinue = () => {
-    console.log("Continue pressed", { city, fromDate, toDate });
+  console.log("selectedBuddyPhones", selectedBuddyPhones);
+
+  const handleContinue = async () => {
+    try {
+      const error = validateForm([
+        { validator: validateCity, values: [city] },
+        { validator: validateFromDate, values: [fromDate] },
+        { validator: validateToDate, values: [toDate, fromDate] },
+        { validator: validateTripMembers, values: [selectedBuddyPhones] },
+      ]);
+
+      if (error) {
+        showToast("error", error);
+        return;
+      }
+
+      console.log("Continue pressed", {
+        city,
+        fromDate,
+        toDate,
+        selectedBuddyPhones,
+      });
+      // Navigate to next screen or submit form
+    } catch (error) {
+      showToast("error", error);
+    }
   };
 
   const handleAddParticipants = () => {
