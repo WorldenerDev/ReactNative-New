@@ -30,7 +30,8 @@ const SearchCity = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [citiesData, setCitiesData] = useState([]);
   const [eventsData, setEventsData] = useState([]);
-  const mode = route?.params?.mode; // 'cityOnly' from CityDetail, otherwise undefined
+  const mode = route?.params?.mode; // 'cityOnly' from CityDetail or CreateTrip
+  const fromScreen = route?.params?.fromScreen; // Track which screen we came from
 
   // When query empty, clear lists (don’t use cached Redux city data)
   useEffect(() => {
@@ -77,11 +78,30 @@ const SearchCity = ({ navigation, route }) => {
     if (section?.title === "Cities") {
       return (
         <TouchableOpacity
-          onPress={() =>
-            navigation.navigate(navigationStrings.CITY_DETAIL, {
-              cityData: item,
-            })
-          }
+          onPress={() => {
+            if (mode === "cityOnly") {
+              // If in cityOnly mode, navigate back to the screen we came from
+              if (fromScreen === "CreateTrip") {
+                navigation.navigate(navigationStrings.CREATE_TRIP, {
+                  cityData: item,
+                });
+              } else if (fromScreen === "CityDetail") {
+                navigation.navigate(navigationStrings.CITY_DETAIL, {
+                  cityData: item,
+                });
+              } else {
+                // Default fallback - go back to CreateTrip
+                navigation.navigate(navigationStrings.CREATE_TRIP, {
+                  cityData: item,
+                });
+              }
+            } else {
+              // Normal flow - navigate to city detail
+              navigation.navigate(navigationStrings.CITY_DETAIL, {
+                cityData: item,
+              });
+            }
+          }}
           activeOpacity={0.7}
           style={styles.row}
         >

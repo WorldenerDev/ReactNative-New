@@ -15,13 +15,16 @@ import { getHeight, getWidth } from "@utils/responsive";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import StepTitle from "@components/StepTitle";
+import navigationStrings from "@navigation/navigationStrings";
 
-const CreateTrip = () => {
-  const [city, setCity] = useState("");
+const CreateTrip = ({ navigation, route }) => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeField, setActiveField] = useState(null);
+
+  // Get city name directly from route params
+  const city = route?.params?.cityData?.name || "";
 
   const handleContinue = () => {
     console.log("Continue pressed", { city, fromDate, toDate });
@@ -29,6 +32,13 @@ const CreateTrip = () => {
 
   const handleAddParticipants = () => {
     console.log("Add participants pressed");
+  };
+
+  const handleCityPress = () => {
+    navigation.navigate(navigationStrings.SEARCH_CITY, {
+      mode: "cityOnly",
+      fromScreen: "CreateTrip",
+    });
   };
 
   const openCalendar = (field) => {
@@ -60,7 +70,7 @@ const CreateTrip = () => {
           <Text style={styles.sectionTitle}>Where?</Text>
         </View>
         {/* City Input */}
-        <TouchableOpacity style={styles.inputBox}>
+        <TouchableOpacity style={styles.inputBox} onPress={handleCityPress}>
           <Text style={styles.inputText}>{city || "Enter City"}</Text>
         </TouchableOpacity>
       </View>

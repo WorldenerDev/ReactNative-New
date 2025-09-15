@@ -158,10 +158,11 @@ const CityDetail = ({ route, navigation }) => {
                 onPress={() =>
                   navigation.navigate(navigationStrings.SEARCH_CITY, {
                     mode: "cityOnly",
+                    fromScreen: "CityDetail",
                   })
                 }
               >
-                <Text style={styles.cityName}>{cityData.name} ⌄</Text>
+                <Text style={styles.cityName}>{cityData?.name} ⌄</Text>
               </TouchableOpacity>
 
               {/* Search */}
