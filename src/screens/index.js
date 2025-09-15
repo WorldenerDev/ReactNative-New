@@ -18,3 +18,4 @@ export { default as CityDetail } from "./Main/CityDetail";
 export { default as BrouseByCategory } from "./Main/BrouseByCategory";
 export { default as ActivityDetails } from "./Main/ActivityDetails";
 export { default as CreateTrip } from "./Main/CreateTrip";
+export { default as AddToTrip } from "./Main/AddToTrip";

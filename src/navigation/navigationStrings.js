@@ -20,4 +20,5 @@ export default {
   BROUSE_BY_CATEGORY: "BrouseByCategory",
   ACTIVITY_DETAILS: "ActivityDetails",
   CREATE_TRIP: "CreateTrip",
+  ADD_TO_TRIP: "AddToTrip",
 };

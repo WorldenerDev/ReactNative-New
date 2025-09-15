@@ -8,6 +8,7 @@ import {
   CityDetail,
   SearchCity,
   CreateTrip,
+  AddToTrip,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -43,6 +44,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.CREATE_TRIP}
           component={CreateTrip}
+        />
+        <MainStack.Screen
+          name={navigationStrings.ADD_TO_TRIP}
+          component={AddToTrip}
         />
       </MainStack.Navigator>
     </>

@@ -31,7 +31,7 @@ const CreateTrip = ({ navigation, route }) => {
   };
 
   const handleAddParticipants = () => {
-    console.log("Add participants pressed");
+    navigation.navigate(navigationStrings.ADD_TO_TRIP);
   };
 
   const handleCityPress = () => {
