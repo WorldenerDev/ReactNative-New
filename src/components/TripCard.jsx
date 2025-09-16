@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
+import imagePath from "@assets/icons";
 
 const TripCard = ({
   image,
@@ -34,14 +35,11 @@ const TripCard = ({
           <TouchableOpacity style={styles.actionButton} onPress={onGroupPress}>
             <Text style={styles.actionButtonText}>Group</Text>
           </TouchableOpacity>
-        </View>
 
-        <TouchableOpacity
-          onPress={onDeletePress}
-          style={styles.deleteContainer}
-        >
-          <Text style={styles.deleteText}>delete</Text>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={onDeletePress} style={styles.deleteButton}>
+            <Image source={imagePath.DELETE_ICON} style={styles.deleteIcon} />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -104,8 +102,8 @@ const styles = StyleSheet.create({
     borderRadius: getRadius(6),
     paddingHorizontal: getWidth(5),
     paddingVertical: getHeight(6),
-    marginRight: getWidth(8),
-    minWidth: getWidth(55),
+    marginRight: getWidth(4),
+    minWidth: getWidth(50),
     alignItems: "center",
     flex: 1,
   },
@@ -114,14 +112,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
   },
-  deleteContainer: {
-    alignItems: "flex-start",
-    marginTop: getHeight(4),
+  deleteButton: {
+    backgroundColor: "transparent",
+
+    paddingVertical: getHeight(6),
   },
-  deleteText: {
-    fontSize: getHeight(11),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.red,
-    textAlign: "left",
+  deleteIcon: {
+    width: getWidth(16),
+    height: getHeight(16),
+    tintColor: colors.red,
   },
 });

@@ -25,6 +25,7 @@ const imagePath = {
   THREE_DOTS_ICON: require("./source/more.png"),
   LOCATION_ON_ICON: require("./source/location_on.png"),
   CALENDER_ICON: require("./source/Calendar.png"),
+  DELETE_ICON: require("./source/trash.png"),
 };
 
 export default imagePath;
