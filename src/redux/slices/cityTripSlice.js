@@ -115,7 +115,7 @@ const cityTripSlice = createSlice({
     handleAsyncCases(builder, fetchEventForYouCityID);
     handleAsyncCases(builder, fetchUserTrip, {
       onFulfilled: (state, action) => {
-        state.trip = action.payload?.data || action.payload || [];
+        state.trip = action.payload?.data?.trips || action.payload || [];
       },
     });
   },

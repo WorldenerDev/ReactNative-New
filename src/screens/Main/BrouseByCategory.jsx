@@ -23,6 +23,7 @@ import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import fonts from "@assets/fonts";
 import { getEventBrowserByCategory } from "@api/services/mainServices";
+import navigationStrings from "@navigation/navigationStrings";
 
 const formatDate = (date) => {
   const year = date.getFullYear();
@@ -31,7 +32,7 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const BrouseByCategory = () => {
+const BrouseByCategory = ({ navigation }) => {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +91,16 @@ const BrouseByCategory = () => {
   return (
     <MainContainer loader={loading}>
       <Header title="Cruise Activities" />
-      <View style={styles.container}>
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate(navigationStrings.SEARCH_CITY, {
+            mode: "eventOnly", // Search only events from BrouseByCategory
+            fromScreen: "BrouseByCategory",
+          })
+        }
+        activeOpacity={0.9}
+        style={styles.container}
+      >
         <TextInput
           value={search}
           onChangeText={setSearch}
@@ -98,12 +108,22 @@ const BrouseByCategory = () => {
           placeholderTextColor={colors.lightText}
           style={styles.searchInput}
           returnKeyType="search"
+          editable={false} // Make it non-editable since we're using it as a button
         />
         <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
-      </View>
+      </TouchableOpacity>
       <FlatList
         data={results}
-        renderItem={({ item }) => <ForYouCard item={item} />}
+        renderItem={({ item }) => (
+          <ForYouCard
+            item={item}
+            onPress={() =>
+              navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+                eventData: item,
+              })
+            }
+          />
+        )}
         keyExtractor={(item, index) => String(item?.id ?? item?._id ?? index)}
         numColumns={2}
         columnWrapperStyle={styles.row}

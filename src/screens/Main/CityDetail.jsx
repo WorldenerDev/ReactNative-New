@@ -86,7 +86,11 @@ const CityDetail = ({ route, navigation }) => {
 
   const renderPopularItem = ({ item }) => (
     <TouchableOpacity
-      onPress={() => navigation.navigate(navigationStrings.ACTIVITY_DETAILS)}
+      onPress={() =>
+        navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+          eventData: item,
+        })
+      }
       style={styles.card}
     >
       <OptimizedImage
@@ -107,7 +111,15 @@ const CityDetail = ({ route, navigation }) => {
 
   /* For You card */
   const renderForYouItem = ({ item }) => (
-    <View style={styles.forYouCard}>
+    <TouchableOpacity
+      onPress={() =>
+        navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+          eventData: item,
+        })
+      }
+      activeOpacity={0.7}
+      style={styles.forYouCard}
+    >
       <OptimizedImage
         source={{ uri: item.image }}
         style={styles.forYouImage}
@@ -119,7 +131,7 @@ const CityDetail = ({ route, navigation }) => {
         <Text style={styles.forYouTitle}>{item.name}</Text>
         {/* <Text style={styles.forYouSubtitle}>{item.subtitle}</Text> */}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -168,7 +180,10 @@ const CityDetail = ({ route, navigation }) => {
               {/* Search */}
               <TouchableOpacity
                 onPress={() =>
-                  navigation.navigate(navigationStrings.SEARCH_CITY)
+                  navigation.navigate(navigationStrings.SEARCH_CITY, {
+                    mode: "eventOnly", // Search only events from CityDetail
+                    fromScreen: "CityDetail",
+                  })
                 }
                 activeOpacity={0.9}
                 style={styles.searchWrap}

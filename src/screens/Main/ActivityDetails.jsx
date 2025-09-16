@@ -34,7 +34,8 @@ const ACCORDION_DATA = [
     content: "Open daily: 9:30 AM – 11:00 PM. Last admission 10:00 PM.",
   },
 ];
-const ActivityDetails = ({ navigation }) => {
+const ActivityDetails = ({ navigation, route }) => {
+  const { eventData } = route?.params || {};
   const renderAccordionItem = ({ item }) => (
     <Accordion title={item.title} defaultOpen={item?.defaultOpen}>
       <Text style={styles.content}>{item.content}</Text>
@@ -46,7 +47,10 @@ const ActivityDetails = ({ navigation }) => {
       <View style={styles.headerImage}>
         <OptimizedImage
           source={{
-            uri: "https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg",
+            uri:
+              eventData?.image ||
+              eventData?.cover_image_url ||
+              "https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg",
           }}
           style={styles.headerImage}
           placeholder={
@@ -66,9 +70,14 @@ const ActivityDetails = ({ navigation }) => {
         {/* Black strip with title & rating */}
         <View style={styles.blackStrip}>
           <Text numberOfLines={2} style={styles.title}>
-            Eiffel Tower Guided Tour by Elevator
+            {eventData?.name ||
+              eventData?.title ||
+              "Eiffel Tower Guided Tour by Elevator"}
           </Text>
-          <Text style={styles.rating}>★ 4.4 (23,144)</Text>
+          <Text style={styles.rating}>
+            ★ {eventData?.rating || "4.4"} (
+            {eventData?.review_count || "23,144"})
+          </Text>
         </View>
       </View>
       {/* Body */}
@@ -83,7 +92,10 @@ const ActivityDetails = ({ navigation }) => {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <Text style={styles.priceText}>
-          from <Text style={styles.price}>$89.99</Text>
+          from{" "}
+          <Text style={styles.price}>
+            ${eventData?.price || eventData?.starting_price || "89.99"}
+          </Text>
         </Text>
         <TouchableOpacity style={styles.availabilityBtn}>
           <Text style={styles.availabilityText}>Check availability</Text>

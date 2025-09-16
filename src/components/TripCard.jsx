@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import colors from "@assets/colors";
+import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 
 const TripCard = ({
@@ -14,7 +15,7 @@ const TripCard = ({
 }) => {
   return (
     <View style={styles.card}>
-      <Image source={image} style={styles.cardImage} />
+      <Image source={{ uri: image }} style={styles.cardImage} />
 
       <View style={styles.cardContent}>
         <Text style={styles.cityName}>{city}</Text>
@@ -79,12 +80,13 @@ const styles = StyleSheet.create({
   },
   cityName: {
     fontSize: getHeight(16),
-    fontWeight: "700",
+    fontFamily: fonts.RobotoBold,
     color: colors.black,
     marginBottom: getHeight(4),
   },
   dates: {
-    fontSize: getHeight(12),
+    fontSize: getHeight(11),
+    fontFamily: fonts.RobotoRegular,
     color: colors.black,
     marginBottom: getHeight(8),
   },
@@ -109,8 +111,8 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: getHeight(11),
+    fontFamily: fonts.RobotoMedium,
     color: colors.black,
-    fontWeight: "500",
   },
   deleteContainer: {
     alignItems: "flex-start",
@@ -118,8 +120,8 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     fontSize: getHeight(11),
+    fontFamily: fonts.RobotoMedium,
     color: colors.red,
-    fontWeight: "500",
     textAlign: "left",
   },
 });

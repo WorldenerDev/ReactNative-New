@@ -24,15 +24,18 @@ import {
   validateToDate,
   validateTripMembers,
 } from "@utils/validators";
+import { createTrip } from "@api/services/mainServices";
 
 const CreateTrip = ({ navigation, route }) => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeField, setActiveField] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get city name directly from route params
-  const city = route?.params?.cityData?.name || "";
+  const city = route?.params?.cityData || "";
+  console.log("city", city);
   const selectedBuddyPhones = route?.params?.selectedBuddyPhones || [];
 
   console.log("selectedBuddyPhones", selectedBuddyPhones);
@@ -40,10 +43,10 @@ const CreateTrip = ({ navigation, route }) => {
   const handleContinue = async () => {
     try {
       const error = validateForm([
-        { validator: validateCity, values: [city] },
+        { validator: validateCity, values: [city?.name] },
         { validator: validateFromDate, values: [fromDate] },
         { validator: validateToDate, values: [toDate, fromDate] },
-        { validator: validateTripMembers, values: [selectedBuddyPhones] },
+        // { validator: validateTripMembers, values: [selectedBuddyPhones] },
       ]);
 
       if (error) {
@@ -51,26 +54,47 @@ const CreateTrip = ({ navigation, route }) => {
         return;
       }
 
-      console.log("Continue pressed", {
-        city,
-        fromDate,
-        toDate,
-        selectedBuddyPhones,
-      });
-      // Navigate to next screen or submit form
+      setIsLoading(true);
+
+      // Prepare API payload
+      const tripData = {
+        city_id: String(city?.city_id),
+        start_at: fromDate,
+        end_at: toDate,
+        // groups: selectedBuddyPhones,
+      };
+
+      console.log("Creating trip with data:", tripData);
+
+      // Call the API
+      const response = await createTrip(tripData);
+
+      console.log("Trip created successfully:", response);
+      showToast("success", "Trip created successfully!");
+
+      // Navigate back to trips screen or home
+      //navigation.goBack();
     } catch (error) {
-      showToast("error", error);
+      console.error("Error creating trip:", error);
+      showToast("error", error?.message || "Failed to create trip");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleAddParticipants = () => {
-    navigation.navigate(navigationStrings.ADD_TO_TRIP);
+    navigation.navigate(navigationStrings.ADD_TO_TRIP, {
+      cityData: city,
+      selectedBuddyPhones: selectedBuddyPhones,
+    });
   };
 
   const handleCityPress = () => {
     navigation.navigate(navigationStrings.SEARCH_CITY, {
       mode: "cityOnly",
       fromScreen: "CreateTrip",
+      cityData: city,
+      selectedBuddyPhones: selectedBuddyPhones,
     });
   };
 
@@ -89,7 +113,7 @@ const CreateTrip = ({ navigation, route }) => {
   };
 
   return (
-    <MainContainer>
+    <MainContainer loader={isLoading}>
       <Header />
       <StepTitle
         title="Create Trip"
@@ -104,7 +128,7 @@ const CreateTrip = ({ navigation, route }) => {
         </View>
         {/* City Input */}
         <TouchableOpacity style={styles.inputBox} onPress={handleCityPress}>
-          <Text style={styles.inputText}>{city || "Enter City"}</Text>
+          <Text style={styles.inputText}>{city?.name || "Enter City"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -158,7 +182,7 @@ const CreateTrip = ({ navigation, route }) => {
       <ButtonComp
         title="Continue"
         onPress={handleContinue}
-        disabled={false}
+        disabled={isLoading}
         containerStyle={styles.continueButton}
       />
 

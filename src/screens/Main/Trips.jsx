@@ -1,4 +1,11 @@
-import { StyleSheet, Text, View, FlatList, Alert } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Alert,
+  RefreshControl,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
@@ -12,74 +19,29 @@ import { fetchUserTrip } from "@redux/slices/cityTripSlice";
 
 const Trips = ({ navigation }) => {
   const { trip } = useSelector((state) => state.cityTrip);
-
-  console.log("Trips data from Redux:", trip); // Debugging line
   const dispatch = useDispatch();
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     getAllTrips();
   }, [dispatch]);
-  const [trips, setTrips] = useState([
-    {
-      id: 1,
-      image: {
-        uri: "https://i0.wp.com/atravelingfairy.com/wp-content/uploads/2024/01/DSC08140.jpg?w=1100&ssl=1",
-      },
-      city: "Paris",
-      startDate: "12 Oct 2025",
-      endDate: "20 Oct 2025",
-    },
-    {
-      id: 2,
-      image: {
-        uri: "https://i0.wp.com/atravelingfairy.com/wp-content/uploads/2024/01/DSC08140.jpg?w=1100&ssl=1",
-      },
-      city: "Paris",
-      startDate: "12 Oct 2025",
-      endDate: "20 Oct 2025",
-    },
-    {
-      id: 3,
-      image: {
-        uri: "https://i0.wp.com/atravelingfairy.com/wp-content/uploads/2024/01/DSC08140.jpg?w=1100&ssl=1",
-      },
-      city: "Paris",
-      startDate: "12 Oct 2025",
-      endDate: "20 Oct 2025",
-    },
-    {
-      id: 4,
-      image: {
-        uri: "https://i0.wp.com/atravelingfairy.com/wp-content/uploads/2024/01/DSC08140.jpg?w=1100&ssl=1",
-      },
-      city: "Paris",
-      startDate: "12 Oct 2025",
-      endDate: "20 Oct 2025",
-    },
-    {
-      id: 5,
-      image: {
-        uri: "https://i0.wp.com/atravelingfairy.com/wp-content/uploads/2024/01/DSC08140.jpg?w=1100&ssl=1",
-      },
-      city: "Paris",
-      startDate: "12 Oct 2025",
-      endDate: "20 Oct 2025",
-    },
-    {
-      id: 6,
-      image: {
-        uri: "https://i0.wp.com/atravelingfairy.com/wp-content/uploads/2024/01/DSC08140.jpg?w=1100&ssl=1",
-      },
-      city: "Paris",
-      startDate: "12 Oct 2025",
-      endDate: "20 Oct 2025",
-    },
-  ]);
+
   const getAllTrips = async () => {
     try {
       const response = await dispatch(fetchUserTrip());
     } catch (error) {
       console.error("Failed to fetch trips: ", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await getAllTrips();
+    } catch (error) {
+      console.error("Failed to refresh trips: ", error);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -133,23 +95,33 @@ const Trips = ({ navigation }) => {
       />
 
       <FlatList
-        data={trips}
+        data={trip}
         renderItem={({ item }) => (
           <TripCard
-            image={item.image}
-            city={item.city}
-            startDate={item.startDate}
-            endDate={item.endDate}
+            image={item?.city?.image}
+            city={item?.city?.name}
+            startDate={item?.start_at.slice(0, 10)}
+            endDate={item?.end_at.slice(0, 10)}
             onItineraryPress={() => handleItinerary(item.id)}
             onGroupPress={() => handleGroup(item.id)}
             onDeletePress={() => handleDelete(item.id)}
           />
         )}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item?._id.toString()}
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.flatListContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]} // Android
+            tintColor={colors.primary} // iOS
+            title="Pull to refresh" // iOS
+            titleColor={colors.lightText} // iOS
+          />
+        }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No trips found</Text>

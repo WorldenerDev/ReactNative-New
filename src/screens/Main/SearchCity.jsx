@@ -30,7 +30,7 @@ const SearchCity = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [citiesData, setCitiesData] = useState([]);
   const [eventsData, setEventsData] = useState([]);
-  const mode = route?.params?.mode; // 'cityOnly' from CityDetail or CreateTrip
+  const mode = route?.params?.mode; // 'cityOnly', 'eventOnly', or undefined (both)
   const fromScreen = route?.params?.fromScreen; // Track which screen we came from
 
   // When query empty, clear lists (don’t use cached Redux city data)
@@ -41,7 +41,7 @@ const SearchCity = ({ navigation, route }) => {
     }
   }, [query]);
 
-  // 🔹 Debounced server search (cities + events, or cities-only when mode=cityOnly)
+  // 🔹 Debounced server search (cities + events, cities-only, or events-only based on mode)
   useEffect(() => {
     const timeout = setTimeout(async () => {
       const searchText = query.trim();
@@ -53,7 +53,13 @@ const SearchCity = ({ navigation, route }) => {
           const nextCities = citiesRes?.data || citiesRes || [];
           setCitiesData(Array.isArray(nextCities) ? nextCities : []);
           setEventsData([]);
+        } else if (mode === "eventOnly") {
+          const eventsRes = await getEventForYou({ search: searchText });
+          const nextEvents = eventsRes?.data || eventsRes || [];
+          setCitiesData([]);
+          setEventsData(Array.isArray(nextEvents) ? nextEvents : []);
         } else {
+          // Default mode: search both cities and events
           const [citiesRes, eventsRes] = await Promise.all([
             searchCityByName({ search: searchText }),
             getEventForYou({ search: searchText }),
@@ -84,6 +90,7 @@ const SearchCity = ({ navigation, route }) => {
               if (fromScreen === "CreateTrip") {
                 navigation.navigate(navigationStrings.CREATE_TRIP, {
                   cityData: item,
+                  selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
                 });
               } else if (fromScreen === "CityDetail") {
                 navigation.navigate(navigationStrings.CITY_DETAIL, {
@@ -93,6 +100,7 @@ const SearchCity = ({ navigation, route }) => {
                 // Default fallback - go back to CreateTrip
                 navigation.navigate(navigationStrings.CREATE_TRIP, {
                   cityData: item,
+                  selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
                 });
               }
             } else {
@@ -122,7 +130,16 @@ const SearchCity = ({ navigation, route }) => {
 
     // event item
     return (
-      <View style={styles.row}>
+      <TouchableOpacity
+        onPress={() => {
+          // Navigate to ActivityDetails with event data
+          navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+            eventData: item,
+          });
+        }}
+        activeOpacity={0.7}
+        style={styles.row}
+      >
         <OptimizedImage
           source={{ uri: item?.image }}
           style={styles.image}
@@ -136,7 +153,7 @@ const SearchCity = ({ navigation, route }) => {
             <Text style={styles.country}>{item?.city_name}</Text>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -157,28 +174,41 @@ const SearchCity = ({ navigation, route }) => {
       {/* List */}
       {loading ? (
         <Text style={styles.loading}>Searching...</Text>
-      ) : !query.trim() ? null : citiesData.length === 0 &&
-        (mode === "cityOnly" ? true : eventsData.length === 0) ? (
-        <Text style={styles.empty}>No results</Text>
-      ) : (
-        <SectionList
-          sections={[
-            ...(citiesData.length
-              ? [{ title: "Cities", data: citiesData }]
-              : []),
-            ...(mode === "cityOnly"
-              ? []
-              : eventsData.length
-              ? [{ title: "Events", data: eventsData }]
-              : []),
-          ]}
-          keyExtractor={(item, index) => `${item?._id || item?.id || index}`}
-          renderItem={renderItem}
-          renderSectionHeader={({ section: { title } }) => (
-            <Text style={styles.sectionTitle}>{title}</Text>
-          )}
-          showsVerticalScrollIndicator={false}
-        />
+      ) : !query.trim() ? null : (
+        (() => {
+          // Determine if we should show "No results" based on mode
+          const shouldShowNoResults =
+            (mode === "cityOnly" && citiesData.length === 0) ||
+            (mode === "eventOnly" && eventsData.length === 0) ||
+            (!mode && citiesData.length === 0 && eventsData.length === 0);
+
+          if (shouldShowNoResults) {
+            return <Text style={styles.empty}>No results</Text>;
+          }
+
+          // Build sections based on mode
+          const sections = [];
+          if (mode !== "eventOnly" && citiesData.length > 0) {
+            sections.push({ title: "Cities", data: citiesData });
+          }
+          if (mode !== "cityOnly" && eventsData.length > 0) {
+            sections.push({ title: "Events", data: eventsData });
+          }
+
+          return (
+            <SectionList
+              sections={sections}
+              keyExtractor={(item, index) =>
+                `${item?._id || item?.id || index}`
+              }
+              renderItem={renderItem}
+              renderSectionHeader={({ section: { title } }) => (
+                <Text style={styles.sectionTitle}>{title}</Text>
+              )}
+              showsVerticalScrollIndicator={false}
+            />
+          );
+        })()
       )}
     </MainContainer>
   );
@@ -242,5 +272,19 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(12),
     fontFamily: fonts.RobotoRegular,
     color: colors.grey,
+  },
+  loading: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.grey,
+    textAlign: "center",
+    marginTop: getVertiPadding(20),
+  },
+  empty: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.grey,
+    textAlign: "center",
+    marginTop: getVertiPadding(20),
   },
 });

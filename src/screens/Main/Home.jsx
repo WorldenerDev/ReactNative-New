@@ -75,7 +75,12 @@ const Home = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.greeting}>{`Hi ${user?.name}!`}</Text>
         <TouchableOpacity
-          onPress={() => navigation.navigate(navigationStrings.SEARCH_CITY)}
+          onPress={() =>
+            navigation.navigate(navigationStrings.SEARCH_CITY, {
+              mode: undefined, // Search both cities and events
+              fromScreen: "Home",
+            })
+          }
         >
           <Image style={styles.search} source={imagePath.SEARCH_ICON} />
         </TouchableOpacity>
@@ -130,7 +135,9 @@ const Home = ({ navigation }) => {
           <ForYouCard
             item={item}
             onPress={() =>
-              navigation.navigate(navigationStrings.ACTIVITY_DETAILS)
+              navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+                eventData: item,
+              })
             }
           />
         )}

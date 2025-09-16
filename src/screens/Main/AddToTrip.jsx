@@ -18,7 +18,7 @@ import imagePath from "@assets/icons";
 import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
 
-const AddToTrip = ({ navigation }) => {
+const AddToTrip = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [allData, setAllData] = useState([
     {
@@ -94,9 +94,10 @@ const AddToTrip = ({ navigation }) => {
     // Get phone numbers of selected buddies only
     const selectedBuddyPhones = selectedBuddies.map((item) => item.phone);
 
-    // Pass data back to CreateTrip screen
+    // Pass data back to CreateTrip screen, preserving existing cityData
     navigation.navigate(navigationStrings.CREATE_TRIP, {
       selectedBuddyPhones,
+      cityData: route?.params?.cityData,
     });
   };
 
