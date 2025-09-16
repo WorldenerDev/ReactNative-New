@@ -15,5 +15,7 @@ export const endpoints = {
     getEventBrowserByCategory: "/getEventBrowserByCategory",
     getTrips: "/getTrips",
     createTrip: "/createTrip",
+    deleteTrip: "/deleteTrip",
+    activityLikeUnlike: "/activity-like-unlike",
   },
 };

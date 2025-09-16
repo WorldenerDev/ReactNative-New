@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut } from "@api/apiHelpers";
+import { apiGet, apiPost, apiPut, apiDelete } from "@api/apiHelpers";
 import { endpoints } from "@api/endpoints";
 
 export const getAllCity = (data) => apiPost(endpoints?.main?.getAllCity, data);
@@ -14,3 +14,7 @@ export const getEventBrowserByCategory = (params) =>
   apiGet(endpoints?.main?.getEventBrowserByCategory, params);
 export const getTrip = (params) => apiGet(endpoints?.main?.getTrips, params);
 export const createTrip = (data) => apiPost(endpoints?.main?.createTrip, data);
+export const deleteTrip = (tripId) =>
+  apiDelete(`${endpoints?.main?.deleteTrip}/${tripId}`);
+export const activityLikeUnlike = (data) =>
+  apiPost(endpoints?.main?.activityLikeUnlike, data);

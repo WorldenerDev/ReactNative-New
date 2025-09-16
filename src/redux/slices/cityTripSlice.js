@@ -13,6 +13,7 @@ import {
   getEventForYouCityId,
   getPopularEvents,
   getTrip,
+  deleteTrip,
 } from "@api/services/mainServices";
 
 // ----------------- Thunks -----------------
@@ -73,6 +74,20 @@ export const fetchUserTrip = createAsyncThunk(
       const res = await getTrip(payload);
       console.log("getTrip response", res);
       return res;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+// Delete trip (API call only, no state update)
+export const deleteUserTrip = createAsyncThunk(
+  "cityTrip/deleteTrip",
+  async (tripId, { rejectWithValue }) => {
+    try {
+      const res = await deleteTrip(tripId);
+      console.log("deleteTrip response", res);
+      return { tripId, response: res };
     } catch (err) {
       return rejectWithValue(err.message);
     }

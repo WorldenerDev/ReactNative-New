@@ -26,6 +26,8 @@ const imagePath = {
   LOCATION_ON_ICON: require("./source/location_on.png"),
   CALENDER_ICON: require("./source/Calendar.png"),
   DELETE_ICON: require("./source/trash.png"),
+  LIKE_ICON: require("./source/like.png"),
+  UN_LIKE_ICON: require("./source/unlike.png"),
 };
 
 export default imagePath;

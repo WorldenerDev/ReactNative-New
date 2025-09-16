@@ -4,6 +4,7 @@ import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
+import OptimizedImage from "@components/OptimizedImage";
 
 const TripCard = ({
   image,
@@ -16,7 +17,15 @@ const TripCard = ({
 }) => {
   return (
     <View style={styles.card}>
-      <Image source={{ uri: image }} style={styles.cardImage} />
+      <OptimizedImage
+        source={{ uri: image }}
+        style={styles.cardImage}
+        resizeMode="cover"
+        priority="high"
+        cache="immutable"
+        showLoader={true}
+        loaderColor={colors.primary}
+      />
 
       <View style={styles.cardContent}>
         <Text style={styles.cityName}>{city}</Text>

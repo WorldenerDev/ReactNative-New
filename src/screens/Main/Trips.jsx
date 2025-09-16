@@ -15,16 +15,22 @@ import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUserTrip } from "@redux/slices/cityTripSlice";
+import { fetchUserTrip, deleteUserTrip } from "@redux/slices/cityTripSlice";
 
 const Trips = ({ navigation }) => {
-  const { trip } = useSelector((state) => state.cityTrip);
+  const { trip, loading } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
+  const [trips, setTrips] = useState([]);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     getAllTrips();
   }, [dispatch]);
+
+  useEffect(() => {
+    setTrips(trip);
+  }, [trip]);
 
   const getAllTrips = async () => {
     try {
@@ -78,15 +84,26 @@ const Trips = ({ navigation }) => {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          setTrips(trips.filter((trip) => trip.id !== tripId));
+        onPress: async () => {
+          setDeleteLoading(true);
+          try {
+            await dispatch(deleteUserTrip(tripId));
+            console.log("Trip deleted successfully");
+            // Remove the trip from local state
+            setTrips(trips.filter((trip) => trip._id !== tripId));
+          } catch (error) {
+            console.error("Failed to delete trip: ", error);
+            Alert.alert("Error", "Failed to delete trip. Please try again.");
+          } finally {
+            setDeleteLoading(false);
+          }
         },
       },
     ]);
   };
 
   return (
-    <MainContainer>
+    <MainContainer loader={deleteLoading}>
       <Header
         showBack={false}
         title="My Trips"
@@ -95,16 +112,16 @@ const Trips = ({ navigation }) => {
       />
 
       <FlatList
-        data={trip}
+        data={trips}
         renderItem={({ item }) => (
           <TripCard
             image={item?.city?.image}
             city={item?.city?.name}
             startDate={item?.start_at.slice(0, 10)}
             endDate={item?.end_at.slice(0, 10)}
-            onItineraryPress={() => handleItinerary(item.id)}
-            onGroupPress={() => handleGroup(item.id)}
-            onDeletePress={() => handleDelete(item.id)}
+            onItineraryPress={() => handleItinerary(item._id)}
+            onGroupPress={() => handleGroup(item._id)}
+            onDeletePress={() => handleDelete(item._id)}
           />
         )}
         keyExtractor={(item) => item?._id.toString()}
