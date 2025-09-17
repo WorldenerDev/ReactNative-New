@@ -22,4 +22,5 @@ export default {
   ACTIVITY_DETAILS_CHECK_AVAILABILITY: "ActivityDetailsCheckAvability",
   CREATE_TRIP: "CreateTrip",
   ADD_TO_TRIP: "AddToTrip",
+  TRIP_DETAILS: "TripDetails",
 };

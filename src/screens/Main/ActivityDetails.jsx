@@ -6,7 +6,7 @@ import {
   FlatList,
   Image,
 } from "react-native";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ScreenWapper from "@components/container/ScreenWapper";
 import OptimizedImage from "@components/OptimizedImage";
 import ImagePlaceholder from "@components/ImagePlaceholder";
@@ -16,13 +16,14 @@ import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import Accordion from "@components/Accordion";
 import navigationStrings from "@navigation/navigationStrings";
+import { activityLikeUnlike } from "@api/services/mainServices";
 const ACCORDION_DATA = [
   {
     id: "1",
     title: "Highlights",
     content:
       "Discover Paris from its most iconic landmark! Skip the lines and ascend the world-famous Eiffel Tower with priority access. An expert guide shares fascinating stories about its history, engineering marvels, and cultural significance.",
-    defaultOpen: true,
+    defaultOpen: false,
   },
   {
     id: "2",
@@ -37,12 +38,37 @@ const ACCORDION_DATA = [
 ];
 const ActivityDetails = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   console.log("eventData", eventData);
+
+  // Initialize like state from event data
+  useEffect(() => {
+    if (eventData?.isLiked !== undefined) {
+      setIsLiked(eventData.isLiked);
+    }
+  }, [eventData]);
 
   const handleCheckAvailability = () => {
     navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
       eventData: eventData,
     });
+  };
+
+  const handleLikeToggle = async () => {
+    if (isLoading) return; // Prevent multiple calls
+
+    try {
+      setIsLoading(true);
+      const response = await activityLikeUnlike({
+        activity_id: eventData?.id || eventData?.activity_id,
+        is_liked: !isLiked,
+      });
+    } catch (error) {
+      console.error("Like/Unlike error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderAccordionItem = ({ item }) => (
@@ -75,6 +101,16 @@ const ActivityDetails = ({ navigation, route }) => {
           onPress={() => navigation.goBack()}
         >
           <Image source={imagePath.BACK_ICON} style={styles.backIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.likeBtn, isLoading && styles.likeBtnDisabled]}
+          onPress={handleLikeToggle}
+          disabled={isLoading}
+        >
+          <Image
+            source={isLiked ? imagePath.LIKE_ICON : imagePath.UN_LIKE_ICON}
+            style={[styles.likeIcon, isLoading && styles.likeIconDisabled]}
+          />
         </TouchableOpacity>
         {/* Black strip with title & rating */}
         <View style={styles.blackStrip}>
@@ -130,6 +166,14 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
     tintColor: colors.white,
   },
+  likeBtn: { position: "absolute", top: 45, right: 15, zIndex: 2 },
+  likeBtnDisabled: { opacity: 0.5 },
+  likeIcon: {
+    height: getHeight(20),
+    width: getWidth(20),
+    resizeMode: "contain",
+  },
+  likeIconDisabled: { opacity: 0.5 },
   blackStrip: {
     position: "absolute",
     bottom: 0,

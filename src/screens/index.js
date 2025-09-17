@@ -20,3 +20,4 @@ export { default as ActivityDetails } from "./Main/ActivityDetails";
 export { default as ActivityDetailsCheckAvability } from "./Main/ActivityDetailsCheckAvability";
 export { default as CreateTrip } from "./Main/CreateTrip";
 export { default as AddToTrip } from "./Main/AddToTrip";
+export { default as TripDetails } from "./Main/TripDetails";

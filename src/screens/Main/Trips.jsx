@@ -119,9 +119,18 @@ const Trips = ({ navigation }) => {
             city={item?.city?.name}
             startDate={item?.start_at.slice(0, 10)}
             endDate={item?.end_at.slice(0, 10)}
-            onItineraryPress={() => handleItinerary(item._id)}
+            onItineraryPress={() =>
+              navigation.navigate(navigationStrings.ITINERARY, {
+                trip: item,
+              })
+            }
             onGroupPress={() => handleGroup(item._id)}
             onDeletePress={() => handleDelete(item._id)}
+            onPressCard={() =>
+              navigation.navigate(navigationStrings.TRIP_DETAILS, {
+                trip: item,
+              })
+            }
           />
         )}
         keyExtractor={(item) => item?._id.toString()}

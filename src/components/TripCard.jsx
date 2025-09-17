@@ -14,9 +14,10 @@ const TripCard = ({
   onItineraryPress,
   onGroupPress,
   onDeletePress,
+  onPressCard,
 }) => {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity onPress={onPressCard} style={styles.card}>
       <OptimizedImage
         source={{ uri: image }}
         style={styles.cardImage}
@@ -50,7 +51,7 @@ const TripCard = ({
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
