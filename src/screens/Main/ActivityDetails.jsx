@@ -15,6 +15,7 @@ import fonts from "@assets/fonts";
 import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import Accordion from "@components/Accordion";
+import navigationStrings from "@navigation/navigationStrings";
 const ACCORDION_DATA = [
   {
     id: "1",
@@ -36,6 +37,14 @@ const ACCORDION_DATA = [
 ];
 const ActivityDetails = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
+  console.log("eventData", eventData);
+
+  const handleCheckAvailability = () => {
+    navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
+      eventData: eventData,
+    });
+  };
+
   const renderAccordionItem = ({ item }) => (
     <Accordion title={item.title} defaultOpen={item?.defaultOpen}>
       <Text style={styles.content}>{item.content}</Text>
@@ -97,7 +106,10 @@ const ActivityDetails = ({ navigation, route }) => {
             ${eventData?.price || eventData?.starting_price || "89.99"}
           </Text>
         </Text>
-        <TouchableOpacity style={styles.availabilityBtn}>
+        <TouchableOpacity
+          style={styles.availabilityBtn}
+          onPress={handleCheckAvailability}
+        >
           <Text style={styles.availabilityText}>Check availability</Text>
         </TouchableOpacity>
       </View>

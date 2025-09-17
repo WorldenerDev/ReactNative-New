@@ -17,5 +17,6 @@ export { default as SearchCity } from "./Main/SearchCity";
 export { default as CityDetail } from "./Main/CityDetail";
 export { default as BrouseByCategory } from "./Main/BrouseByCategory";
 export { default as ActivityDetails } from "./Main/ActivityDetails";
+export { default as ActivityDetailsCheckAvability } from "./Main/ActivityDetailsCheckAvability";
 export { default as CreateTrip } from "./Main/CreateTrip";
 export { default as AddToTrip } from "./Main/AddToTrip";

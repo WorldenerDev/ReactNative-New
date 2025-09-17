@@ -35,7 +35,6 @@ const CreateTrip = ({ navigation, route }) => {
 
   // Get city name directly from route params
   const city = route?.params?.cityData || "";
-  console.log("city", city);
   const selectedBuddyPhones = route?.params?.selectedBuddyPhones || [];
 
   console.log("selectedBuddyPhones", selectedBuddyPhones);

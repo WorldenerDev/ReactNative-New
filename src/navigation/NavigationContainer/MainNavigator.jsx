@@ -4,6 +4,7 @@ import navigationStrings from "@navigation/navigationStrings";
 import BottomTabNavigator from "./BottomTabNavigator";
 import {
   ActivityDetails,
+  ActivityDetailsCheckAvability,
   BrouseByCategory,
   CityDetail,
   SearchCity,
@@ -40,6 +41,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.ACTIVITY_DETAILS}
           component={ActivityDetails}
+        />
+        <MainStack.Screen
+          name={navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY}
+          component={ActivityDetailsCheckAvability}
         />
         <MainStack.Screen
           name={navigationStrings.CREATE_TRIP}
