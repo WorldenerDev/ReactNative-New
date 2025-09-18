@@ -30,6 +30,7 @@ import {
   fetchPopularEvent,
 } from "@redux/slices/cityTripSlice";
 import CategoryCard from "@components/appComponent/CategoryCard";
+import ForYouCard from "@components/appComponent/ForYouCard";
 import ScreenWapper from "@components/container/ScreenWapper";
 
 /** --- screen --- */
@@ -63,7 +64,9 @@ const CityDetail = ({ route, navigation }) => {
           limit: 2,
         })
       );
-      setPopularThings(result?.payload?.data);
+      if (result?.payload?.data) {
+        setPopularThings(result?.payload?.data);
+      }
       console.log("fetchPopularEvent result:", result);
     } catch (error) {
       console.warn("fetchPopularEvent error:", error);
@@ -77,7 +80,9 @@ const CityDetail = ({ route, navigation }) => {
           city: cityData?.city_id,
         })
       );
-      result?.payload?.success && setEventByCity(result?.payload?.data);
+      if (result?.payload?.success) {
+        setEventByCity(result?.payload?.data);
+      }
       console.log("fetchEventForYouCityID result:", result);
     } catch (error) {
       console.warn("fetchEventForYouCityID error:", error);
@@ -85,53 +90,26 @@ const CityDetail = ({ route, navigation }) => {
   };
 
   const renderPopularItem = ({ item }) => (
-    <TouchableOpacity
+    <ForYouCard
+      item={item}
       onPress={() =>
         navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
           eventData: item,
         })
       }
-      style={styles.card}
-    >
-      <OptimizedImage
-        source={{ uri: item?.city_data?.cover_image_url }}
-        style={styles.image}
-        placeholder={
-          <ImagePlaceholder style={styles.image} text="Loading..." />
-        }
-        priority="high"
-      />
-      <View style={styles.overlay}>
-        <Text numberOfLines={2} style={styles.forYouTitle}>
-          {item.name}
-        </Text>
-      </View>
-    </TouchableOpacity>
+    />
   );
 
   /* For You card */
   const renderForYouItem = ({ item }) => (
-    <TouchableOpacity
+    <ForYouCard
+      item={item}
       onPress={() =>
         navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
           eventData: item,
         })
       }
-      activeOpacity={0.7}
-      style={styles.forYouCard}
-    >
-      <OptimizedImage
-        source={{ uri: item.image }}
-        style={styles.forYouImage}
-        placeholder={
-          <ImagePlaceholder style={styles.forYouImage} text="Loading..." />
-        }
-      />
-      <View style={styles.overlay}>
-        <Text style={styles.forYouTitle}>{item.name}</Text>
-        {/* <Text style={styles.forYouSubtitle}>{item.subtitle}</Text> */}
-      </View>
-    </TouchableOpacity>
+    />
   );
 
   return (
@@ -206,16 +184,19 @@ const CityDetail = ({ route, navigation }) => {
             {/* Popular */}
             <Text style={styles.sectionTitle}>Popular things to do</Text>
             <FlatList
-              horizontal
               data={popularThing}
               renderItem={renderPopularItem}
               keyExtractor={(it) => it.id}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.hListPad}
+              numColumns={2}
+              columnWrapperStyle={styles.row}
+              scrollEnabled={false}
+              contentContainerStyle={{ paddingHorizontal: getHoriPadding(16) }}
             />
 
             {/* Categories */}
-            <Text style={styles.sectionTitle}>Browse by Category</Text>
+            <Text style={[styles.sectionTitle, styles.categoryTitle]}>
+              Browse by Category
+            </Text>
             <FlatList
               horizontal
               data={categories}
@@ -328,98 +309,15 @@ const styles = StyleSheet.create({
     color: colors.black,
     paddingHorizontal: getHoriPadding(16),
   },
+  categoryTitle: {
+    marginTop: getVertiPadding(20), // Reduced gap for Browse by Category
+  },
   row: {
     justifyContent: "space-between",
     marginBottom: getVertiPadding(10),
   },
   hListPad: {
     paddingHorizontal: getHoriPadding(16),
-  },
-
-  /* Popular */
-  card: {
-    marginRight: getWidth(15),
-    borderRadius: getWidth(10),
-    overflow: "hidden",
-  },
-  image: {
-    width: getWidth(160),
-    height: getWidth(120),
-    borderRadius: getWidth(10),
-  },
-  popularPill: {
-    position: "absolute",
-
-    paddingVertical: getVertiPadding(6),
-    borderRadius: getRadius(30),
-    backgroundColor: "rgba(255,255,255,0.9)",
-    alignItems: "center",
-  },
-  popularTitle: {
-    fontSize: getFontSize(12),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.black,
-  },
-  popularSub: {
-    fontSize: getFontSize(11),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
-  },
-
-  /* Categories */
-  categoryCard: {
-    marginRight: getWidth(15),
-    borderRadius: getWidth(10),
-    overflow: "hidden",
-  },
-  cardOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: getVertiPadding(6),
-    backgroundColor: "rgba(0,0,0,0.35)",
-    alignItems: "flex-start",
-    paddingHorizontal: getHoriPadding(8),
-  },
-  cardTitle: {
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.white,
-  },
-
-  /* For You */
-  forYouCard: {
-    flex: 1,
-    marginBottom: getVertiPadding(15),
-    marginHorizontal: getWidth(5),
-    borderRadius: getWidth(12),
-    overflow: "hidden",
-  },
-  forYouImage: {
-    width: "100%",
-    height: getHeight(150),
-    borderRadius: getWidth(12),
-  },
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: getHoriPadding(10),
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderTopRightRadius: getRadius(20),
-    borderTopLeftRadius: getRadius(20),
-  },
-  forYouTitle: {
-    color: colors.white,
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoBold,
-  },
-  forYouSubtitle: {
-    color: colors.white,
-    fontSize: getFontSize(12),
-    fontFamily: fonts.RobotoRegular,
   },
 });
 

@@ -23,7 +23,7 @@ import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import { activityLikeUnlike } from "@api/services/mainServices";
 
-const ForYouCard = ({ item, onPress, onLikeChange }) => {
+const ForYouCard = ({ item, onPress }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [localIsLiked, setLocalIsLiked] = useState(item?.isLiked || false);
 
@@ -43,15 +43,11 @@ const ForYouCard = ({ item, onPress, onLikeChange }) => {
       setIsLoading(true);
       const response = await activityLikeUnlike({
         activity_id: item?.id || item?.activity_id,
+        is_liked: newLikeState,
       });
 
       // Handle success response
       console.log("Like/Unlike response:", response);
-
-      // Notify parent component about the change
-      if (onLikeChange) {
-        onLikeChange(item?.id || item?.activity_id, newLikeState);
-      }
     } catch (error) {
       console.error("Error liking/unliking activity:", error);
       // Revert the UI change if API call failed
@@ -65,7 +61,9 @@ const ForYouCard = ({ item, onPress, onLikeChange }) => {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
       <OptimizedImage
-        source={{ uri: item?.image }}
+        source={{
+          uri: item?.image || item?.city_data?.cover_image_url,
+        }}
         style={styles.image}
         placeholder={
           <ImagePlaceholder style={styles.image} text="Loading..." />
@@ -109,7 +107,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    height: getHeight(150),
+    height: getHeight(120), // More rectangular like popular cards
     borderRadius: getWidth(12),
   },
   overlay: {
