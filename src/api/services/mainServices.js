@@ -18,3 +18,5 @@ export const deleteTrip = (tripId) =>
   apiDelete(`${endpoints?.main?.deleteTrip}/${tripId}`);
 export const activityLikeUnlike = (data) =>
   apiPost(endpoints?.main?.activityLikeUnlike, data);
+export const getEventDetails = (data) =>
+  apiPost(endpoints?.main?.getEventDetails, data);

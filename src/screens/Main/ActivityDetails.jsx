@@ -17,6 +17,7 @@ import imagePath from "@assets/icons";
 import Accordion from "@components/Accordion";
 import navigationStrings from "@navigation/navigationStrings";
 import { activityLikeUnlike } from "@api/services/mainServices";
+import { showToast } from "@components/AppToast";
 const ACCORDION_DATA = [
   {
     id: "1",
@@ -64,6 +65,11 @@ const ActivityDetails = ({ navigation, route }) => {
         activity_id: eventData?.id || eventData?.activity_id,
         is_liked: !isLiked,
       });
+
+      // Update the like state only if API call is successful
+      if (response) {
+        setIsLiked(!isLiked);
+      }
     } catch (error) {
       console.error("Like/Unlike error:", error);
     } finally {
@@ -76,6 +82,7 @@ const ActivityDetails = ({ navigation, route }) => {
       <Text style={styles.content}>{item.content}</Text>
     </Accordion>
   );
+
   return (
     <ScreenWapper>
       {/* Header */}
@@ -111,13 +118,16 @@ const ActivityDetails = ({ navigation, route }) => {
             source={isLiked ? imagePath.LIKE_ICON : imagePath.UN_LIKE_ICON}
             style={[styles.likeIcon, isLoading && styles.likeIconDisabled]}
           />
+          {isLoading && (
+            <View style={styles.loadingOverlay}>
+              <Text style={styles.loadingText}>...</Text>
+            </View>
+          )}
         </TouchableOpacity>
         {/* Black strip with title & rating */}
         <View style={styles.blackStrip}>
           <Text numberOfLines={2} style={styles.title}>
-            {eventData?.name ||
-              eventData?.title ||
-              "Eiffel Tower Guided Tour by Elevator"}
+            {eventData?.name || eventData?.title}
           </Text>
           <Text style={styles.rating}>
             ★ {eventData?.rating || "4.4"} (
@@ -134,6 +144,7 @@ const ActivityDetails = ({ navigation, route }) => {
           showsVerticalScrollIndicator={false}
         />
       </View>
+
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <Text style={styles.priceText}>
@@ -174,6 +185,22 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   likeIconDisabled: { opacity: 0.5 },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  loadingText: {
+    color: colors.white,
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoMedium,
+  },
   blackStrip: {
     position: "absolute",
     bottom: 0,
