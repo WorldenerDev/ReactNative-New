@@ -23,4 +23,5 @@ export default {
   CREATE_TRIP: "CreateTrip",
   ADD_TO_TRIP: "AddToTrip",
   TRIP_DETAILS: "TripDetails",
+  EDIT_TRIP: "EditTrip",
 };

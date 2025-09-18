@@ -87,7 +87,7 @@ const TripDetails = ({ navigation, route }) => {
 
   const handleEditPress = () => {
     // Navigate to edit trip screen
-    console.log("Edit trip pressed");
+    navigation.navigate("EditTrip", { trip });
   };
 
   const handleViewGroup = () => {
