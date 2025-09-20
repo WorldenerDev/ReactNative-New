@@ -6,7 +6,9 @@ import {
   ScrollView,
   FlatList,
   Image,
+  Modal,
 } from "react-native";
+import { Calendar } from "react-native-calendars";
 import React, { useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
@@ -20,14 +22,15 @@ import { showToast } from "@components/AppToast";
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
   const [eventDate, setEventDate] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedTime, setSelectedTime] = useState({
     label: "09:30",
     value: "09:30",
   });
-  console.log("eventData", eventData);
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [ticketQuantities, setTicketQuantities] = useState({
     adult: 1,
     student: 9,
@@ -37,13 +40,13 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   // API call to get event dates
   const fetchEventDates = async () => {
     try {
+      setIsLoading(true);
       const requestData = {
-        //activityUuid: "d38cea83-02f6-47b3-abd6-5abbf812e27a",
         activityUuid: eventData?.activityUuid,
       };
       const response = await getEventDates(requestData);
-      console.log("📥 getEventDates API Response:", response);
       if (response?.data?.length > 0) {
+        setIsLoading(false);
         setEventDate(response?.data);
       } else {
         setEventDate([]);
@@ -51,6 +54,8 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error("❌ Error fetching event dates:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,9 +122,48 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     }));
   };
 
+  const handleCalendarToggle = () => {
+    setShowCalendar(!showCalendar);
+  };
+
+  const onDayPress = (day) => {
+    // Check if the selected date is available in the API data
+    const isAvailable = eventDate.some((event) => event.day === day.dateString);
+
+    if (isAvailable) {
+      setSelectedDate(day.dateString);
+      setShowCalendar(false);
+    } else {
+      showToast("error", "This date is not available for booking");
+    }
+  };
+
+  // Create marked dates for react-native-calendars
+  const getMarkedDates = () => {
+    const markedDates = {};
+
+    // Mark available dates
+    eventDate.forEach((event) => {
+      markedDates[event.day] = {
+        marked: true,
+        dotColor: colors.primary,
+        activeOpacity: 0.7,
+      };
+    });
+
+    // Mark selected date
+    if (selectedDate) {
+      markedDates[selectedDate] = {
+        ...markedDates[selectedDate],
+        selected: true,
+        selectedColor: colors.primary,
+      };
+    }
+
+    return markedDates;
+  };
+
   const handleSave = () => {
-    // Handle save logic here
-    console.log("Saving booking details...");
     navigation.goBack();
   };
 
@@ -147,7 +191,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const ItemSeparator = () => <View style={{ width: getWidth(2) }} />;
 
   return (
-    <MainContainer>
+    <MainContainer loader={isLoading}>
       <Header title={eventData?.activityName} />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -156,14 +200,25 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           <Text style={styles.dateSectionTitle}>Select a date</Text>
           <View style={styles.dateContainer}>
             <FlatList
-              data={eventDate}
+              data={eventDate.slice(0, 10)}
               renderItem={renderDateItem}
               keyExtractor={(item, index) => item.day || index.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.dateList}
               ItemSeparatorComponent={ItemSeparator}
+              scrollEnabled={true}
+              bounces={false}
             />
+            <TouchableOpacity
+              style={styles.calendarButton}
+              onPress={handleCalendarToggle}
+            >
+              <Image
+                source={imagePath.CALENDER_ICON}
+                style={styles.calendarIconImage}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -304,6 +359,45 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
+      {/* Calendar Modal */}
+      <Modal visible={showCalendar} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarContainer}>
+            <Calendar
+              onDayPress={onDayPress}
+              markedDates={getMarkedDates()}
+              theme={{
+                backgroundColor: colors.white,
+                calendarBackground: colors.white,
+                textSectionTitleColor: colors.black,
+                selectedDayBackgroundColor: colors.primary,
+                selectedDayTextColor: colors.white,
+                todayTextColor: colors.primary,
+                dayTextColor: colors.black,
+                textDisabledColor: colors.lightText,
+                dotColor: colors.primary,
+                selectedDotColor: colors.white,
+                arrowColor: colors.primary,
+                monthTextColor: colors.black,
+                indicatorColor: colors.primary,
+                textDayFontFamily: fonts.RobotoRegular,
+                textMonthFontFamily: fonts.RobotoBold,
+                textDayHeaderFontFamily: fonts.RobotoMedium,
+                textDayFontSize: getFontSize(14),
+                textMonthFontSize: getFontSize(16),
+                textDayHeaderFontSize: getFontSize(12),
+              }}
+            />
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setShowCalendar(false)}
+            >
+              <Text style={styles.closeText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Save Button */}
       <View style={styles.bottomContainer}>
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
@@ -338,12 +432,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    flex: 1,
   },
   dateList: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
     paddingHorizontal: getWidth(1),
+    paddingRight: getWidth(10),
   },
   dateItem: {
     paddingHorizontal: getWidth(6),
@@ -374,7 +469,12 @@ const styles = StyleSheet.create({
     color: "#4A90E2",
     fontWeight: "600",
   },
-  calendarIcon: {
+  calendarIconImage: {
+    width: getWidth(18),
+    height: getHeight(18),
+    tintColor: colors.black,
+  },
+  calendarButton: {
     width: getWidth(45),
     height: getHeight(45),
     backgroundColor: colors.white,
@@ -383,11 +483,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-  },
-  calendarIconImage: {
-    width: getWidth(18),
-    height: getHeight(18),
-    tintColor: colors.black,
+    marginLeft: getWidth(10),
   },
 
   // Option Section Styles
@@ -584,5 +680,32 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(16),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
+  },
+
+  // Calendar Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  calendarContainer: {
+    width: "90%",
+    borderRadius: getRadius(12),
+    backgroundColor: colors.white,
+    padding: getWidth(10),
+  },
+  closeBtn: {
+    marginTop: getHeight(10),
+    alignSelf: "flex-end",
+    paddingVertical: getHeight(6),
+    paddingHorizontal: getWidth(12),
+    backgroundColor: colors.primary,
+    borderRadius: getRadius(6),
+  },
+  closeText: {
+    color: colors.white,
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoMedium,
   },
 });
