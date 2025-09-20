@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ScrollView,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import ScreenWapper from "@components/container/ScreenWapper";
@@ -16,32 +17,38 @@ import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import Accordion from "@components/Accordion";
 import navigationStrings from "@navigation/navigationStrings";
-import { activityLikeUnlike } from "@api/services/mainServices";
+import {
+  activityLikeUnlike,
+  getEventDetails,
+} from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
-const ACCORDION_DATA = [
+import RadioCheckbox from "@components/RadioCheckbox";
+
+const pickuppoints = [
   {
-    id: "1",
-    title: "Highlights",
-    content:
-      "Discover Paris from its most iconic landmark! Skip the lines and ascend the world-famous Eiffel Tower with priority access. An expert guide shares fascinating stories about its history, engineering marvels, and cultural significance.",
-    defaultOpen: false,
+    id: 1, // Unique ID for each pickup point
+    name: "Main Street Hub", // Name of the pickup point
+    address: "123 Main Street, City, State", // Optional address
   },
   {
-    id: "2",
-    title: "Cancellation Policy",
-    content: "Free cancellation up to 24 hours before the activity starts.",
+    id: 2,
+    name: "Downtown Center",
+    address: "456 Downtown Ave, City, State",
   },
   {
-    id: "3",
-    title: "Operating Hours",
-    content: "Open daily: 9:30 AM – 11:00 PM. Last admission 10:00 PM.",
+    id: 3,
+    name: "Airport Pickup Point",
+    address: "Terminal 1, Airport Road, City",
   },
 ];
+
 const ActivityDetails = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  console.log("eventData", eventData);
+  const [selectedLocationId, setSelectedLocationId] = useState(null);
+  const [eventDetail, setEventDetail] = useState([]);
+  const [selectedPoint, setSelectedPoint] = useState(null);
 
   // Initialize like state from event data
   useEffect(() => {
@@ -49,6 +56,25 @@ const ActivityDetails = ({ navigation, route }) => {
       setIsLiked(eventData.isLiked);
     }
   }, [eventData]);
+
+  // Fetch event details (locations) when component mounts
+  useEffect(() => {
+    if (eventData?.id) {
+      fetchEventDetails();
+    }
+  }, [eventData]);
+
+  const fetchEventDetails = async () => {
+    try {
+      const response = await getEventDetails({
+        activityUuid: eventData?.id,
+      });
+      console.log("Event details response:", response?.data);
+      setEventDetail(response?.data);
+    } catch (error) {
+      console.error("Error fetching event details:", error);
+    }
+  };
 
   const handleCheckAvailability = () => {
     navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
@@ -76,12 +102,6 @@ const ActivityDetails = ({ navigation, route }) => {
       setIsLoading(false);
     }
   };
-
-  const renderAccordionItem = ({ item }) => (
-    <Accordion title={item.title} defaultOpen={item?.defaultOpen}>
-      <Text style={styles.content}>{item.content}</Text>
-    </Accordion>
-  );
 
   return (
     <ScreenWapper>
@@ -130,27 +150,120 @@ const ActivityDetails = ({ navigation, route }) => {
             {eventData?.name || eventData?.title}
           </Text>
           <Text style={styles.rating}>
-            ★ {eventData?.rating || "4.4"} (
-            {eventData?.review_count || "23,144"})
+            ★ {eventDetail?.reviews?.reviewsAvg || "0"} (
+            {eventDetail?.reviews?.reviewsNumber || "0"})
           </Text>
         </View>
       </View>
       {/* Body */}
-      <View style={styles.innerContainer}>
-        <FlatList
-          data={ACCORDION_DATA}
-          keyExtractor={(item) => item.id}
-          renderItem={renderAccordionItem}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+      <ScrollView style={styles.innerContainer}>
+        <View style={styles.container}>
+          {/* Free Cancellation */}
+          <View style={styles.featureRow}>
+            <Image source={imagePath.CHECK_ICON} style={styles.likeIcon} />
+            <Text style={styles.text}>Free Cancellation</Text>
+          </View>
+          {/* Languages */}
+          <View style={styles.featureRow}>
+            <Image source={imagePath.LANGUAGE_ICON} style={styles.likeIcon} />
+            <Text style={styles.text}>
+              {eventDetail?.tourDetails?.languagesAvailable
+                .map((lang) => lang.name)
+                .join(", ")}
+            </Text>
+          </View>
+          {/* Duration */}
+          <View style={styles.featureRow}>
+            <Image source={imagePath.DURATION_ICON} style={styles.likeIcon} />
+            <Text style={styles.text}>Duration: 1.5 hours</Text>
+          </View>
+
+          {/* Instant Confirmation */}
+          <View style={styles.featureRow}>
+            <Image source={imagePath.INSTANT_ICON} style={styles.likeIcon} />
+            <Text style={styles.text}>Instant Confirmation</Text>
+          </View>
+        </View>
+        <Accordion
+          title={"What makes this special"}
+          key={"What makes this special"}
+          defaultOpen={false}
+        >
+          {eventDetail?.generalInfo?.highlights &&
+          eventDetail.generalInfo.highlights.length > 0 ? (
+            eventDetail.generalInfo.highlights.map((item, index) => (
+              <Text key={index} style={styles.content}>
+                {"\u2022 "} {item}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.content}>No details available.</Text>
+          )}
+        </Accordion>
+        <Accordion
+          title={"Before you go"}
+          key={"Before you go"}
+          defaultOpen={false}
+        >
+          <Text style={styles.content}>
+            {eventDetail?.generalInfo?.aboutSummary[0] || ""}
+          </Text>
+        </Accordion>
+
+        <Accordion title={"Included"} key={"Included"} defaultOpen={false}>
+          {eventDetail?.inclusions?.included &&
+          eventDetail.inclusions.included.length > 0 ? (
+            eventDetail.inclusions.included.map((item, index) => (
+              <Text key={index} style={styles.content}>
+                {"\u2022 "} {item}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.content}>No inclusions available.</Text>
+          )}
+        </Accordion>
+
+        <Accordion
+          title={"Not Included"}
+          key={"Not Included"}
+          defaultOpen={false}
+        >
+          {eventDetail?.inclusions?.notIncluded &&
+          eventDetail.inclusions.notIncluded.length > 0 ? (
+            eventDetail.inclusions.notIncluded.map((item, index) => (
+              <Text key={index} style={styles.content}>
+                {"\u2022 "} {item}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.content}>No exclusions listed.</Text>
+          )}
+        </Accordion>
+
+        <Accordion title={"Where"} key={"Where"} defaultOpen={false}>
+          <View style={styles.listContainer}>
+            {eventDetail?.pickup_points?.length > 0 ? (
+              eventDetail?.pickup_points.map((point, index) => (
+                <RadioCheckbox
+                  key={index}
+                  label={point.name || point.address || "Unnamed Point"}
+                  selected={selectedPoint === point.id} // assumes each point has unique id
+                  onPress={() => setSelectedPoint(point.id)}
+                />
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Pickup not available</Text>
+            )}
+          </View>
+        </Accordion>
+      </ScrollView>
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <Text style={styles.priceText}>
           from{" "}
           <Text style={styles.price}>
-            ${eventData?.price || eventData?.starting_price || "89.99"}
+            {eventDetail?.pricing?.retailPrice?.formatted_value}
           </Text>
         </Text>
         <TouchableOpacity
@@ -221,13 +334,43 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: colors.white,
   },
-  innerContainer: { flex: 1, backgroundColor: colors.white, padding: 20 },
+  innerContainer: {
+    flex: 1,
+    backgroundColor: colors.white,
+    padding: 20,
+  },
+
   content: {
     fontSize: getFontSize(14),
     fontFamily: fonts.RobotoRegular,
     color: colors.darkGray,
     marginTop: 5,
     lineHeight: 20,
+  },
+  container: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderColor: colors.black,
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "48%", // two per row
+    marginBottom: 18,
+  },
+  icon: {
+    marginRight: 10,
+  },
+  text: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#222",
+    flexShrink: 1,
+    lineHeight: 18,
+    left: getWidth(10),
   },
   bottomBar: {
     flexDirection: "row",
@@ -259,5 +402,87 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(13),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
+  },
+  // Location Selection Styles
+  locationContainer: {
+    paddingVertical: getHeight(12),
+  },
+
+  locationHeading: {
+    fontSize: getFontSize(16),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
+    marginBottom: getHeight(10),
+  },
+  loadingContainer: {
+    paddingVertical: getHeight(20),
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.darkGray,
+  },
+  noDataContainer: {
+    paddingVertical: getHeight(20),
+    alignItems: "center",
+  },
+  noDataText: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.darkGray,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingVertical: getHeight(8),
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  lastLocationRow: {
+    borderBottomWidth: 0,
+  },
+  radioButtonContainer: {
+    marginRight: getWidth(12),
+    marginTop: getHeight(2),
+  },
+  radioButton: {
+    width: getWidth(18),
+    height: getWidth(18),
+    borderRadius: getWidth(9),
+    borderWidth: 2,
+    borderColor: "#CCCCCC",
+    backgroundColor: colors.white,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  listContainer: {
+    flexDirection: "column", // ensures vertical stacking
+  },
+  radioButtonSelected: {
+    borderColor: colors.black,
+    backgroundColor: colors.white,
+  },
+  radioButtonInner: {
+    width: getWidth(6),
+    height: getWidth(6),
+    borderRadius: getWidth(3),
+    backgroundColor: colors.black,
+  },
+  locationDetails: {
+    flex: 1,
+  },
+  locationName: {
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoRegular,
+    color: "#666666",
+    marginBottom: getHeight(1),
+    lineHeight: getHeight(16),
+  },
+  locationAddress: {
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoRegular,
+    color: "#666666",
+    lineHeight: getHeight(16),
   },
 });

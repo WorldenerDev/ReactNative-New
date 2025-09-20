@@ -28,6 +28,10 @@ const imagePath = {
   DELETE_ICON: require("./source/trash.png"),
   LIKE_ICON: require("./source/like.png"),
   UN_LIKE_ICON: require("./source/unlike.png"),
+  LANGUAGE_ICON: require("./source/language.png"),
+  DURATION_ICON: require("./source/duration.png"),
+  CHECK_ICON: require("./source/check.png"),
+  INSTANT_ICON: require("./source/lightning.png"),
 };
 
 export default imagePath;
