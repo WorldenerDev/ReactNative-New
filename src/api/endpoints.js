@@ -18,5 +18,6 @@ export const endpoints = {
     deleteTrip: "/deleteTrip",
     activityLikeUnlike: "/activity-like-unlike",
     getEventDetails: "/get-event-Details", // Using same endpoint as checkPickupPoints
+    getEventDates: "/get-event-dates",
   },
 };

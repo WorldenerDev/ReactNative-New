@@ -57,13 +57,18 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleCheckAvailability = () => {
+    const data = {
+      activityUuid: eventData?.id,
+      pickupPointId: selectedPoint,
+      activityName: eventData?.name,
+    };
     navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
-      eventData: eventData,
+      eventData: data,
     });
   };
 
   const handleLikeToggle = async () => {
-    if (isLoading) return; // Prevent multiple calls
+    if (isLoading) return;
 
     try {
       setIsLoading(true);

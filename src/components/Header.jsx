@@ -1,6 +1,11 @@
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
-import { getHeight, getRadius, getWidth } from "@utils/responsive";
+import {
+  getHeight,
+  getHoriPadding,
+  getRadius,
+  getWidth,
+} from "@utils/responsive";
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -20,13 +25,19 @@ const Header = ({
           onPress={() => navigation.goBack()}
           style={styles.iconBtn}
         >
-          <Image source={imagePath.BACK_ICON} style={styles.iconStyle} />
+          <Image
+            tintColor={colors.black}
+            source={imagePath.BACK_ICON}
+            style={styles.iconStyle}
+          />
         </TouchableOpacity>
       ) : (
         <View style={styles.iconBtnr} />
       )}
 
-      <Text style={styles.title}>{title}</Text>
+      <Text numberOfLines={1} style={styles.title}>
+        {title}
+      </Text>
 
       {rightIconImage ? (
         <TouchableOpacity
@@ -81,6 +92,7 @@ const styles = StyleSheet.create({
     fontSize: getHeight(18),
     fontWeight: "600",
     color: colors.black,
+    paddingHorizontal: getHoriPadding(10),
   },
   threeDotsText: {
     fontSize: getHeight(20),

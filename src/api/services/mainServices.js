@@ -20,3 +20,5 @@ export const activityLikeUnlike = (data) =>
   apiPost(endpoints?.main?.activityLikeUnlike, data);
 export const getEventDetails = (data) =>
   apiPost(endpoints?.main?.getEventDetails, data);
+export const getEventDates = (data) =>
+  apiPost(endpoints?.main?.getEventDates, data);

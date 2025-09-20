@@ -4,26 +4,29 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
+  FlatList,
   Image,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
+import { getEventDates } from "@api/services/mainServices";
+import { showToast } from "@components/AppToast";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
-
-  // State management
+  const [eventDate, setEventDate] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
   const [selectedTime, setSelectedTime] = useState({
     label: "09:30",
     value: "09:30",
   });
+  console.log("eventData", eventData);
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [ticketQuantities, setTicketQuantities] = useState({
     adult: 1,
@@ -31,55 +34,43 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     youth: 0,
   });
 
-  // Generate dates from current date
-  const generateDates = () => {
-    const dates = [];
-    const today = new Date();
-    const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    for (let i = 0; i < 4; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-
-      const day = date.getDate();
-      const month = monthNames[date.getMonth()];
-      const dayName = dayNames[date.getDay()];
-
-      const label = `${month} ${day}\n${dayName}`;
-      const value = `${month} ${day} ${dayName}`;
-
-      dates.push({
-        id: (i + 1).toString(),
-        label,
-        value,
-        date: new Date(date),
-      });
+  // API call to get event dates
+  const fetchEventDates = async () => {
+    try {
+      const requestData = {
+        //activityUuid: "d38cea83-02f6-47b3-abd6-5abbf812e27a",
+        activityUuid: eventData?.activityUuid,
+      };
+      const response = await getEventDates(requestData);
+      console.log("📥 getEventDates API Response:", response);
+      if (response?.data?.length > 0) {
+        setEventDate(response?.data);
+      } else {
+        setEventDate([]);
+        showToast("No dates found");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching event dates:", error);
     }
-
-    return dates;
   };
 
-  const dates = generateDates();
-
-  // Set initial selected date to today
-  React.useEffect(() => {
-    if (!selectedDate && dates.length > 0) {
-      setSelectedDate(dates[0].value);
+  useEffect(() => {
+    if (!selectedDate && eventDate.length > 0) {
+      setSelectedDate(eventDate[0].day);
     }
+  }, [eventDate]);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleString("en-US", { month: "short" });
+    const day = date.getDate();
+    const weekday = date.toLocaleString("en-US", { weekday: "short" });
+    return `${month} ${day} ${weekday}`;
+  };
+
+  // Call API to get event dates
+  useEffect(() => {
+    fetchEventDates();
   }, []);
 
   // Time options
@@ -132,55 +123,47 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const handleCalendarPress = () => {
-    // Handle calendar icon press - could open a full calendar modal
-    console.log("Calendar icon pressed - could open full calendar");
-    // You can implement a full calendar modal here if needed
-  };
+  // Render function for FlatList date items
+  const renderDateItem = ({ item }) => (
+    <TouchableOpacity
+      style={[
+        styles.dateItem,
+        selectedDate === item.day && styles.selectedDateItem,
+      ]}
+      onPress={() => handleDateSelect(item.day)}
+    >
+      <Text
+        style={[
+          styles.dateText,
+          selectedDate === item.day && styles.selectedDateText,
+        ]}
+      >
+        {formatDate(item.day)}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  // Separator component for FlatList
+  const ItemSeparator = () => <View style={{ width: getWidth(2) }} />;
 
   return (
     <MainContainer>
-      <Header title="Eiffel Tower Guided Tour by Elevator" />
+      <Header title={eventData?.activityName} />
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Date Selector */}
         <View style={styles.dateSection}>
           <Text style={styles.dateSectionTitle}>Select a date</Text>
           <View style={styles.dateContainer}>
-            <ScrollView
+            <FlatList
+              data={eventDate}
+              renderItem={renderDateItem}
+              keyExtractor={(item, index) => item.day || index.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.dateList}
-            >
-              {dates.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    styles.dateItem,
-                    selectedDate === item.value && styles.selectedDateItem,
-                  ]}
-                  onPress={() => handleDateSelect(item.value)}
-                >
-                  <Text
-                    style={[
-                      styles.dateText,
-                      selectedDate === item.value && styles.selectedDateText,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              style={styles.calendarIcon}
-              onPress={handleCalendarPress}
-            >
-              <Image
-                source={imagePath.CALENDER_ICON}
-                style={styles.calendarIconImage}
-              />
-            </TouchableOpacity>
+              ItemSeparatorComponent={ItemSeparator}
+            />
           </View>
         </View>
 
@@ -360,8 +343,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    justifyContent: "space-between",
-    marginRight: getWidth(10),
+    paddingHorizontal: getWidth(1),
   },
   dateItem: {
     paddingHorizontal: getWidth(6),
@@ -370,11 +352,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
-    flex: 1,
+    width: getWidth(60),
     alignItems: "center",
     justifyContent: "center",
     height: getHeight(45),
-    marginHorizontal: getWidth(1),
   },
   selectedDateItem: {
     backgroundColor: "#d9f0ff",
@@ -383,7 +364,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#4A90E2",
   },
   dateText: {
-    fontSize: getFontSize(11),
+    fontSize: getFontSize(12),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
     textAlign: "center",
