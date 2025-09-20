@@ -12,11 +12,15 @@ import { Calendar } from "react-native-calendars";
 import React, { useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
+import CustomDropdown from "@components/CustomDropdown";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
-import { getEventDates } from "@api/services/mainServices";
+import {
+  getEventDates,
+  getEventDatesDetails,
+} from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
@@ -29,7 +33,6 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     label: "09:30",
     value: "09:30",
   });
-  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [ticketQuantities, setTicketQuantities] = useState({
     adult: 1,
@@ -59,9 +62,32 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     }
   };
 
+  // API call to get event dates details
+  const fetchEventDatesDetails = async (selectedDate) => {
+    try {
+      setIsLoading(true);
+      const requestData = {
+        activityUuid: eventData?.activityUuid,
+        date: selectedDate,
+      };
+      console.log("📤 Calling getEventDatesDetails with data:", requestData);
+      const response = await getEventDatesDetails(requestData);
+      setIsLoading(false);
+      console.log("📥 getEventDatesDetails response:", response);
+      return response;
+    } catch (error) {
+      console.error("❌ Error fetching event dates details:", error);
+      showToast("error", "Failed to fetch event details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!selectedDate && eventDate.length > 0) {
       setSelectedDate(eventDate[0].day);
+      // Call the API with the first available date
+      fetchEventDatesDetails(eventDate[0].day);
     }
   }, [eventDate]);
 
@@ -95,15 +121,13 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     { id: "youth", label: "Youth (11-29)", price: 25, max: 10 },
   ];
 
-  // Option data
-  const options = [
-    { id: "1", title: "Option 1" },
-    { id: "2", title: "Option 2" },
-    { id: "3", title: "Option 3" },
-  ];
+  // Options for the radio buttons
+  const options = [{ id: "1", title: "Option 1" }];
 
-  const handleDateSelect = (date) => {
+  const handleDateSelect = async (date) => {
     setSelectedDate(date);
+    // Call the new API when a date is selected
+    await fetchEventDatesDetails(date);
   };
 
   const handleOptionSelect = (optionId) => {
@@ -112,7 +136,6 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
   const handleTimeSelect = (time) => {
     setSelectedTime(time);
-    setShowTimeDropdown(false);
   };
 
   const handleQuantityChange = (ticketId, change) => {
@@ -126,13 +149,15 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     setShowCalendar(!showCalendar);
   };
 
-  const onDayPress = (day) => {
+  const onDayPress = async (day) => {
     // Check if the selected date is available in the API data
     const isAvailable = eventDate.some((event) => event.day === day.dateString);
 
     if (isAvailable) {
       setSelectedDate(day.dateString);
       setShowCalendar(false);
+      // Call the new API when a date is selected from calendar
+      await fetchEventDatesDetails(day.dateString);
     } else {
       showToast("error", "This date is not available for booking");
     }
@@ -253,51 +278,18 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                 <View style={styles.expandedContent}>
                   {/* Time Selection */}
                   <View style={styles.timeSelectorContainer}>
-                    <TouchableOpacity
-                      style={styles.timeSelector}
-                      onPress={() => setShowTimeDropdown(!showTimeDropdown)}
-                    >
-                      <Image
-                        source={imagePath.CALENDER_ICON}
-                        style={styles.clockIcon}
-                      />
-                      <Text style={styles.timeText}>
-                        {selectedTime ? selectedTime.label : "09:30"}
-                      </Text>
-                      <Image
-                        source={imagePath.ARROW_DOWN_ICON}
-                        style={[
-                          styles.arrowIcon,
-                          showTimeDropdown && styles.arrowIconRotated,
-                        ]}
-                      />
-                    </TouchableOpacity>
-
-                    {showTimeDropdown && (
-                      <View style={styles.timeDropdown}>
-                        {timeOptions.map((time) => (
-                          <TouchableOpacity
-                            key={time.value}
-                            style={[
-                              styles.timeOption,
-                              selectedTime?.value === time.value &&
-                                styles.selectedTimeOption,
-                            ]}
-                            onPress={() => handleTimeSelect(time)}
-                          >
-                            <Text
-                              style={[
-                                styles.timeOptionText,
-                                selectedTime?.value === time.value &&
-                                  styles.selectedTimeOptionText,
-                              ]}
-                            >
-                              {time.label}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
+                    <CustomDropdown
+                      placeholder="Please select the time"
+                      options={timeOptions}
+                      selectedValue={selectedTime}
+                      onValueChange={handleTimeSelect}
+                      containerStyle={styles.timeDropdownContainer}
+                      dropdownWrapperStyle={styles.timeSelector}
+                      customIcon={imagePath.CALENDER_ICON}
+                      iconStyle={styles.clockIcon}
+                      textStyle={styles.timeText}
+                      arrowIconStyle={styles.arrowIcon}
+                    />
                   </View>
 
                   {/* Ticket Quantity Selectors */}
@@ -538,8 +530,11 @@ const styles = StyleSheet.create({
     paddingLeft: getWidth(32),
   },
   timeSelectorContainer: {
-    position: "relative",
     marginBottom: getHeight(15),
+  },
+  timeDropdownContainer: {
+    paddingVertical: 0,
+    top: 0,
   },
   timeSelector: {
     flexDirection: "row",
@@ -550,6 +545,8 @@ const styles = StyleSheet.create({
     borderRadius: getRadius(8),
     borderWidth: 1,
     borderColor: colors.border,
+    height: undefined,
+    minHeight: getHeight(40),
   },
   clockIcon: {
     width: getWidth(16),
@@ -567,43 +564,6 @@ const styles = StyleSheet.create({
     width: getWidth(12),
     height: getHeight(12),
     tintColor: colors.lightText,
-  },
-  arrowIconRotated: {
-    transform: [{ rotate: "180deg" }],
-  },
-  timeDropdown: {
-    position: "absolute",
-    top: getHeight(45),
-    left: 0,
-    right: 0,
-    backgroundColor: colors.white,
-    borderRadius: getRadius(8),
-    borderWidth: 1,
-    borderColor: colors.border,
-    zIndex: 1000,
-    elevation: 5,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  timeOption: {
-    paddingHorizontal: getWidth(12),
-    paddingVertical: getHeight(10),
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  selectedTimeOption: {
-    backgroundColor: "#f0f8ff",
-  },
-  timeOptionText: {
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.black,
-  },
-  selectedTimeOptionText: {
-    color: "#4A90E2",
-    fontFamily: fonts.RobotoMedium,
   },
 
   // Ticket Row Styles

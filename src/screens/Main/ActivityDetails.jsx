@@ -152,9 +152,12 @@ const ActivityDetails = ({ navigation, route }) => {
           <View style={styles.featureRow}>
             <Image source={imagePath.LANGUAGE_ICON} style={styles.likeIcon} />
             <Text style={styles.text}>
-              {eventDetail?.tourDetails?.languagesAvailable
-                .map((lang) => lang.name)
-                .join(", ")}
+              {eventDetail?.tourDetails?.languagesAvailable &&
+              eventDetail.tourDetails.languagesAvailable.length > 0
+                ? eventDetail.tourDetails.languagesAvailable
+                    .map((lang) => lang.name)
+                    .join(", ")
+                : "Language not available"}
             </Text>
           </View>
           {/* Duration */}

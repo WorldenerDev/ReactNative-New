@@ -22,3 +22,5 @@ export const getEventDetails = (data) =>
   apiPost(endpoints?.main?.getEventDetails, data);
 export const getEventDates = (data) =>
   apiPost(endpoints?.main?.getEventDates, data);
+export const getEventDatesDetails = (data) =>
+  apiPost(endpoints?.main?.getEventDatesDetails, data);
