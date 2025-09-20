@@ -3,7 +3,6 @@ import {
   Text,
   View,
   TouchableOpacity,
-  FlatList,
   Image,
   ScrollView,
 } from "react-native";
@@ -24,29 +23,10 @@ import {
 import { showToast } from "@components/AppToast";
 import RadioCheckbox from "@components/RadioCheckbox";
 
-const pickuppoints = [
-  {
-    id: 1, // Unique ID for each pickup point
-    name: "Main Street Hub", // Name of the pickup point
-    address: "123 Main Street, City, State", // Optional address
-  },
-  {
-    id: 2,
-    name: "Downtown Center",
-    address: "456 Downtown Ave, City, State",
-  },
-  {
-    id: 3,
-    name: "Airport Pickup Point",
-    address: "Terminal 1, Airport Road, City",
-  },
-];
-
 const ActivityDetails = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedLocationId, setSelectedLocationId] = useState(null);
   const [eventDetail, setEventDetail] = useState([]);
   const [selectedPoint, setSelectedPoint] = useState(null);
 
@@ -252,7 +232,7 @@ const ActivityDetails = ({ navigation, route }) => {
                 />
               ))
             ) : (
-              <Text style={styles.emptyText}>Pickup not available</Text>
+              <Text style={styles.content}>Pickup not available</Text>
             )}
           </View>
         </Accordion>
@@ -361,9 +341,6 @@ const styles = StyleSheet.create({
     width: "48%", // two per row
     marginBottom: 18,
   },
-  icon: {
-    marginRight: 10,
-  },
   text: {
     fontSize: 14,
     fontWeight: "500",
@@ -403,86 +380,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
   },
-  // Location Selection Styles
-  locationContainer: {
-    paddingVertical: getHeight(12),
-  },
-
-  locationHeading: {
-    fontSize: getFontSize(16),
-    fontFamily: fonts.RobotoBold,
-    color: colors.black,
-    marginBottom: getHeight(10),
-  },
-  loadingContainer: {
-    paddingVertical: getHeight(20),
-    alignItems: "center",
-  },
-  loadingText: {
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.darkGray,
-  },
-  noDataContainer: {
-    paddingVertical: getHeight(20),
-    alignItems: "center",
-  },
-  noDataText: {
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.darkGray,
-  },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingVertical: getHeight(8),
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  lastLocationRow: {
-    borderBottomWidth: 0,
-  },
-  radioButtonContainer: {
-    marginRight: getWidth(12),
-    marginTop: getHeight(2),
-  },
-  radioButton: {
-    width: getWidth(18),
-    height: getWidth(18),
-    borderRadius: getWidth(9),
-    borderWidth: 2,
-    borderColor: "#CCCCCC",
-    backgroundColor: colors.white,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   listContainer: {
     flexDirection: "column", // ensures vertical stacking
-  },
-  radioButtonSelected: {
-    borderColor: colors.black,
-    backgroundColor: colors.white,
-  },
-  radioButtonInner: {
-    width: getWidth(6),
-    height: getWidth(6),
-    borderRadius: getWidth(3),
-    backgroundColor: colors.black,
-  },
-  locationDetails: {
-    flex: 1,
-  },
-  locationName: {
-    fontSize: getFontSize(13),
-    fontFamily: fonts.RobotoRegular,
-    color: "#666666",
-    marginBottom: getHeight(1),
-    lineHeight: getHeight(16),
-  },
-  locationAddress: {
-    fontSize: getFontSize(13),
-    fontFamily: fonts.RobotoRegular,
-    color: "#666666",
-    lineHeight: getHeight(16),
   },
 });
