@@ -25,7 +25,12 @@ import { showToast } from "@components/AppToast";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
+  console.log(
+    "Event data in Activity details check availability screen ",
+    eventData
+  );
   const [eventDate, setEventDate] = useState([]);
+  const [dateDetails, setDateDetails] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -34,11 +39,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     value: "09:30",
   });
   const [showCalendar, setShowCalendar] = useState(false);
-  const [ticketQuantities, setTicketQuantities] = useState({
-    adult: 1,
-    student: 9,
-    youth: 0,
-  });
+  const [ticketQuantities, setTicketQuantities] = useState({});
 
   // API call to get event dates
   const fetchEventDates = async () => {
@@ -74,6 +75,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       const response = await getEventDatesDetails(requestData);
       setIsLoading(false);
       console.log("📥 getEventDatesDetails response:", response);
+      setDateDetails(response?.data?.groups || response?.groups);
       return response;
     } catch (error) {
       console.error("❌ Error fetching event dates details:", error);
@@ -104,25 +106,51 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     fetchEventDates();
   }, []);
 
-  // Time options
-  const timeOptions = [
-    { label: "09:30", value: "09:30" },
-    { label: "10:00", value: "10:00" },
-    { label: "10:30", value: "10:30" },
-    { label: "11:00", value: "11:00" },
-    { label: "11:30", value: "11:30" },
-    { label: "12:00", value: "12:00" },
-  ];
+  // Get time slots from selected group
+  const getTimeSlotsForSelectedGroup = () => {
+    if (!selectedOption || !dateDetails) return [];
+    const selectedGroup = dateDetails.find(
+      (group) => group.name === selectedOption
+    );
+    if (!selectedGroup || !selectedGroup.slots) return [];
 
-  // Ticket types
-  const ticketTypes = [
-    { id: "adult", label: "Adult (30-64)", price: 99, max: 10 },
-    { id: "student", label: "Student", price: 30, max: 10 },
-    { id: "youth", label: "Youth (11-29)", price: 25, max: 10 },
-  ];
+    return selectedGroup.slots.map((slot) => ({
+      label: slot.time,
+      value: slot.time,
+      slot: slot,
+    }));
+  };
 
-  // Options for the radio buttons
-  const options = [{ id: "1", title: "Option 1" }];
+  // Get products for selected time slot
+  const getProductsForSelectedTime = () => {
+    if (!selectedOption || !selectedTime || !dateDetails) return [];
+    const selectedGroup = dateDetails.find(
+      (group) => group.name === selectedOption
+    );
+    if (!selectedGroup || !selectedGroup.slots) return [];
+
+    const selectedSlot = selectedGroup.slots.find(
+      (slot) => slot.time === selectedTime.value
+    );
+    if (!selectedSlot || !selectedSlot.products) return [];
+
+    return selectedSlot.products.map((product) => ({
+      id: product.product_id,
+      name: product.name,
+      price: product.retail_price?.value || 0,
+      formatted_price:
+        product.retail_price?.formatted_value ||
+        `$${product.retail_price?.value || 0}`,
+      max: product.max_buy,
+      min: product.min_buy,
+    }));
+  };
+
+  // Time options from API
+  const timeOptions = getTimeSlotsForSelectedGroup();
+
+  // Products from API
+  const ticketTypes = getProductsForSelectedTime();
 
   const handleDateSelect = async (date) => {
     setSelectedDate(date);
@@ -130,8 +158,15 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     await fetchEventDatesDetails(date);
   };
 
-  const handleOptionSelect = (optionId) => {
-    setSelectedOption(optionId);
+  const handleOptionSelect = (optionName) => {
+    setSelectedOption(optionName);
+
+    // Reset time and quantities when group changes
+    setSelectedTime({
+      label: "09:30",
+      value: "09:30",
+    });
+    setTicketQuantities({});
   };
 
   const handleTimeSelect = (time) => {
@@ -139,10 +174,15 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   };
 
   const handleQuantityChange = (ticketId, change) => {
-    setTicketQuantities((prev) => ({
-      ...prev,
-      [ticketId]: Math.max(0, Math.min(10, prev[ticketId] + change)),
-    }));
+    setTicketQuantities((prev) => {
+      const currentQuantity = prev[ticketId] || 0;
+      const newQuantity = currentQuantity + change;
+
+      return {
+        ...prev,
+        [ticketId]: Math.max(0, newQuantity),
+      };
+    });
   };
 
   const handleCalendarToggle = () => {
@@ -188,7 +228,32 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     return markedDates;
   };
 
+  // Calculate total price using retail_price
+  const getTotalPrice = () => {
+    let total = 0;
+    ticketTypes.forEach((ticket) => {
+      const quantity = ticketQuantities[ticket.id] || 0;
+      total += ticket.price * quantity;
+    });
+    return total;
+  };
+
   const handleSave = () => {
+    // Collect selected data for booking
+    const selectedProducts = ticketTypes
+      .filter((ticket) => (ticketQuantities[ticket.id] || 0) > 0)
+      .map((ticket) => ({
+        product_id: ticket.id,
+        name: ticket.name,
+        quantity: ticketQuantities[ticket.id] || 0,
+        price: ticket.price,
+        total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
+        time: selectedTime?.value,
+      }));
+
+    console.log("Selected products for booking:", selectedProducts);
+    console.log("Total price:", getTotalPrice());
+
     navigation.goBack();
   };
 
@@ -251,35 +316,39 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         <View style={styles.optionSection}>
           <Text style={styles.sectionTitle}>Select your option</Text>
 
-          {options.map((option) => (
-            <View key={option.id} style={styles.optionContainer}>
+          {dateDetails?.map((option) => (
+            <View key={option?.name} style={styles.optionContainer}>
               <TouchableOpacity
                 style={styles.optionRow}
-                onPress={() => handleOptionSelect(option.id)}
+                onPress={() => handleOptionSelect(option.name)}
               >
                 <View style={styles.radioContainer}>
                   <View
                     style={[
                       styles.radioButton,
-                      selectedOption === option.id &&
+                      selectedOption === option?.name &&
                         styles.selectedRadioButton,
                     ]}
                   >
-                    {selectedOption === option.id && (
+                    {selectedOption === option?.name && (
                       <View style={styles.radioInner} />
                     )}
                   </View>
                 </View>
-                <Text style={styles.optionText}>{option.title}</Text>
+                <Text style={styles.optionText}>{option.name}</Text>
               </TouchableOpacity>
 
-              {/* Expanded content for Option 1 */}
-              {selectedOption === "1" && option.id === "1" && (
+              {/* Expanded content for selected option */}
+              {selectedOption === option?.name && (
                 <View style={styles.expandedContent}>
                   {/* Time Selection */}
                   <View style={styles.timeSelectorContainer}>
                     <CustomDropdown
-                      placeholder="Please select the time"
+                      placeholder={
+                        timeOptions.length > 0
+                          ? "Please select the time"
+                          : "No time slots available"
+                      }
                       options={timeOptions}
                       selectedValue={selectedTime}
                       onValueChange={handleTimeSelect}
@@ -296,23 +365,25 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                   {ticketTypes.map((ticket) => (
                     <View key={ticket.id} style={styles.ticketRow}>
                       <View style={styles.ticketInfo}>
-                        <Text style={styles.ticketLabel}>{ticket.label}</Text>
-                        <Text style={styles.ticketPrice}>${ticket.price}</Text>
+                        <Text style={styles.ticketLabel}>{ticket.name}</Text>
+                        <Text style={styles.ticketPrice}>
+                          {ticket.formatted_price}
+                        </Text>
                       </View>
                       <View style={styles.quantitySelector}>
                         <TouchableOpacity
                           style={[
                             styles.quantityButton,
-                            ticketQuantities[ticket.id] === 0 &&
+                            (ticketQuantities[ticket.id] || 0) === 0 &&
                               styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, -1)}
-                          disabled={ticketQuantities[ticket.id] === 0}
+                          disabled={(ticketQuantities[ticket.id] || 0) === 0}
                         >
                           <Text
                             style={[
                               styles.quantityButtonText,
-                              ticketQuantities[ticket.id] === 0 &&
+                              (ticketQuantities[ticket.id] || 0) === 0 &&
                                 styles.disabledButtonText,
                             ]}
                           >
@@ -320,22 +391,24 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                           </Text>
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>
-                          {ticketQuantities[ticket.id]}
+                          {ticketQuantities[ticket.id] || 0}
                         </Text>
                         <TouchableOpacity
                           style={[
                             styles.quantityButton,
-                            ticketQuantities[ticket.id] === ticket.max &&
+                            (ticketQuantities[ticket.id] || 0) === ticket.max &&
                               styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, 1)}
-                          disabled={ticketQuantities[ticket.id] === ticket.max}
+                          disabled={
+                            (ticketQuantities[ticket.id] || 0) === ticket.max
+                          }
                         >
                           <Text
                             style={[
                               styles.quantityButtonText,
-                              ticketQuantities[ticket.id] === ticket.max &&
-                                styles.disabledButtonText,
+                              (ticketQuantities[ticket.id] || 0) ===
+                                ticket.max && styles.disabledButtonText,
                             ]}
                           >
                             +

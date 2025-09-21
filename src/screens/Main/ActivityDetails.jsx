@@ -25,6 +25,10 @@ import RadioCheckbox from "@components/RadioCheckbox";
 
 const ActivityDetails = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
+  console.log(
+    "Event data in Activity detail screen before call api ",
+    eventData
+  );
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [eventDetail, setEventDetail] = useState([]);
@@ -61,6 +65,7 @@ const ActivityDetails = ({ navigation, route }) => {
       activityUuid: eventData?.id,
       pickupPointId: selectedPoint,
       activityName: eventData?.name,
+      cityId: eventData?.city_data?.id,
     };
     navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
       eventData: data,
