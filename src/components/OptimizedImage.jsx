@@ -1,68 +1,64 @@
 import React, { useState } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
-import FastImage from "react-native-fast-image";
-import colors from "@assets/colors";
+import { View, StyleSheet, Image } from "react-native";
+import { Blurhash } from "react-native-blurhash";
 
 const OptimizedImage = ({
   source,
   style,
-  placeholder = null,
-  resizeMode = FastImage.resizeMode.cover,
-  priority = FastImage.priority.normal,
-  cache = FastImage.cacheControl.immutable,
-  onLoadStart,
-  onLoadEnd,
-  onError,
-  showLoader = true,
-  loaderColor = colors.primary,
+  resizeMode = "cover",
+  blurhash = "LGFFaXYk^6#M@-5c,1J5@[or[Q6.", // Default blurhash
   ...props
 }) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  const handleLoadStart = () => {
-    setLoading(true);
-    setError(false);
-    onLoadStart?.();
-  };
-
-  const handleLoadEnd = () => {
-    setLoading(false);
-    onLoadEnd?.();
-  };
-
-  const handleError = () => {
-    setLoading(false);
-    setError(true);
-    onError?.();
-  };
-
-  // If there's an error, show placeholder or fallback
-  if (error && placeholder) {
-    return placeholder;
-  }
+  console.log("OptimizedImage render:", {
+    blurhash,
+    imageLoaded,
+    source,
+  });
 
   return (
     <View style={[style, styles.container]}>
-      <FastImage
-        source={{
-          uri: source?.uri,
-          priority,
-          cache,
-        }}
-        style={[style, styles.image]}
-        resizeMode={resizeMode}
-        onLoadStart={handleLoadStart}
-        onLoadEnd={handleLoadEnd}
-        onError={handleError}
-        {...props}
-      />
-
-      {loading && showLoader && (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="small" color={loaderColor} />
+      {/* Show blurhash while image is loading */}
+      {blurhash && !imageLoaded && (
+        <View style={styles.blurhash}>
+          <Blurhash
+            blurhash={blurhash}
+            style={styles.blurhashInner}
+            resizeMode={resizeMode}
+            decodeWidth={16}
+            decodeHeight={16}
+            decodeAsync={false}
+            onLoadStart={() => {
+              console.log("Blurhash started loading");
+            }}
+            onLoadEnd={() => {
+              console.log("Blurhash loaded successfully");
+            }}
+            onLoadError={(error) => {
+              console.log("Blurhash error:", error);
+            }}
+          />
         </View>
       )}
+
+      {/* Main image */}
+      <Image
+        source={source}
+        style={[styles.image, !imageLoaded && blurhash && styles.hiddenImage]}
+        resizeMode={resizeMode}
+        onLoadStart={() => {
+          console.log("Image started loading");
+        }}
+        onLoadEnd={() => {
+          console.log("Image loaded, showing image and hiding blurhash");
+          setImageLoaded(true);
+        }}
+        onError={(error) => {
+          console.log("Image error:", error);
+        }}
+        {...props}
+      />
     </View>
   );
 };
@@ -75,15 +71,22 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  loaderContainer: {
+  blurhash: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.1)",
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#f0f0f0", // Fallback background
+  },
+  blurhashInner: {
+    width: "100%",
+    height: "100%",
+  },
+  hiddenImage: {
+    opacity: 0,
   },
 });
 

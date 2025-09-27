@@ -151,10 +151,6 @@ const TripDetails = ({ navigation, route }) => {
               source={{ uri: tripData.image }}
               style={styles.cardImage}
               resizeMode="cover"
-              priority="high"
-              cache="immutable"
-              showLoader={true}
-              loaderColor={colors.primary}
             />
           </View>
 

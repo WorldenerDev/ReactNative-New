@@ -111,7 +111,6 @@ const ActivityDetails = ({ navigation, route }) => {
               text="Loading activity image..."
             />
           }
-          priority="high"
         />
         <TouchableOpacity
           style={styles.backBtn}

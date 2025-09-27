@@ -22,10 +22,6 @@ const TripCard = ({
         source={{ uri: image }}
         style={styles.cardImage}
         resizeMode="cover"
-        priority="high"
-        cache="immutable"
-        showLoader={true}
-        loaderColor={colors.primary}
       />
 
       <View style={styles.cardContent}>

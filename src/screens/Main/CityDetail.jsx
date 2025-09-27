@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import OptimizedImage from "@components/OptimizedImage";
 import ImagePlaceholder from "@components/ImagePlaceholder";
-import { preloadScreenImages } from "@utils/imagePreloader";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import {
@@ -46,14 +45,6 @@ const CityDetail = ({ route, navigation }) => {
     PopularEvents();
     getEvent_by_city();
   }, [route]);
-
-  // Preload images when data changes
-  useEffect(() => {
-    if (popularThing.length > 0 || eventByCity.length > 0) {
-      const allData = [...popularThing, ...eventByCity];
-      preloadScreenImages(allData, ["cover_image_url", "image"]);
-    }
-  }, [popularThing, eventByCity]);
 
   const PopularEvents = async () => {
     try {
@@ -132,7 +123,6 @@ const CityDetail = ({ route, navigation }) => {
                     text="Loading city image..."
                   />
                 }
-                priority="high"
               />
 
               <TouchableOpacity

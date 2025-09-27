@@ -1,6 +1,8 @@
 // components/CategoryCard.js
 import React from "react";
-import { TouchableOpacity, Image, View, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
+import OptimizedImage from "@components/OptimizedImage";
+import ImagePlaceholder from "@components/ImagePlaceholder";
 import {
   getWidth,
   getFontSize,
@@ -12,7 +14,11 @@ import fonts from "@assets/fonts";
 
 const CategoryCard = ({ item, onPress }) => (
   <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
-    <Image source={{ uri: item?.cover_image_url }} style={styles.image} />
+    <OptimizedImage
+      source={{ uri: item?.cover_image_url }}
+      style={styles.image}
+      placeholder={<ImagePlaceholder style={styles.image} text="Loading..." />}
+    />
     <View style={styles.cardOverlay}>
       <Text numberOfLines={2} style={styles.cardTitle}>
         {item?.name}

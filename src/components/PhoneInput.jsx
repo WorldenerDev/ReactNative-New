@@ -35,6 +35,7 @@ const countryCodes = [
   { code: "+52", country: "MX", flag: "🇲🇽" },
   { code: "+82", country: "KR", flag: "🇰🇷" },
   { code: "+31", country: "NL", flag: "🇳🇱" },
+  { code: "+41", country: "CH", flag: "🇨🇭" },
 ];
 
 const PhoneInput = ({
