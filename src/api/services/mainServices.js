@@ -24,3 +24,5 @@ export const getEventDates = (data) =>
   apiPost(endpoints?.main?.getEventDates, data);
 export const getEventDatesDetails = (data) =>
   apiPost(endpoints?.main?.getEventDatesDetails, data);
+export const addEventInTrip = (data) =>
+  apiPost(endpoints?.main?.addEventInTrip, data);

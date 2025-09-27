@@ -20,15 +20,16 @@ import imagePath from "@assets/icons";
 import {
   getEventDates,
   getEventDatesDetails,
+  addEventInTrip,
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
-  console.log(
-    "Event data in Activity details check availability screen ",
-    eventData
-  );
+  // console.log(
+  //   "Event data in Activity details check availability screen ",
+  //   eventData
+  // );
   const [eventDate, setEventDate] = useState([]);
   const [dateDetails, setDateDetails] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -71,10 +72,10 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         activityUuid: eventData?.activityUuid,
         date: selectedDate,
       };
-      console.log("📤 Calling getEventDatesDetails with data:", requestData);
+      console.log(" Calling getEventDatesDetails with data:", requestData);
       const response = await getEventDatesDetails(requestData);
       setIsLoading(false);
-      console.log("📥 getEventDatesDetails response:", response);
+      console.log(" getEventDatesDetails response:", response);
       setDateDetails(response?.data?.groups || response?.groups);
       return response;
     } catch (error) {
@@ -238,23 +239,51 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     return total;
   };
 
-  const handleSave = () => {
-    // Collect selected data for booking
-    const selectedProducts = ticketTypes
-      .filter((ticket) => (ticketQuantities[ticket.id] || 0) > 0)
-      .map((ticket) => ({
-        product_id: ticket.id,
-        name: ticket.name,
-        quantity: ticketQuantities[ticket.id] || 0,
-        price: ticket.price,
-        total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
-        time: selectedTime?.value,
-      }));
+  const handleSave = async () => {
+    try {
+      // Collect selected data for booking
+      const selectedProducts = ticketTypes
+        .filter((ticket) => (ticketQuantities[ticket.id] || 0) > 0)
+        .map((ticket) => ({
+          product_id: ticket.id,
+          product_name: ticket.name,
+          type: ticket?.type || "musement", // Based on the API example
+          quantity: ticketQuantities[ticket.id] || 0,
+          retail_price: ticket.price,
+          total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
+        }));
 
-    console.log("Selected products for booking:", selectedProducts);
-    console.log("Total price:", getTotalPrice());
+      // Check if any products are selected
+      if (selectedProducts.length === 0) {
+        showToast("error", "Please select at least one ticket");
+        return;
+      }
 
-    navigation.goBack();
+      // Check if required fields are present
+      if (!selectedDate || !selectedOption || !selectedTime) {
+        showToast("error", "Please complete all selections");
+        return;
+      }
+
+      // Prepare API request data
+      const requestData = {
+        city_id: String(eventData?.cityId || ""), // Ensure city_id is a string
+        event_id: eventData?.activityUuid,
+        start_date: selectedDate,
+        products: selectedProducts,
+      };
+      setIsLoading(true);
+      const response = await addEventInTrip(requestData);
+      console.log("📥 addEventInTrip response:", response);
+
+      showToast("success", response?.message);
+      navigation.navigate("TripDetails", { trip: response?.data });
+    } catch (error) {
+      console.error("❌ Error adding event to trip:", error);
+      showToast("error", error?.message || "Failed to add event to trip");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Render function for FlatList date items
@@ -465,8 +494,14 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
       {/* Save Button */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, isLoading && styles.disabledSaveButton]}
+          onPress={handleSave}
+          disabled={isLoading}
+        >
+          <Text style={styles.saveButtonText}>
+            {isLoading ? "Adding to Trip..." : "Add to Trip"}
+          </Text>
         </TouchableOpacity>
       </View>
     </MainContainer>
@@ -713,6 +748,10 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(16),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
+  },
+  disabledSaveButton: {
+    backgroundColor: colors.border,
+    opacity: 0.6,
   },
 
   // Calendar Modal Styles

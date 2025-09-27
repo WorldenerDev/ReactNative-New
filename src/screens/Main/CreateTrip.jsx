@@ -67,12 +67,10 @@ const CreateTrip = ({ navigation, route }) => {
 
       // Call the API
       const response = await createTrip(tripData);
-
-      console.log("Trip created successfully:", response);
       showToast("success", "Trip created successfully!");
-
-      // Navigate back to trips screen or home
-      //navigation.goBack();
+      navigation.navigate(navigationStrings.TRIP_DETAILS, {
+        trip: response?.data?._id,
+      });
     } catch (error) {
       console.error("Error creating trip:", error);
       showToast("error", error?.message || "Failed to create trip");
@@ -98,14 +96,36 @@ const CreateTrip = ({ navigation, route }) => {
   };
 
   const openCalendar = (field) => {
+    // Check if trying to select "to" date without selecting "from" date first
+    if (field === "to" && !fromDate) {
+      showToast("error", "Please select a start date first");
+      return;
+    }
+
     setActiveField(field);
     setShowCalendar(true);
   };
 
   const onDayPress = (day) => {
+    const today = new Date().toISOString().split("T")[0];
+
     if (activeField === "from") {
+      // Prevent selection of dates before today for from field
+      if (day.dateString < today) {
+        showToast("error", "Cannot select a date before today");
+        return;
+      }
       setFromDate(day.dateString);
+      // Clear to date if it's before the new from date
+      if (toDate && day.dateString > toDate) {
+        setToDate("");
+      }
     } else if (activeField === "to") {
+      // Prevent selection of dates before from date for to field
+      if (day.dateString < fromDate) {
+        showToast("error", "End date cannot be before start date");
+        return;
+      }
       setToDate(day.dateString);
     }
     setShowCalendar(false);
@@ -191,6 +211,13 @@ const CreateTrip = ({ navigation, route }) => {
           <View style={styles.calendarContainer}>
             <Calendar
               onDayPress={onDayPress}
+              minDate={
+                activeField === "from"
+                  ? new Date().toISOString().split("T")[0]
+                  : activeField === "to" && fromDate
+                  ? fromDate
+                  : undefined
+              }
               markedDates={{
                 [fromDate]: { selected: true, selectedColor: "#2E86DE" },
                 [toDate]: { selected: true, selectedColor: "#20BF6B" },

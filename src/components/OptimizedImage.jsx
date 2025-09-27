@@ -10,13 +10,6 @@ const OptimizedImage = ({
   ...props
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-
-  console.log("OptimizedImage render:", {
-    blurhash,
-    imageLoaded,
-    source,
-  });
-
   return (
     <View style={[style, styles.container]}>
       {/* Show blurhash while image is loading */}
@@ -30,13 +23,13 @@ const OptimizedImage = ({
             decodeHeight={16}
             decodeAsync={false}
             onLoadStart={() => {
-              console.log("Blurhash started loading");
+              //  console.log("Blurhash started loading");
             }}
             onLoadEnd={() => {
-              console.log("Blurhash loaded successfully");
+              //console.log("Blurhash loaded successfully");
             }}
             onLoadError={(error) => {
-              console.log("Blurhash error:", error);
+              //console.log("Blurhash error:", error);
             }}
           />
         </View>
@@ -48,14 +41,14 @@ const OptimizedImage = ({
         style={[styles.image, !imageLoaded && blurhash && styles.hiddenImage]}
         resizeMode={resizeMode}
         onLoadStart={() => {
-          console.log("Image started loading");
+          //console.log("Image started loading");
         }}
         onLoadEnd={() => {
-          console.log("Image loaded, showing image and hiding blurhash");
+          //console.log("Image loaded, showing image and hiding blurhash");
           setImageLoaded(true);
         }}
         onError={(error) => {
-          console.log("Image error:", error);
+          //console.log("Image error:", error);
         }}
         {...props}
       />

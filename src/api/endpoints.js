@@ -20,5 +20,6 @@ export const endpoints = {
     getEventDetails: "/get-event-Details", // Using same endpoint as checkPickupPoints
     getEventDates: "/get-event-dates",
     getEventDatesDetails: "/get-event-dates-details",
+    addEventInTrip: "/addEventInTrip",
   },
 };
