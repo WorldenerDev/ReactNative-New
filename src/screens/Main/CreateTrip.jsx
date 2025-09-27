@@ -69,7 +69,7 @@ const CreateTrip = ({ navigation, route }) => {
       const response = await createTrip(tripData);
       showToast("success", "Trip created successfully!");
       navigation.navigate(navigationStrings.TRIP_DETAILS, {
-        trip: response?.data?._id,
+        tripId: response?.data?._id,
       });
     } catch (error) {
       console.error("Error creating trip:", error);

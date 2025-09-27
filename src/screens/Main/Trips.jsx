@@ -18,19 +18,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchUserTrip, deleteUserTrip } from "@redux/slices/cityTripSlice";
 
 const Trips = ({ navigation }) => {
-  const { trip, loading } = useSelector((state) => state.cityTrip);
+  const { trip } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
-  const [trips, setTrips] = useState([]);
   const [deleteLoading, setDeleteLoading] = useState(false);
-
+  console.log("trip", trip);
   useEffect(() => {
     getAllTrips();
   }, [dispatch]);
-
-  useEffect(() => {
-    setTrips(trip);
-  }, [trip]);
 
   const getAllTrips = async () => {
     try {
@@ -55,29 +50,6 @@ const Trips = ({ navigation }) => {
     navigation.navigate(navigationStrings.CREATE_TRIP);
   };
 
-  const handleClearAllTrips = () => {
-    Alert.alert(
-      "Clear All Trips",
-      "Are you sure you want to clear all trips?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear All",
-          style: "destructive",
-          onPress: () => setTrips([]),
-        },
-      ]
-    );
-  };
-
-  const handleItinerary = (tripId) => {
-    Alert.alert("Itinerary", `View itinerary for trip ${tripId}`);
-  };
-
-  const handleGroup = (tripId) => {
-    Alert.alert("Group", `View group for trip ${tripId}`);
-  };
-
   const handleDelete = (tripId) => {
     Alert.alert("Delete Trip", "Are you sure you want to delete this trip?", [
       { text: "Cancel", style: "cancel" },
@@ -88,11 +60,7 @@ const Trips = ({ navigation }) => {
           setDeleteLoading(true);
           try {
             await dispatch(deleteUserTrip(tripId));
-            console.log("Trip deleted successfully");
-            // Remove the trip from local state
-            setTrips(trips.filter((trip) => trip._id !== tripId));
           } catch (error) {
-            console.error("Failed to delete trip: ", error);
             Alert.alert("Error", "Failed to delete trip. Please try again.");
           } finally {
             setDeleteLoading(false);
@@ -112,7 +80,7 @@ const Trips = ({ navigation }) => {
       />
 
       <FlatList
-        data={trips}
+        data={trip}
         renderItem={({ item }) => (
           <TripCard
             image={item?.city?.image}
@@ -120,15 +88,15 @@ const Trips = ({ navigation }) => {
             startDate={item?.start_at.slice(0, 10)}
             endDate={item?.end_at.slice(0, 10)}
             onItineraryPress={() =>
-              navigation.navigate(navigationStrings.ITINERARY, {
-                trip: item,
+              navigation.navigate(navigationStrings.TRIP_DETAILS, {
+                tripId: item?._id,
               })
             }
-            onGroupPress={() => handleGroup(item._id)}
+            onGroupPress={() => {}}
             onDeletePress={() => handleDelete(item._id)}
             onPressCard={() =>
               navigation.navigate(navigationStrings.TRIP_DETAILS, {
-                trip: item,
+                tripId: item?._id,
               })
             }
           />
@@ -164,11 +132,7 @@ const Trips = ({ navigation }) => {
 export default Trips;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   flatListContent: {
-    // paddingHorizontal: getWidth(8),
     paddingTop: getHeight(16),
     paddingBottom: getHeight(20),
   },

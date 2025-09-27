@@ -2,12 +2,11 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   TouchableOpacity,
   Image,
   FlatList,
 } from "react-native";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import ButtonComp from "@components/ButtonComp";
@@ -21,113 +20,121 @@ import {
   getVertiPadding,
 } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
+import { getTripDetails } from "@api/services/mainServices";
 
 const TripDetails = ({ navigation, route }) => {
-  const { trip } = route?.params || {};
+  const { trip, tripId } = route?.params || {};
+  const [tripData, setTripData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data for demonstration - replace with actual trip data
-  const tripData = {
-    image:
-      trip?.city?.image ||
-      "https://images.unsplash.com/photo-1513639766991-4c7b0b0b0b0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-    destination: trip?.city?.name || "Tokyo, Japan",
-    status: "Planning",
-    startDate: trip?.start_at?.slice(0, 10) || "Dec 15, 2024",
-    endDate: trip?.end_at?.slice(0, 10) || "Jan 20, 2025",
-    participants: 10,
-    activities: 8,
-    budget: 1230,
-    participantsList: [
-      {
-        id: 1,
-        avatar:
-          "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&w=150&q=80",
-      },
-      {
-        id: 2,
-        avatar:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&w=150&q=80",
-      },
-      {
-        id: 3,
-        avatar:
-          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&w=150&q=80",
-      },
-    ],
-    activitiesData: [
-      {
-        id: 1,
-        title: "Tokyo Tower Visit",
-        date: "15 Dec 2024",
-        price: 129,
-        image:
-          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
-        time: "Dec 16",
-      },
-      {
-        id: 2,
-        title: "Tokyo Tower Visit",
-        date: "15 Dec 2024",
-        price: 129,
-        image:
-          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
-        time: "Dec 16",
-      },
-      {
-        id: 3,
-        title: "Tokyo Tower Visit",
-        date: "19 Dec 2024",
-        price: 129,
-        image:
-          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
-        time: "Dec 16",
-      },
-    ],
+  // Get trip ID from route params or trip object
+  const currentTripId = tripId || trip?.id || trip?._id;
+
+  useEffect(() => {
+    if (currentTripId) {
+      fetchTripDetails();
+    } else {
+      setError("Trip ID not found");
+      setLoading(false);
+    }
+  }, [currentTripId]);
+
+  useEffect(() => {
+    if (error) {
+      navigation.goBack();
+    }
+  }, [error, navigation]);
+
+  const fetchTripDetails = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getTripDetails(currentTripId);
+      if (response?.success) {
+        setTripData(response?.data);
+      } else {
+        setError(response?.message || "Failed to fetch trip details");
+      }
+    } catch (err) {
+      console.error("Error fetching trip details:", err);
+      setError(err?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditPress = () => {
-    // Navigate to edit trip screen
     navigation.navigate("EditTrip", { trip });
   };
 
   const handleViewGroup = () => {
-    // Navigate to group details
-    console.log("View group pressed");
+    // TODO: Navigate to group details
   };
 
   const handleInviteParticipants = () => {
-    // Navigate to invite participants screen
-    console.log("Invite participants pressed");
-  };
-
-  const handleActivitiesPress = () => {
-    // Navigate to activities list
-    console.log("Activities pressed");
-  };
-
-  const handleBudgetPress = () => {
-    // Navigate to budget details
-    console.log("Budget pressed");
+    // TODO: Navigate to invite participants screen
   };
 
   const handleActivityPress = (activity) => {
-    // Navigate to activity details
-    console.log("Activity pressed:", activity);
+    // TODO: Navigate to activity details
   };
 
   const handleCheckout = () => {
-    // Navigate to checkout screen
-    console.log("Checkout pressed");
+    // TODO: Navigate to checkout screen
+  };
+
+  // Format date for group headers (e.g., "15 Dec 2024")
+  const formatGroupDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleDateString("en-US", { month: "short" });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
+  // Format date for activity cards (e.g., "Dec 16")
+  const formatActivityDate = (dateString) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleDateString("en-US", { month: "short" });
+    const day = date.getDate();
+    return `${month} ${day}`;
   };
 
   // Group activities by date
   const groupActivitiesByDate = () => {
+    if (!tripData?.activitiesData && !tripData?.activities) return {};
+
+    // Handle different possible data structures
+    const activities = tripData?.activitiesData || tripData?.activities || [];
+
+    if (!Array.isArray(activities)) return {};
+
     const grouped = {};
-    tripData.activitiesData.forEach((activity) => {
-      if (!grouped[activity.date]) {
-        grouped[activity.date] = [];
+    const seenIds = new Set(); // Track unique activity IDs
+
+    activities.forEach((activity, index) => {
+      // Create a unique ID for this activity
+      const activityId =
+        activity.id || activity._id || activity.product_id || `temp-${index}`;
+
+      // Skip if we've already seen this activity
+      if (seenIds.has(activityId)) {
+        return;
       }
-      grouped[activity.date].push(activity);
+      seenIds.add(activityId);
+
+      // Handle different date field names
+      const activityDate =
+        activity.date ||
+        activity.created_at ||
+        activity.start_date ||
+        "Unknown Date";
+
+      if (!grouped[activityDate]) {
+        grouped[activityDate] = [];
+      }
+      grouped[activityDate].push(activity);
     });
     return grouped;
   };
@@ -136,7 +143,7 @@ const TripDetails = ({ navigation, route }) => {
   const activityDates = Object.keys(groupedActivities);
 
   return (
-    <MainContainer>
+    <MainContainer loader={loading}>
       <Header
         title="Trip Details"
         rightIconImage={imagePath.THREE_DOTS_ICON}
@@ -144,178 +151,267 @@ const TripDetails = ({ navigation, route }) => {
         showBack={true}
       />
       <View style={styles.contentContainer}>
-        <View style={styles.tripCard}>
-          {/* Hero Image */}
-          <View style={styles.imageContainer}>
-            <OptimizedImage
-              source={{ uri: tripData.image }}
-              style={styles.cardImage}
-              resizeMode="cover"
-            />
-          </View>
-
-          {/* Card Content */}
-          <View style={styles.cardContent}>
-            {/* Destination and Status Row */}
-            <View style={styles.destinationRow}>
-              <View style={styles.destinationInfo}>
-                <Image source={imagePath.PIN_ICON} style={styles.pinIcon} />
-                <Text style={styles.destinationText}>
-                  {tripData.destination}
-                </Text>
+        {tripData && (
+          <>
+            <View style={styles.tripCard}>
+              {/* Hero Image */}
+              <View style={styles.imageContainer}>
+                <OptimizedImage
+                  source={{
+                    uri:
+                      tripData?.image ||
+                      tripData?.city?.image ||
+                      "https://images.unsplash.com/photo-1513639766991-4c7b0b0b0b0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+                  }}
+                  style={styles.cardImage}
+                  resizeMode="cover"
+                />
               </View>
-              <View style={styles.statusContainer}>
-                <View style={styles.statusIndicator} />
-                <Text style={styles.statusText}>{tripData.status}</Text>
-              </View>
-            </View>
 
-            {/* Dates */}
-            <View style={styles.datesContainer}>
-              <Image
-                source={imagePath.CALENDER_ICON}
-                style={styles.calendarIcon}
-              />
-              <Text style={styles.datesText}>
-                {tripData.startDate} - {tripData.endDate}
-              </Text>
-            </View>
-
-            {/* Participants Section */}
-            <View style={styles.participantsSection}>
-              {tripData.participants > 0 ? (
-                // Show participants info and View Group button when participants are available
-                <>
-                  <View style={styles.participantsInfo}>
-                    <View style={styles.avatarContainer}>
-                      {tripData.participantsList.map((participant, index) => (
-                        <View
-                          key={participant.id}
-                          style={[
-                            styles.avatar,
-                            {
-                              zIndex: tripData.participantsList.length - index,
-                            },
-                          ]}
-                        >
-                          <OptimizedImage
-                            source={{ uri: participant.avatar }}
-                            style={styles.avatarImage}
-                            resizeMode="cover"
-                          />
-                        </View>
-                      ))}
-                      {tripData.participants > 3 && (
-                        <View style={styles.avatar}>
-                          <Text style={styles.avatarText}>
-                            +{tripData.participants - 3}
-                          </Text>
-                        </View>
+              {/* Card Content */}
+              <View style={styles.cardContent}>
+                {/* Destination and Status Row */}
+                <View style={styles.destinationRow}>
+                  <View style={styles.destinationInfo}>
+                    <Image
+                      source={imagePath.LOCATION_PIN}
+                      style={styles.pinIcon}
+                    />
+                    <Text style={styles.destinationText}>
+                      {String(
+                        tripData?.destination ||
+                          tripData?.city?.name ||
+                          "Unknown Destination"
                       )}
-                    </View>
-                    <Text style={styles.participantsCount}>
-                      {tripData.participants} people
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.viewGroupButton}
-                    onPress={handleViewGroup}
-                  >
-                    <Text style={styles.viewGroupText}>View Group</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                // Show Invite Participants button when no participants
-                <TouchableOpacity
-                  style={styles.inviteButton}
-                  onPress={handleInviteParticipants}
-                >
-                  <Text style={styles.inviteButtonText}>
-                    Invite Participants
+                  <View style={styles.statusContainer}>
+                    <View style={styles.statusIndicator} />
+                    <Text style={styles.statusText}>
+                      {String(tripData?.status || "Planning")}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Dates */}
+                <View style={styles.datesContainer}>
+                  <Image
+                    source={imagePath.CALENDER_ICON}
+                    style={styles.calendarIcon}
+                  />
+                  <Text style={styles.datesText}>
+                    {String(
+                      tripData?.startDate ||
+                        tripData?.start_at?.slice(0, 10) ||
+                        "TBD"
+                    )}{" "}
+                    -{" "}
+                    {String(
+                      tripData?.endDate ||
+                        tripData?.end_at?.slice(0, 10) ||
+                        "TBD"
+                    )}
                   </Text>
+                </View>
+
+                {/* Participants Section */}
+                <View style={styles.participantsSection}>
+                  {(tripData?.participants ||
+                    tripData?.participantsList?.length ||
+                    0) > 0 ? (
+                    // Show participants info and View Group button when participants are available
+                    <>
+                      <View style={styles.participantsInfo}>
+                        <View style={styles.avatarContainer}>
+                          {(tripData?.participantsList || []).map(
+                            (participant, index) => (
+                              <View
+                                key={`participant-${index}-${
+                                  participant.id || participant._id || index
+                                }`}
+                                style={[
+                                  styles.avatar,
+                                  {
+                                    zIndex:
+                                      (tripData?.participantsList || [])
+                                        .length - index,
+                                  },
+                                ]}
+                              >
+                                <OptimizedImage
+                                  source={{
+                                    uri:
+                                      participant.avatar ||
+                                      participant.profileImage,
+                                  }}
+                                  style={styles.avatarImage}
+                                  resizeMode="cover"
+                                />
+                              </View>
+                            )
+                          )}
+                          {(tripData?.participants ||
+                            tripData?.participantsList?.length ||
+                            0) > 3 && (
+                            <View style={styles.avatar}>
+                              <Text style={styles.avatarText}>
+                                +
+                                {(tripData?.participants ||
+                                  tripData?.participantsList?.length ||
+                                  0) - 3}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.participantsCount}>
+                          {String(
+                            tripData?.participants ||
+                              tripData?.participantsList?.length ||
+                              0
+                          )}{" "}
+                          people
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.viewGroupButton}
+                        onPress={handleViewGroup}
+                      >
+                        <Text style={styles.viewGroupText}>View Group</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    // Show Invite Participants button when no participants
+                    <TouchableOpacity
+                      style={styles.inviteButton}
+                      onPress={handleInviteParticipants}
+                    >
+                      <Text style={styles.inviteButtonText}>
+                        Invite Participants
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Activities and Budget Buttons */}
+                <View style={styles.actionsRow}>
+                  <View style={styles.actionButton}>
+                    <Text style={styles.actionButtonText}>
+                      {(() => {
+                        const count = tripData?.activities?.length || 0;
+                        return count === 1
+                          ? "1 Activity"
+                          : `${count} Activities`;
+                      })()}
+                    </Text>
+                  </View>
+                  <View style={styles.actionButton}>
+                    <Text style={styles.actionButtonText}>
+                      ${String((tripData?.budget || 0).toLocaleString())} Budget
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Activities Section */}
+            <View style={styles.activitiesContainer}>
+              <View style={styles.activitiesHeader}>
+                <Text style={styles.activitiesTitle}>Activities</Text>
+                <TouchableOpacity style={styles.calendarButton}>
+                  <Image
+                    source={imagePath.CALENDER_ICON}
+                    style={styles.calendarIcon}
+                  />
                 </TouchableOpacity>
+              </View>
+
+              {activityDates.length > 0 ? (
+                <FlatList
+                  data={activityDates}
+                  keyExtractor={(item, index) => `date-${index}-${item}`}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item: date, index: dateIndex }) => {
+                    const activitiesForDate = groupedActivities[date] || [];
+
+                    return (
+                      <View style={styles.dateGroup}>
+                        <Text style={styles.dateHeader}>
+                          {formatGroupDate(date)}
+                        </Text>
+                        <FlatList
+                          data={activitiesForDate}
+                          keyExtractor={(item, index) =>
+                            `activity-${dateIndex}-${index}-${
+                              item.id || item._id || item.product_id || index
+                            }`
+                          }
+                          showsVerticalScrollIndicator={false}
+                          renderItem={({ item: activity }) => {
+                            // Ensure activity is an object and has the required properties
+                            if (!activity || typeof activity !== "object") {
+                              return null;
+                            }
+
+                            return (
+                              <TouchableOpacity
+                                style={styles.activityCard}
+                                onPress={() => handleActivityPress(activity)}
+                              >
+                                <OptimizedImage
+                                  source={{
+                                    uri:
+                                      activity.image ||
+                                      activity.product_image ||
+                                      activity.thumbnail ||
+                                      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
+                                  }}
+                                  style={styles.activityImage}
+                                  resizeMode="cover"
+                                />
+                                <View style={styles.activityInfo}>
+                                  <Text style={styles.activityTitle}>
+                                    {String(
+                                      activity.title ||
+                                        activity.name ||
+                                        activity.product_name ||
+                                        "Activity"
+                                    )}
+                                  </Text>
+                                  <Text style={styles.activityDetails}>
+                                    {formatActivityDate(
+                                      activity.date || activity.time || "TBD"
+                                    )}{" "}
+                                    • $
+                                    {String(
+                                      activity.price ||
+                                        activity.retail_price ||
+                                        0
+                                    )}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                            );
+                          }}
+                        />
+                      </View>
+                    );
+                  }}
+                />
+              ) : (
+                <View style={styles.noActivitiesContainer}>
+                  <Text style={styles.noActivitiesText}>
+                    No activities found
+                  </Text>
+                </View>
               )}
             </View>
 
-            {/* Activities and Budget Buttons */}
-            <View style={styles.actionsRow}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleActivitiesPress}
-              >
-                <Text style={styles.actionButtonText}>
-                  {tripData.activities} Activities
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={handleBudgetPress}
-              >
-                <Text style={styles.actionButtonText}>
-                  ${tripData.budget.toLocaleString()} Budget
-                </Text>
-              </TouchableOpacity>
+            {/* Floating Checkout Button */}
+            <View style={styles.floatingButtonContainer}>
+              <ButtonComp title="Checkout" onPress={handleCheckout} />
             </View>
-          </View>
-        </View>
-
-        {/* Activities Section */}
-        <View style={styles.activitiesContainer}>
-          <View style={styles.activitiesHeader}>
-            <Text style={styles.activitiesTitle}>Activities</Text>
-            <TouchableOpacity style={styles.calendarButton}>
-              <Image
-                source={imagePath.CALENDER_ICON}
-                style={styles.calendarIcon}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <FlatList
-            data={activityDates}
-            keyExtractor={(item) => item}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item: date }) => (
-              <View style={styles.dateGroup}>
-                <Text style={styles.dateHeader}>{date}</Text>
-                <FlatList
-                  data={groupedActivities[date]}
-                  keyExtractor={(item) => item.id.toString()}
-                  showsVerticalScrollIndicator={false}
-                  renderItem={({ item: activity }) => (
-                    <TouchableOpacity
-                      style={styles.activityCard}
-                      onPress={() => handleActivityPress(activity)}
-                    >
-                      <OptimizedImage
-                        source={{ uri: activity.image }}
-                        style={styles.activityImage}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.activityInfo}>
-                        <Text style={styles.activityTitle}>
-                          {activity.title}
-                        </Text>
-                        <Text style={styles.activityDetails}>
-                          {activity.time} • ${activity.price}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                />
-              </View>
-            )}
-          />
-        </View>
-
-        {/* Floating Checkout Button */}
-        <View style={styles.floatingButtonContainer}>
-          <ButtonComp
-            title="Checkout"
-            onPress={handleCheckout}
-            // disabled={false}
-          />
-        </View>
+          </>
+        )}
       </View>
     </MainContainer>
   );
@@ -324,13 +420,6 @@ const TripDetails = ({ navigation, route }) => {
 export default TripDetails;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: getWidth(20),
-    backgroundColor: colors.input,
-  },
   tripCard: {
     backgroundColor: colors.white,
     borderRadius: getRadius(12),
@@ -571,5 +660,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
+  },
+  noActivitiesContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: getHeight(40),
+  },
+  noActivitiesText: {
+    fontSize: getHeight(16),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.lightText,
+    textAlign: "center",
   },
 });

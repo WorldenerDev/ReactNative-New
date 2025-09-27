@@ -6,6 +6,7 @@ const imagePath = {
   EYE_OFF: require("./source/eye_off.png"),
   BACK_ICON: require("./source/back.png"),
   PIN_ICON: require("./source/pin.png"),
+  LOCATION_PIN: require("./source/location_pin.png"),
   RIGHT_ICON: require("./source/right.png"),
   ONBOARDING1: require("./source/onboarding1.png"),
   ONBOARDING2: require("./source/onboarding2.png"),

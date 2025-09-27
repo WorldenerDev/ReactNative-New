@@ -13,6 +13,8 @@ export const getPopularEvents = (params) =>
 export const getEventBrowserByCategory = (params) =>
   apiGet(endpoints?.main?.getEventBrowserByCategory, params);
 export const getTrip = (params) => apiGet(endpoints?.main?.getTrips, params);
+export const getTripDetails = (tripId) =>
+  apiGet(`${endpoints?.main?.getTripDetails}/${tripId}`);
 export const createTrip = (data) => apiPost(endpoints?.main?.createTrip, data);
 export const deleteTrip = (tripId) =>
   apiDelete(`${endpoints?.main?.deleteTrip}/${tripId}`);
