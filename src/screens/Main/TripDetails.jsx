@@ -51,6 +51,7 @@ const TripDetails = ({ navigation, route }) => {
       setLoading(true);
       setError(null);
       const response = await getTripDetails(currentTripId);
+      console.log("Trip details response:", response?.data);
       if (response?.success) {
         setTripData(response?.data);
       } else {
@@ -76,7 +77,7 @@ const TripDetails = ({ navigation, route }) => {
     // TODO: Navigate to invite participants screen
   };
 
-  const handleActivityPress = (activity) => {
+  const handleActivityPress = () => {
     // TODO: Navigate to activity details
   };
 
@@ -84,7 +85,13 @@ const TripDetails = ({ navigation, route }) => {
     // TODO: Navigate to checkout screen
   };
 
-  // Format date for group headers (e.g., "15 Dec 2024")
+  const handleCalendarView = () => {
+    navigation.navigate("CalendarViewTripDetail", {
+      trip: tripData,
+      tripId: currentTripId,
+    });
+  };
+
   const formatGroupDate = (dateString) => {
     const date = new Date(dateString);
     const day = date.getDate();
@@ -93,7 +100,6 @@ const TripDetails = ({ navigation, route }) => {
     return `${day} ${month} ${year}`;
   };
 
-  // Format date for activity cards (e.g., "Dec 16")
   const formatActivityDate = (dateString) => {
     const date = new Date(dateString);
     const month = date.toLocaleDateString("en-US", { month: "short" });
@@ -103,34 +109,13 @@ const TripDetails = ({ navigation, route }) => {
 
   // Group activities by date
   const groupActivitiesByDate = () => {
-    if (!tripData?.activitiesData && !tripData?.activities) return {};
+    if (!tripData?.activities) return {};
 
-    // Handle different possible data structures
-    const activities = tripData?.activitiesData || tripData?.activities || [];
-
-    if (!Array.isArray(activities)) return {};
-
+    const activities = tripData.activities;
     const grouped = {};
-    const seenIds = new Set(); // Track unique activity IDs
 
-    activities.forEach((activity, index) => {
-      // Create a unique ID for this activity
-      const activityId =
-        activity.id || activity._id || activity.product_id || `temp-${index}`;
-
-      // Skip if we've already seen this activity
-      if (seenIds.has(activityId)) {
-        return;
-      }
-      seenIds.add(activityId);
-
-      // Handle different date field names
-      const activityDate =
-        activity.date ||
-        activity.created_at ||
-        activity.start_date ||
-        "Unknown Date";
-
+    activities.forEach((activity) => {
+      const activityDate = activity.date || "Unknown Date";
       if (!grouped[activityDate]) {
         grouped[activityDate] = [];
       }
@@ -140,7 +125,9 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const groupedActivities = groupActivitiesByDate();
-  const activityDates = Object.keys(groupedActivities);
+  const activityDates = Object.keys(groupedActivities).sort((a, b) => {
+    return new Date(a) - new Date(b);
+  });
 
   return (
     <MainContainer loader={loading}>
@@ -178,17 +165,15 @@ const TripDetails = ({ navigation, route }) => {
                       style={styles.pinIcon}
                     />
                     <Text style={styles.destinationText}>
-                      {String(
-                        tripData?.destination ||
-                          tripData?.city?.name ||
-                          "Unknown Destination"
-                      )}
+                      {tripData?.destination ||
+                        tripData?.city?.name ||
+                        "Unknown Destination"}
                     </Text>
                   </View>
                   <View style={styles.statusContainer}>
                     <View style={styles.statusIndicator} />
                     <Text style={styles.statusText}>
-                      {String(tripData?.status || "Planning")}
+                      {tripData?.status || "Planning"}
                     </Text>
                   </View>
                 </View>
@@ -200,17 +185,13 @@ const TripDetails = ({ navigation, route }) => {
                     style={styles.calendarIcon}
                   />
                   <Text style={styles.datesText}>
-                    {String(
-                      tripData?.startDate ||
-                        tripData?.start_at?.slice(0, 10) ||
-                        "TBD"
-                    )}{" "}
+                    {tripData?.startDate ||
+                      tripData?.start_at?.slice(0, 10) ||
+                      "TBD"}{" "}
                     -{" "}
-                    {String(
-                      tripData?.endDate ||
-                        tripData?.end_at?.slice(0, 10) ||
-                        "TBD"
-                    )}
+                    {tripData?.endDate ||
+                      tripData?.end_at?.slice(0, 10) ||
+                      "TBD"}
                   </Text>
                 </View>
 
@@ -264,11 +245,9 @@ const TripDetails = ({ navigation, route }) => {
                           )}
                         </View>
                         <Text style={styles.participantsCount}>
-                          {String(
-                            tripData?.participants ||
-                              tripData?.participantsList?.length ||
-                              0
-                          )}{" "}
+                          {tripData?.participants ||
+                            tripData?.participantsList?.length ||
+                            0}{" "}
                           people
                         </Text>
                       </View>
@@ -297,7 +276,10 @@ const TripDetails = ({ navigation, route }) => {
                   <View style={styles.actionButton}>
                     <Text style={styles.actionButtonText}>
                       {(() => {
-                        const count = tripData?.activities?.length || 0;
+                        const count =
+                          tripData?.activities?.length ||
+                          tripData?.totalActivities ||
+                          0;
                         return count === 1
                           ? "1 Activity"
                           : `${count} Activities`;
@@ -306,7 +288,13 @@ const TripDetails = ({ navigation, route }) => {
                   </View>
                   <View style={styles.actionButton}>
                     <Text style={styles.actionButtonText}>
-                      ${String((tripData?.budget || 0).toLocaleString())} Budget
+                      $
+                      {(
+                        tripData?.totalBudget ||
+                        tripData?.budget ||
+                        0
+                      ).toLocaleString()}{" "}
+                      Budget
                     </Text>
                   </View>
                 </View>
@@ -317,7 +305,10 @@ const TripDetails = ({ navigation, route }) => {
             <View style={styles.activitiesContainer}>
               <View style={styles.activitiesHeader}>
                 <Text style={styles.activitiesTitle}>Activities</Text>
-                <TouchableOpacity style={styles.calendarButton}>
+                <TouchableOpacity
+                  style={styles.calendarButton}
+                  onPress={handleCalendarView}
+                >
                   <Image
                     source={imagePath.CALENDER_ICON}
                     style={styles.calendarIcon}
@@ -342,56 +333,46 @@ const TripDetails = ({ navigation, route }) => {
                           data={activitiesForDate}
                           keyExtractor={(item, index) =>
                             `activity-${dateIndex}-${index}-${
-                              item.id || item._id || item.product_id || index
+                              item.product_id || item.id || item._id || index
                             }`
                           }
                           showsVerticalScrollIndicator={false}
-                          renderItem={({ item: activity }) => {
-                            // Ensure activity is an object and has the required properties
-                            if (!activity || typeof activity !== "object") {
-                              return null;
-                            }
-
-                            return (
-                              <TouchableOpacity
-                                style={styles.activityCard}
-                                onPress={() => handleActivityPress(activity)}
-                              >
-                                <OptimizedImage
-                                  source={{
-                                    uri:
-                                      activity.image ||
-                                      activity.product_image ||
-                                      activity.thumbnail ||
-                                      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
-                                  }}
-                                  style={styles.activityImage}
-                                  resizeMode="cover"
-                                />
-                                <View style={styles.activityInfo}>
-                                  <Text style={styles.activityTitle}>
-                                    {String(
-                                      activity.title ||
-                                        activity.name ||
-                                        activity.product_name ||
-                                        "Activity"
-                                    )}
-                                  </Text>
-                                  <Text style={styles.activityDetails}>
-                                    {formatActivityDate(
-                                      activity.date || activity.time || "TBD"
-                                    )}{" "}
-                                    • $
-                                    {String(
-                                      activity.price ||
-                                        activity.retail_price ||
-                                        0
-                                    )}
-                                  </Text>
-                                </View>
-                              </TouchableOpacity>
-                            );
-                          }}
+                          renderItem={({ item: activity }) => (
+                            <TouchableOpacity
+                              style={styles.activityCard}
+                              onPress={handleActivityPress}
+                            >
+                              <OptimizedImage
+                                source={{
+                                  uri:
+                                    activity.image ||
+                                    activity.product_image ||
+                                    activity.thumbnail ||
+                                    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
+                                }}
+                                style={styles.activityImage}
+                                resizeMode="cover"
+                              />
+                              <View style={styles.activityInfo}>
+                                <Text style={styles.activityTitle}>
+                                  {activity.title ||
+                                    activity.name ||
+                                    activity.product_name ||
+                                    "Activity"}
+                                </Text>
+                                <Text style={styles.activityDetails}>
+                                  {formatActivityDate(
+                                    activity.date || activity.time || "TBD"
+                                  )}{" "}
+                                  • Qty: {activity.quantity || 1} • $
+                                  {activity.total_price ||
+                                    activity.price ||
+                                    activity.retail_price ||
+                                    0}
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          )}
                         />
                       </View>
                     );

@@ -22,3 +22,4 @@ export { default as CreateTrip } from "./Main/CreateTrip";
 export { default as AddToTrip } from "./Main/AddToTrip";
 export { default as TripDetails } from "./Main/TripDetails";
 export { default as EditTrip } from "./Main/EditTrip";
+export { default as CalendarViewTripDetail } from "./Main/CalendarViewTripDetail";

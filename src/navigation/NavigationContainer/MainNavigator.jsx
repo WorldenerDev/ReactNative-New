@@ -12,6 +12,7 @@ import {
   AddToTrip,
   TripDetails,
   EditTrip,
+  CalendarViewTripDetail,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -63,6 +64,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.EDIT_TRIP}
           component={EditTrip}
+        />
+        <MainStack.Screen
+          name={navigationStrings.CALENDAR_VIEW_TRIP_DETAIL}
+          component={CalendarViewTripDetail}
         />
       </MainStack.Navigator>
     </>

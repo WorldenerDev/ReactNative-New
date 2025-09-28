@@ -24,4 +24,5 @@ export default {
   ADD_TO_TRIP: "AddToTrip",
   TRIP_DETAILS: "TripDetails",
   EDIT_TRIP: "EditTrip",
+  CALENDAR_VIEW_TRIP_DETAIL: "CalendarViewTripDetail",
 };
