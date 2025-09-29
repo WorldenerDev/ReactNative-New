@@ -25,4 +25,5 @@ export default {
   TRIP_DETAILS: "TripDetails",
   EDIT_TRIP: "EditTrip",
   CALENDAR_VIEW_TRIP_DETAIL: "CalendarViewTripDetail",
+  CART: "Cart",
 };

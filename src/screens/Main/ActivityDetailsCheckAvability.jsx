@@ -23,6 +23,7 @@ import {
   addEventInTrip,
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
+import navigationStrings from "@navigation/navigationStrings";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
@@ -277,7 +278,9 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       console.log("📥 addEventInTrip response:", response);
 
       showToast("success", response?.message);
-      navigation.navigate("TripDetails", { trip: response?.data });
+      navigation.navigate(navigationStrings.TRIP_DETAILS, {
+        trip: response?.data,
+      });
     } catch (error) {
       console.error("❌ Error adding event to trip:", error);
       showToast("error", error?.message || "Failed to add event to trip");

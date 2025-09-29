@@ -21,6 +21,7 @@ import {
 } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { getTripDetails } from "@api/services/mainServices";
+import navigationStrings from "@navigation/navigationStrings";
 
 const TripDetails = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
@@ -66,7 +67,7 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const handleEditPress = () => {
-    navigation.navigate("EditTrip", { trip: tripData });
+    navigation.navigate(navigationStrings.EDIT_TRIP, { trip: tripData });
   };
 
   const handleViewGroup = () => {
@@ -82,11 +83,14 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const handleCheckout = () => {
-    // TODO: Navigate to checkout screen
+    navigation.navigate(navigationStrings.CART, {
+      trip: tripData,
+      tripId: currentTripId,
+    });
   };
 
   const handleCalendarView = () => {
-    navigation.navigate("CalendarViewTripDetail", {
+    navigation.navigate(navigationStrings.CALENDAR_VIEW_TRIP_DETAIL, {
       trip: tripData,
       tripId: currentTripId,
     });
@@ -389,7 +393,11 @@ const TripDetails = ({ navigation, route }) => {
 
             {/* Floating Checkout Button */}
             <View style={styles.floatingButtonContainer}>
-              <ButtonComp title="Checkout" onPress={handleCheckout} />
+              <ButtonComp
+                disabled={false}
+                title="Checkout"
+                onPress={handleCheckout}
+              />
             </View>
           </>
         )}

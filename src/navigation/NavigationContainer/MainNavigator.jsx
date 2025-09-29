@@ -13,6 +13,7 @@ import {
   TripDetails,
   EditTrip,
   CalendarViewTripDetail,
+  Cart,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -69,6 +70,7 @@ const MainNavigator = () => {
           name={navigationStrings.CALENDAR_VIEW_TRIP_DETAIL}
           component={CalendarViewTripDetail}
         />
+        <MainStack.Screen name={navigationStrings.CART} component={Cart} />
       </MainStack.Navigator>
     </>
   );
