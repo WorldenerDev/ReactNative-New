@@ -33,6 +33,7 @@ const imagePath = {
   DURATION_ICON: require("./source/duration.png"),
   CHECK_ICON: require("./source/check.png"),
   INSTANT_ICON: require("./source/lightning.png"),
+  NOTIFICATION_ICON: require("./source/notification.png"),
 };
 
 export default imagePath;
