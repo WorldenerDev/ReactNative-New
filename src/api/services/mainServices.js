@@ -16,6 +16,8 @@ export const getTrip = (params) => apiGet(endpoints?.main?.getTrips, params);
 export const getTripDetails = (tripId) =>
   apiGet(`${endpoints?.main?.getTripDetails}/${tripId}`);
 export const createTrip = (data) => apiPost(endpoints?.main?.createTrip, data);
+export const updateTrip = (tripId, data) =>
+  apiPost(`${endpoints?.main?.updateTrip}/${tripId}`, data);
 export const deleteTrip = (tripId) =>
   apiDelete(`${endpoints?.main?.deleteTrip}/${tripId}`);
 export const activityLikeUnlike = (data) =>

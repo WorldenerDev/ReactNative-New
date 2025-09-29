@@ -68,8 +68,15 @@ const CreateTrip = ({ navigation, route }) => {
       // Call the API
       const response = await createTrip(tripData);
       showToast("success", "Trip created successfully!");
-      navigation.navigate(navigationStrings.TRIP_DETAILS, {
-        tripId: response?.data?._id,
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: navigationStrings.BOTTOM_TAB },
+          {
+            name: navigationStrings.TRIP_DETAILS,
+            params: { tripId: response?.data?._id },
+          },
+        ],
       });
     } catch (error) {
       console.error("Error creating trip:", error);

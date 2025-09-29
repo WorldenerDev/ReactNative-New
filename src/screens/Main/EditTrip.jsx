@@ -24,10 +24,14 @@ import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
+import { updateTrip } from "@api/services/mainServices";
+import { useDispatch } from "react-redux";
+import { deleteUserTrip } from "@redux/slices/cityTripSlice";
+import navigationStrings from "@navigation/navigationStrings";
 
 const EditTrip = ({ navigation, route }) => {
   const { trip } = route?.params || {};
-
+  const dispatch = useDispatch();
   // Form state
   const [tripName, setTripName] = useState(trip?.city?.name || "Tokyo Trip");
   const [fromDate, setFromDate] = useState(trip?.start_at?.slice(0, 10) || "");
@@ -36,38 +40,33 @@ const EditTrip = ({ navigation, route }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleSave = async () => {
     try {
-      if (!tripName.trim()) {
-        showToast("error", "Please enter a trip name");
-        return;
-      }
-      if (!fromDate) {
-        showToast("error", "Please select a start date");
-        return;
-      }
-      if (!toDate) {
-        showToast("error", "Please select an end date");
-        return;
-      }
-      if (new Date(fromDate) > new Date(toDate)) {
-        showToast("error", "End date must be after start date");
+      if (!trip?.id && !trip?._id) {
+        showToast("error", "Trip ID not found");
         return;
       }
 
       setIsLoading(true);
 
-      // TODO: Implement API call to update trip
-      console.log("Updating trip:", {
-        name: tripName,
-        start_at: fromDate,
-        end_at: toDate,
-        cover_photo: coverPhoto,
-      });
+      // Get trip ID (handle both id and _id formats)
+      const tripId = trip?.id || trip?._id;
 
+      // Prepare FormData for API call
+      const formData = new FormData();
+      formData.append("name", tripName);
+      formData.append("city_id", String(trip?.city_id));
+      formData.append("start_at", fromDate);
+      formData.append("end_at", toDate);
+
+      // Call the API
+      await updateTrip(tripId, formData);
       showToast("success", "Trip updated successfully!");
-      navigation.goBack();
+      navigation.navigate(navigationStrings.BOTTOM_TAB, {
+        screen: navigationStrings.TRIPS,
+      });
     } catch (error) {
       console.error("Error updating trip:", error);
       showToast("error", error?.message || "Failed to update trip");
@@ -90,16 +89,19 @@ const EditTrip = ({ navigation, route }) => {
           style: "destructive",
           onPress: async () => {
             try {
-              setIsLoading(true);
-              // TODO: Implement API call to delete trip
-              console.log("Deleting trip:", trip?.id);
+              setDeleteLoading(true);
+              const tripId = trip?._id || trip?.id;
+              // Call the Redux action
+              await dispatch(deleteUserTrip(tripId));
               showToast("success", "Trip deleted successfully!");
-              navigation.goBack();
+              navigation.navigate(navigationStrings.BOTTOM_TAB, {
+                screen: navigationStrings.TRIPS,
+              });
             } catch (error) {
               console.error("Error deleting trip:", error);
               showToast("error", error?.message || "Failed to delete trip");
             } finally {
-              setIsLoading(false);
+              setDeleteLoading(false);
             }
           },
         },
@@ -108,8 +110,8 @@ const EditTrip = ({ navigation, route }) => {
   };
 
   const handleCoverPhotoPress = () => {
-    // TODO: Implement image picker
-    showToast("info", "Cover photo selection coming soon!");
+    // Cover photo is read-only from route params
+    showToast("info", "Cover photo cannot be changed in edit mode");
   };
 
   const openCalendar = (field) => {
@@ -132,7 +134,7 @@ const EditTrip = ({ navigation, route }) => {
   };
 
   return (
-    <MainContainer loader={isLoading}>
+    <MainContainer loader={isLoading || deleteLoading}>
       <Header title="Edit Trip" showBack={true} />
 
       <View style={styles.container}>
@@ -207,12 +209,16 @@ const EditTrip = ({ navigation, route }) => {
           <ButtonComp
             title="Delete Trip"
             onPress={handleDelete}
-            disabled={isLoading}
+            disabled={isLoading || deleteLoading}
             containerStyle={styles.deleteButton}
             textStyle={styles.deleteButtonText}
           />
 
-          <ButtonComp title="Save" onPress={handleSave} />
+          <ButtonComp
+            disabled={deleteLoading}
+            title="Save"
+            onPress={handleSave}
+          />
         </View>
       </View>
 

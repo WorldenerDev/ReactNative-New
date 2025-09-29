@@ -66,7 +66,7 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const handleEditPress = () => {
-    navigation.navigate("EditTrip", { trip });
+    navigation.navigate("EditTrip", { trip: tripData });
   };
 
   const handleViewGroup = () => {

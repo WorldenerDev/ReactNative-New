@@ -15,6 +15,7 @@ export const endpoints = {
     getEventBrowserByCategory: "/getEventBrowserByCategory",
     getTrips: "/getTrips",
     createTrip: "/createTrip",
+    updateTrip: "/updateTrip",
     deleteTrip: "/deleteTrip",
     getTripDetails: "/getTripDetails",
     activityLikeUnlike: "/activity-like-unlike",
