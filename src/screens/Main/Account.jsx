@@ -1,4 +1,12 @@
-import { Alert, StyleSheet, Text, View, StatusBar, Image } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  View,
+  StatusBar,
+  Image,
+  TouchableOpacity,
+} from "react-native";
 import React from "react";
 import { removeItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
@@ -9,6 +17,7 @@ import ProfileButton from "@components/ProfileButton";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
+import navigationStrings from "@navigation/navigationStrings";
 import {
   getFontSize,
   getVertiPadding,
@@ -16,7 +25,7 @@ import {
   getHeight,
 } from "@utils/responsive";
 
-const Account = () => {
+const Account = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const handleLogout = async () => {
@@ -38,7 +47,7 @@ const Account = () => {
   };
 
   const handleEditProfile = () => {
-    // TODO: Navigate to edit profile screen
+    navigation.navigate(navigationStrings.EDIT_PROFILE);
   };
 
   const handleMyUpcomingBookings = () => {
@@ -50,7 +59,11 @@ const Account = () => {
   };
 
   const handleNotificationSettings = () => {
-    // TODO: Navigate to notification settings screen
+    navigation.navigate(navigationStrings.NOTIFICATION_SETTINGS);
+  };
+
+  const handleNotificationIcon = () => {
+    navigation.navigate(navigationStrings.NOTIFICATION_SCREEN);
   };
 
   const handleTermsOfService = () => {
@@ -92,13 +105,16 @@ const Account = () => {
       <View style={styles.header}>
         <Text style={styles.title}>My Profile</Text>
         <Text style={styles.subtitle}>Account, bookings and payments.</Text>
-        <View style={styles.notificationContainer}>
+        <TouchableOpacity
+          style={styles.notificationContainer}
+          onPress={handleNotificationIcon}
+        >
           <Image
             source={imagePath.NOTIFICATION_ICON}
             style={styles.notificationIcon}
             resizeMode="contain"
           />
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* My Profile Section */}
@@ -172,7 +188,7 @@ const styles = StyleSheet.create({
   notificationContainer: {
     position: "absolute",
     top: getVertiPadding(20),
-    right: getWidth(20),
+    right: 0,
     alignItems: "center",
   },
   notificationIcon: {

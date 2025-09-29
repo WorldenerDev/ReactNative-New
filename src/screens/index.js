@@ -24,3 +24,6 @@ export { default as TripDetails } from "./Main/TripDetails";
 export { default as EditTrip } from "./Main/EditTrip";
 export { default as CalendarViewTripDetail } from "./Main/CalendarViewTripDetail";
 export { default as Cart } from "./Main/Cart";
+export { default as NotificationScreen } from "./Main/NotificationScreen";
+export { default as NotificationSettings } from "./Main/NotificationSettings";
+export { default as EditProfile } from "./Main/EditProfile";

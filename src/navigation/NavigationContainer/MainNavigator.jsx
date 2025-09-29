@@ -14,6 +14,9 @@ import {
   EditTrip,
   CalendarViewTripDetail,
   Cart,
+  NotificationSettings,
+  NotificationScreen,
+  EditProfile,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -71,6 +74,18 @@ const MainNavigator = () => {
           component={CalendarViewTripDetail}
         />
         <MainStack.Screen name={navigationStrings.CART} component={Cart} />
+        <MainStack.Screen
+          name={navigationStrings.NOTIFICATION_SCREEN}
+          component={NotificationScreen}
+        />
+        <MainStack.Screen
+          name={navigationStrings.NOTIFICATION_SETTINGS}
+          component={NotificationSettings}
+        />
+        <MainStack.Screen
+          name={navigationStrings.EDIT_PROFILE}
+          component={EditProfile}
+        />
       </MainStack.Navigator>
     </>
   );

@@ -9,9 +9,9 @@ export const validateEmail = (email) => {
 
 export const validateMobileNumber = (mobile) => {
   if (!mobile) return "Mobile number is required";
-  const mobileRegex = /^[6-9]\d{9}$/;
+  const mobileRegex = /^[6-9]\d{7,10}$/;
   if (!mobileRegex.test(mobile))
-    return "Please enter a valid 10-digit mobile number";
+    return "Please enter a valid mobile number (8-11 digits)";
   return null;
 };
 

@@ -1,6 +1,4 @@
 const imagePath = {
-  LOGO: require("./source/logo.png"),
-  LAUNCH_LOGO: require("./source/launch_screen.png"),
   ARROW_DOWN_ICON: require("./source/arrow_down.png"),
   EYE: require("./source/eye.png"),
   EYE_OFF: require("./source/eye_off.png"),
@@ -34,6 +32,7 @@ const imagePath = {
   CHECK_ICON: require("./source/check.png"),
   INSTANT_ICON: require("./source/lightning.png"),
   NOTIFICATION_ICON: require("./source/notification.png"),
+  CAMERA_ICON: require("./source/camra.png"),
 };
 
 export default imagePath;
