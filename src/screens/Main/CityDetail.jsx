@@ -31,6 +31,7 @@ import {
 import CategoryCard from "@components/appComponent/CategoryCard";
 import ForYouCard from "@components/appComponent/ForYouCard";
 import ScreenWapper from "@components/container/ScreenWapper";
+import { DUMMY_CITY_DATA } from "@assets/dummyData/CityData";
 
 /** --- screen --- */
 const CityDetail = ({ route, navigation }) => {
@@ -39,7 +40,7 @@ const CityDetail = ({ route, navigation }) => {
   const { categories } = useSelector((state) => state.auth);
   const [popularThing, setPopularThings] = useState([]);
   const [eventByCity, setEventByCity] = useState([]);
-  // console.log("City Data on city detail screen ", cityData);
+  //console.log("City Data on city detail screen ", cityData);
 
   useEffect(() => {
     PopularEvents();
@@ -206,7 +207,9 @@ const CityDetail = ({ route, navigation }) => {
             {/* For You */}
             <Text style={styles.sectionTitle}>For You</Text>
             <FlatList
-              data={eventByCity}
+              data={
+                cityData?.name === "Amsterdam" ? DUMMY_CITY_DATA : eventByCity
+              }
               renderItem={renderForYouItem}
               keyExtractor={(it) => it.id}
               numColumns={2}

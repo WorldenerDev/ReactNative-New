@@ -20,7 +20,9 @@ const CityCard = ({ item, onPress }) => (
       placeholder={<ImagePlaceholder style={styles.image} text="Loading..." />}
     />
     <View style={styles.cardOverlay}>
-      <Text style={styles.cardTitle}>{item?.name}</Text>
+      <Text style={styles.cardTitle}>
+        {item?.name === "Amsterdam" ? "Dummy City " : item?.name}
+      </Text>
     </View>
   </TouchableOpacity>
 );
