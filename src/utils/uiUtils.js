@@ -20,3 +20,16 @@ export const getDeviceId = async () => {
     return null;
   }
 };
+
+export function isoDurationToHours(duration) {
+  if (!duration) return "N/A";
+  // Match hours and minutes
+  const hoursMatch = duration.match(/(\d+)H/);
+  const minutesMatch = duration.match(/(\d+)M/);
+
+  const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+  const minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
+
+  // Convert minutes to hours and add
+  return hours + minutes / 60;
+}

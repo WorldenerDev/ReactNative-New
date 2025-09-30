@@ -33,6 +33,7 @@ const imagePath = {
   INSTANT_ICON: require("./source/lightning.png"),
   NOTIFICATION_ICON: require("./source/notification.png"),
   CAMERA_ICON: require("./source/camra.png"),
+  DUMMY_ICON: require("./source/dummy.jpg"),
 };
 
 export default imagePath;

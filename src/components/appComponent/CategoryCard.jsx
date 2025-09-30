@@ -15,7 +15,11 @@ import fonts from "@assets/fonts";
 const CategoryCard = ({ item, onPress }) => (
   <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.card}>
     <OptimizedImage
-      source={{ uri: item?.cover_image_url }}
+      source={{
+        uri:
+          item?.cover_image_url ||
+          "https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png",
+      }}
       style={styles.image}
       placeholder={<ImagePlaceholder style={styles.image} text="Loading..." />}
     />

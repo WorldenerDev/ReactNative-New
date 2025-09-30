@@ -22,13 +22,11 @@ import {
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import RadioCheckbox from "@components/RadioCheckbox";
+import { isoDurationToHours } from "@utils/uiUtils";
 
 const ActivityDetails = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
-  console.log(
-    "Event data in Activity detail screen before call api ",
-    eventData
-  );
+
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [eventDetail, setEventDetail] = useState([]);
@@ -150,7 +148,12 @@ const ActivityDetails = ({ navigation, route }) => {
           {/* Free Cancellation */}
           <View style={styles.featureRow}>
             <Image source={imagePath.CHECK_ICON} style={styles.likeIcon} />
-            <Text style={styles.text}>Free Cancellation</Text>
+            <Text style={styles.text}>
+              {" "}
+              {eventDetail?.bookingPolicies?.freeCancellation
+                ? "Free Cancellation"
+                : "Need confirmation"}
+            </Text>
           </View>
           {/* Languages */}
           <View style={styles.featureRow}>
@@ -167,13 +170,21 @@ const ActivityDetails = ({ navigation, route }) => {
           {/* Duration */}
           <View style={styles.featureRow}>
             <Image source={imagePath.DURATION_ICON} style={styles.likeIcon} />
-            <Text style={styles.text}>Duration: 1.5 hours</Text>
+            <Text style={styles.text}>
+              Duration:{" "}
+              {isoDurationToHours(eventDetail?.tourDetails?.duration?.[0])}{" "}
+              hours
+            </Text>
           </View>
 
           {/* Instant Confirmation */}
           <View style={styles.featureRow}>
             <Image source={imagePath.INSTANT_ICON} style={styles.likeIcon} />
-            <Text style={styles.text}>Instant Confirmation</Text>
+            <Text style={styles.text}>
+              {eventDetail?.bookingPolicies?.maxConfirmationTime === "P0D"
+                ? "Instant confirmation"
+                : "Need confirmation"}
+            </Text>
           </View>
         </View>
         <Accordion
@@ -214,40 +225,44 @@ const ActivityDetails = ({ navigation, route }) => {
             <Text style={styles.content}>No inclusions available.</Text>
           )}
         </Accordion>
-
-        <Accordion
-          title={"Not Included"}
-          key={"Not Included"}
-          defaultOpen={false}
-        >
-          {eventDetail?.inclusions?.notIncluded &&
-          eventDetail.inclusions.notIncluded.length > 0 ? (
-            eventDetail.inclusions.notIncluded.map((item, index) => (
-              <Text key={index} style={styles.content}>
-                {"\u2022 "} {item}
-              </Text>
-            ))
-          ) : (
-            <Text style={styles.content}>No exclusions listed.</Text>
+        {eventDetail?.inclusions?.notIncluded &&
+          eventDetail.inclusions.notIncluded.length > 0 && (
+            <Accordion
+              title={"Not Included"}
+              key={"Not Included"}
+              defaultOpen={false}
+            >
+              {eventDetail?.inclusions?.notIncluded &&
+              eventDetail.inclusions.notIncluded.length > 0 ? (
+                eventDetail.inclusions.notIncluded.map((item, index) => (
+                  <Text key={index} style={styles.content}>
+                    {"\u2022 "} {item}
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.content}>No exclusions listed.</Text>
+              )}
+            </Accordion>
           )}
-        </Accordion>
 
-        <Accordion title={"Where"} key={"Where"} defaultOpen={false}>
-          <View style={styles.listContainer}>
-            {eventDetail?.pickup_points?.length > 0 ? (
-              eventDetail?.pickup_points.map((point, index) => (
-                <RadioCheckbox
-                  key={index}
-                  label={point.name || point.address || "Unnamed Point"}
-                  selected={selectedPoint === point.id} // assumes each point has unique id
-                  onPress={() => setSelectedPoint(point.id)}
-                />
-              ))
-            ) : (
-              <Text style={styles.content}>Pickup not available</Text>
-            )}
-          </View>
-        </Accordion>
+        {eventDetail?.pickupPointsIsExist && (
+          <Accordion title={"Where"} key={"Where"} defaultOpen={false}>
+            <View style={styles.listContainer}>
+              {eventDetail?.pickup_points?.length > 0 ? (
+                eventDetail?.pickup_points.map((point, index) => (
+                  <RadioCheckbox
+                    key={index}
+                    label={point.name || point.address || "Unnamed Point"}
+                    selected={selectedPoint === point.id} // assumes each point has unique id
+                    onPress={() => setSelectedPoint(point.id)}
+                  />
+                ))
+              ) : (
+                <Text style={styles.content}>Pickup not available</Text>
+              )}
+            </View>
+          </Accordion>
+        )}
       </ScrollView>
 
       {/* Bottom Bar */}
