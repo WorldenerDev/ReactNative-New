@@ -13,6 +13,7 @@ import React, { useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import CustomDropdown from "@components/CustomDropdown";
+import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
@@ -36,10 +37,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [selectedTime, setSelectedTime] = useState({
-    label: "09:30",
-    value: "09:30",
-  });
+  const [selectedTime, setSelectedTime] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [ticketQuantities, setTicketQuantities] = useState({});
 
@@ -164,10 +162,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     setSelectedOption(optionName);
 
     // Reset time and quantities when group changes
-    setSelectedTime({
-      label: "09:30",
-      value: "09:30",
-    });
+    setSelectedTime(null);
     setTicketQuantities({});
   };
 
@@ -277,9 +272,10 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       const response = await addEventInTrip(requestData);
       console.log("📥 addEventInTrip response:", response);
 
-      showToast("success", response?.message);
+      // showToast("success", response?.message);
       navigation.navigate(navigationStrings.TRIP_DETAILS, {
         trip: response?.data,
+        tripId: response?.data?.id || response?.data?._id,
       });
     } catch (error) {
       console.error("❌ Error adding event to trip:", error);
@@ -497,15 +493,12 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
       {/* Save Button */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={[styles.saveButton, isLoading && styles.disabledSaveButton]}
+        <ButtonComp
+          title={isLoading ? "Adding to Trip..." : "Add to Trip"}
           onPress={handleSave}
           disabled={isLoading}
-        >
-          <Text style={styles.saveButtonText}>
-            {isLoading ? "Adding to Trip..." : "Add to Trip"}
-          </Text>
-        </TouchableOpacity>
+          containerStyle={{ width: "100%" }}
+        />
       </View>
     </MainContainer>
   );
