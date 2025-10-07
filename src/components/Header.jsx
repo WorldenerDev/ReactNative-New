@@ -71,8 +71,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border, // round background for back button
   },
   iconBtnr: {
-    width: getWidth(32),
-    height: getHeight(32),
+    width: getWidth(1),
+    height: getHeight(1),
     // round background for back button
   },
   iconBtnNoBorder: {

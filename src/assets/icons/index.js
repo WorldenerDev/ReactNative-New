@@ -17,7 +17,7 @@ const imagePath = {
   HOME: require("./source/home.png"),
   GROUP: require("./source/group.png"),
   TRIP: require("./source/trip.png"),
-  CHAT: require("./source/chat.png"),
+  BOOKING: require("./source/booking.png"),
   ACCOUNT: require("./source/account.png"),
   SEARCH_ICON: require("./source/Search.png"),
   PLUS_ICON_BORDER: require("./source/plus_border.png"),

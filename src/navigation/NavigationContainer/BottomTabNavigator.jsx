@@ -18,7 +18,7 @@ import {
   getWidth,
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
-import { Account, Chat, Group, Home, Trips } from "@screens/index";
+import { Account, Booking, Group, Home, Trips } from "@screens/index";
 
 const Tab = createBottomTabNavigator();
 
@@ -29,7 +29,7 @@ const tabIcons = {
   Home: imagePath.HOME,
   Group: imagePath.GROUP,
   Trips: imagePath.TRIP,
-  Chat: imagePath.CHAT,
+  Booking: imagePath.BOOKING,
   Account: imagePath.ACCOUNT,
 };
 
@@ -45,12 +45,10 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
           d={`
             M0 0
             H${activeX}
-            C${activeX + tabWidth * 0.25} 0, ${activeX + tabWidth * 0.25} 0, ${
-            activeX + tabWidth / 2
-          } 10
-            C${activeX + tabWidth * 0.75} 0, ${activeX + tabWidth * 0.75} 0, ${
-            activeX + tabWidth
-          } 0
+            C${activeX + tabWidth * 0.25} 0, ${activeX + tabWidth * 0.25} 0, ${activeX + tabWidth / 2
+            } 10
+            C${activeX + tabWidth * 0.75} 0, ${activeX + tabWidth * 0.75} 0, ${activeX + tabWidth
+            } 0
             H${width}
             V70
             H0
@@ -109,7 +107,7 @@ const BottomTabNavigator = () => {
       <Tab.Screen name={navigationStrings.HOME} component={Home} />
       <Tab.Screen name={navigationStrings.GROUP} component={Group} />
       <Tab.Screen name={navigationStrings.TRIPS} component={Trips} />
-      <Tab.Screen name={navigationStrings.CHAT} component={Chat} />
+      <Tab.Screen name={navigationStrings.BOOKING} component={Booking} />
       <Tab.Screen name={navigationStrings.ACCOUNT} component={Account} />
     </Tab.Navigator>
   );

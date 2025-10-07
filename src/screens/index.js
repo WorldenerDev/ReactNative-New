@@ -11,7 +11,7 @@ export { default as Interests } from "./Auth/Interests";
 export { default as Home } from "./Main/Home";
 export { default as Group } from "./Main/Group";
 export { default as Trips } from "./Main/Trips";
-export { default as Chat } from "./Main/Chat";
+export { default as Booking } from "./Main/Booking";
 export { default as Account } from "./Main/Account";
 export { default as SearchCity } from "./Main/SearchCity";
 export { default as CityDetail } from "./Main/CityDetail";

@@ -164,7 +164,7 @@ const SearchCity = ({ navigation, route }) => {
         <TextInput
           placeholder="Where are you going?"
           style={styles.searchBar}
-          placeholderTextColor={colors.grey}
+          placeholderTextColor={"grey"}
           value={query}
           onChangeText={setQuery}
         />

@@ -3,14 +3,14 @@ import React from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 
-const Group = () => {
+const Booking = () => {
   return (
     <MainContainer>
-      <Header title="My Group" showBack={false} />
+      <Header title="Booking" />
     </MainContainer>
   );
 };
 
-export default Group;
+export default Booking;
 
 const styles = StyleSheet.create({});

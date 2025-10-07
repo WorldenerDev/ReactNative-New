@@ -13,7 +13,7 @@ export default {
   HOME: "Home",
   GROUP: "Group",
   TRIPS: "Trips",
-  CHAT: "Chat",
+  BOOKING: "Booking",
   ACCOUNT: "Account",
   SEARCH_CITY: "SearchCity",
   CITY_DETAIL: "CityDetail",

@@ -52,6 +52,7 @@ const styles = StyleSheet.create({
     paddingVertical: getVertiPadding(5),
     paddingHorizontal: getHoriPadding(5),
     alignItems: "center",
+    backgroundColor: colors.light_bg
   },
   cardTitle: {
     fontSize: getFontSize(14),

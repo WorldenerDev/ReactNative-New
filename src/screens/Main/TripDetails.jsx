@@ -211,9 +211,8 @@ const TripDetails = ({ navigation, route }) => {
                           {(tripData?.participantsList || []).map(
                             (participant, index) => (
                               <View
-                                key={`participant-${index}-${
-                                  participant.id || participant._id || index
-                                }`}
+                                key={`participant-${index}-${participant.id || participant._id || index
+                                  }`}
                                 style={[
                                   styles.avatar,
                                   {
@@ -238,15 +237,15 @@ const TripDetails = ({ navigation, route }) => {
                           {(tripData?.participants ||
                             tripData?.participantsList?.length ||
                             0) > 3 && (
-                            <View style={styles.avatar}>
-                              <Text style={styles.avatarText}>
-                                +
-                                {(tripData?.participants ||
-                                  tripData?.participantsList?.length ||
-                                  0) - 3}
-                              </Text>
-                            </View>
-                          )}
+                              <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>
+                                  +
+                                  {(tripData?.participants ||
+                                    tripData?.participantsList?.length ||
+                                    0) - 3}
+                                </Text>
+                              </View>
+                            )}
                         </View>
                         <Text style={styles.participantsCount}>
                           {tripData?.participants ||
@@ -336,8 +335,7 @@ const TripDetails = ({ navigation, route }) => {
                         <FlatList
                           data={activitiesForDate}
                           keyExtractor={(item, index) =>
-                            `activity-${dateIndex}-${index}-${
-                              item.product_id || item.id || item._id || index
+                            `activity-${dateIndex}-${index}-${item.product_id || item.id || item._id || index
                             }`
                           }
                           showsVerticalScrollIndicator={false}
@@ -606,7 +604,7 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     flexDirection: "row",
-    backgroundColor: colors.light_white,
+    backgroundColor: colors.light_bg,
     borderRadius: getRadius(8),
     padding: getHeight(8),
     marginBottom: getHeight(4),

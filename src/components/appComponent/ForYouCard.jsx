@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: getHoriPadding(8),
-    backgroundColor: colors.light_white,
+    backgroundColor: colors.light_bg,
     borderTopRightRadius: getRadius(20),
     borderTopLeftRadius: getRadius(20),
     flexDirection: "row",

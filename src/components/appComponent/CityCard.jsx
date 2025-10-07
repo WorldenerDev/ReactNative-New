@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingVertical: getVertiPadding(5),
     alignItems: "center",
+    backgroundColor: colors.light_bg
   },
   cardTitle: {
     fontSize: getFontSize(14),
