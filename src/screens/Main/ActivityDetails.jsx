@@ -59,6 +59,20 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleCheckAvailability = () => {
+    // Check if pickup points exist and user needs to select one
+    if (
+      eventDetail?.pickupPointsIsExist &&
+      eventDetail?.pickup_points?.length > 0
+    ) {
+      if (!selectedPoint) {
+        showToast(
+          "error",
+          "Please select a pickup point before checking availability"
+        );
+        return;
+      }
+    }
+
     const data = {
       activityUuid: eventData?.id,
       pickupPointId: selectedPoint,
@@ -253,8 +267,8 @@ const ActivityDetails = ({ navigation, route }) => {
                   <RadioCheckbox
                     key={index}
                     label={point.name || point.address || "Unnamed Point"}
-                    selected={selectedPoint === point.id} // assumes each point has unique id
-                    onPress={() => setSelectedPoint(point.id)}
+                    selected={selectedPoint === point.uuid} // using uuid instead of id
+                    onPress={() => setSelectedPoint(point.uuid)}
                   />
                 ))
               ) : (

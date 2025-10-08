@@ -28,10 +28,6 @@ import navigationStrings from "@navigation/navigationStrings";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const { eventData } = route?.params || {};
-  // console.log(
-  //   "Event data in Activity details check availability screen ",
-  //   eventData
-  // );
   const [eventDate, setEventDate] = useState([]);
   const [dateDetails, setDateDetails] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +43,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       setIsLoading(true);
       const requestData = {
         activityUuid: eventData?.activityUuid,
+        ...(eventData?.pickupPointId && { pickup: eventData?.pickupPointId }),
       };
       const response = await getEventDates(requestData);
       if (response?.data?.length > 0) {
@@ -70,6 +67,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       const requestData = {
         activityUuid: eventData?.activityUuid,
         date: selectedDate,
+        ...(eventData?.pickupPointId && { pickup: eventData?.pickupPointId }),
       };
       console.log(" Calling getEventDatesDetails with data:", requestData);
       const response = await getEventDatesDetails(requestData);
@@ -270,9 +268,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       };
       setIsLoading(true);
       const response = await addEventInTrip(requestData);
-      console.log("📥 addEventInTrip response:", response);
-
-      // showToast("success", response?.message);
+      showToast("success", response?.message);
       navigation.navigate(navigationStrings.TRIP_DETAILS, {
         trip: response?.data,
         tripId: response?.data?.id || response?.data?._id,
