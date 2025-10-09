@@ -81,12 +81,7 @@ const TripDetails = ({ navigation, route }) => {
     // TODO: Navigate to activity details
   };
 
-  const handleCheckout = () => {
-    navigation.navigate(navigationStrings.CART, {
-      trip: tripData,
-      tripId: currentTripId,
-    });
-  };
+  const handleCheckout = () => {};
 
   const handleCalendarView = () => {
     navigation.navigate(navigationStrings.CALENDAR_VIEW_TRIP_DETAIL, {

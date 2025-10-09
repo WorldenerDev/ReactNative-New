@@ -22,7 +22,6 @@ const Trips = ({ navigation }) => {
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  console.log("trip", trip);
   useEffect(() => {
     getAllTrips();
   }, [dispatch]);

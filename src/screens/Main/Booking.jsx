@@ -3,7 +3,7 @@ import React, { useState, useMemo } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TopTab from "@components/TopTab";
-import TripSection from "@components/TripSection";
+import TripGroupSection from "@components/TripGroupSection";
 import EmptyBookingState from "@components/EmptyBookingState";
 import colors from "@assets/colors";
 import { getHeight } from "@utils/responsive";
@@ -61,20 +61,25 @@ const Booking = () => {
     },
   ];
 
-  const currentBookings = useMemo(() => {
-    // All tabs show same data
+  const currentTrips = useMemo(() => {
+    // Filter trips based on active tab
     if (activeTab === "Cancelled") {
       return [];
     }
-    // Flatten all bookings from all trips
-    return mockTrips.flatMap((trip) =>
-      trip.bookings.map((booking) => ({
-        ...booking,
-        tripTitle: trip.tripTitle,
-        tripDates: trip.tripDates,
-        type: trip.type,
-      }))
-    );
+
+    if (activeTab === "All") {
+      return mockTrips;
+    }
+
+    if (activeTab === "Upcoming") {
+      return mockTrips.filter((trip) => trip.type === "upcoming");
+    }
+
+    if (activeTab === "Past") {
+      return mockTrips.filter((trip) => trip.type === "past");
+    }
+
+    return mockTrips;
   }, [activeTab]);
 
   const handleViewDetails = (item) => {
@@ -82,8 +87,8 @@ const Booking = () => {
     // Navigate to booking details screen
   };
 
-  const renderBookingItem = ({ item }) => (
-    <TripSection booking={item} onViewDetails={handleViewDetails} />
+  const renderTripItem = ({ item }) => (
+    <TripGroupSection trip={item} onViewDetails={handleViewDetails} />
   );
 
   const renderEmptyComponent = () => <EmptyBookingState type={activeTab} />;
@@ -93,9 +98,9 @@ const Booking = () => {
       <Header showBack={false} title="My Booking" />
       <TopTab activeTab={activeTab} onTabChange={setActiveTab} />
       <FlatList
-        data={currentBookings}
-        renderItem={renderBookingItem}
-        keyExtractor={(item) => item.id}
+        data={currentTrips}
+        renderItem={renderTripItem}
+        keyExtractor={(item) => item.tripId}
         ListEmptyComponent={renderEmptyComponent}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.flatListContainer}
