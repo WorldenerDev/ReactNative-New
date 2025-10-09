@@ -33,3 +33,14 @@ export function isoDurationToHours(duration) {
   // Convert minutes to hours and add
   return hours + minutes / 60;
 }
+// utils/formattedDate.js
+export const formattedDate = (dateString) => {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};

@@ -24,5 +24,6 @@ export const endpoints = {
     getEventDatesDetails: "/get-event-dates-details",
     addEventInTrip: "/addEventInTrip",
     checkout: "/checkout",
+    getCartList: "/getCartList",
   },
 };

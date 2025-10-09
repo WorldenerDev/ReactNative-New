@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import OptimizedImage from "@components/OptimizedImage";
@@ -14,6 +14,8 @@ import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
+import { getCartList } from "@api/services/mainServices";
+import { showToast } from "@components/AppToast";
 import {
   getHeight,
   getWidth,
@@ -21,69 +23,74 @@ import {
   getFontSize,
   getVertiPadding,
 } from "@utils/responsive";
-
-// Dummy data matching the image design
-const DUMMY_ACTIVITIES = [
-  {
-    _id: "demo-1",
-    title: "Tokyo Tower Visit with all the description that can be added",
-    date_text: "28 April, 2026",
-    option_text: "Semi-private Tour - 10:30 AM",
-    tickets_text: "Tickets: 1x Adult (19-99), 1x Child (7-18), 5x Infant (0-6)",
-    total_price: 256,
-    image: "https://picsum.photos/seed/tokyo-tower/300/300",
-  },
-  {
-    _id: "demo-2",
-    title: "Tokyo Tower Visit with all the description that can be added",
-    date_text: "28 April, 2026",
-    option_text: "Semi-private Tour - 10:30 AM",
-    tickets_text: "Tickets: 1x Adult (19-99), 1x Child (7-18), 5x Infant (0-6)",
-    total_price: 256,
-    image: "https://picsum.photos/seed/tokyo-2/300/300",
-  },
-];
+import { formattedDate } from "@utils/uiUtils";
 
 const Cart = ({ navigation }) => {
-  const activities = DUMMY_ACTIVITIES;
+  const [cartList, setCartList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Function to fetch cart list from API
+  const fetchCartList = async () => {
+    try {
+      setLoading(true);
+      const response = await getCartList();
+      console.log("Cart list response:", response);
+      setCartList(response?.data?.carts || []);
+    } catch (error) {
+      showToast("error", error?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Call API when component mounts
+  useEffect(() => {
+    fetchCartList();
+  }, []);
 
   const renderItem = ({ item }) => {
-    const price = item?.total_price || item?.price || item?.retail_price || 0;
+    const firstActivity = item?.activities?.[0];
 
     return (
       <View style={styles.card}>
         <View style={styles.rowTop}>
           <OptimizedImage
             source={{
-              uri:
-                item?.image ||
-                "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=200&q=60",
+              uri: firstActivity?.image || item?.city?.image,
             }}
             style={styles.thumb}
             resizeMode="cover"
           />
           <View style={styles.infoWrap}>
             <Text style={styles.title} numberOfLines={2}>
-              {item?.title || item?.name || item?.product_name || "Activity"}
+              {firstActivity?.name || item?.city?.name || "Activity"}
+            </Text>
+            <Text style={styles.cityText} numberOfLines={1}>
+              {item?.city?.name}, {item?.city?.country_name}
             </Text>
           </View>
         </View>
 
         <View style={styles.detailsWrap}>
-          {!!(item?.date_text || item?.date || item?.time) && (
-            <Text style={styles.meta}>{`Date: ${
-              item?.date_text || item?.date || item?.time
-            }`}</Text>
+          {!!item?.start_at && (
+            <Text style={styles.meta}>{`Date: ${formattedDate(
+              item?.start_at
+            )}`}</Text>
           )}
           {!!(item?.option || item?.option_name || item?.option_text) && (
             <Text style={styles.meta}>{`Options: ${
               item?.option || item?.option_name || item?.option_text
             }`}</Text>
           )}
-          {!!(item?.tickets_text || item?.tickets) && (
-            <Text style={styles.meta}>
-              {item?.tickets_text || item?.tickets}
-            </Text>
+          {!!firstActivity?.product_name && (
+            <Text
+              style={styles.meta}
+            >{`Ticket Type: ${firstActivity?.product_name}`}</Text>
+          )}
+          {!!firstActivity?.quantity && (
+            <Text
+              style={styles.meta}
+            >{`Quantity: ${firstActivity?.quantity}`}</Text>
           )}
         </View>
 
@@ -113,17 +120,19 @@ const Cart = ({ navigation }) => {
               <Text style={styles.removeText}>Remove</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.priceText}>{`$${Number(price).toFixed(2)}`}</Text>
+          <Text style={styles.priceText}>{`$${Number(item?.totalPrice).toFixed(
+            2
+          )}`}</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <MainContainer>
+    <MainContainer loading={loading}>
       <Header title="Cart" />
       <FlatList
-        data={activities}
+        data={cartList}
         keyExtractor={(item, index) => `${item?.id || item?._id || index}`}
         contentContainerStyle={styles.listContent}
         renderItem={renderItem}
@@ -180,8 +189,15 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(16),
     fontFamily: fonts.RobotoBold,
     color: colors.black,
-    marginBottom: 0,
+    marginBottom: getVertiPadding(4),
     lineHeight: getFontSize(20),
+  },
+  cityText: {
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+    marginBottom: 0,
+    lineHeight: getFontSize(16),
   },
   meta: {
     fontSize: getFontSize(13),
