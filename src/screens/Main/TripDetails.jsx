@@ -20,8 +20,9 @@ import {
   getVertiPadding,
 } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
-import { getTripDetails } from "@api/services/mainServices";
+import { getTripDetails, checkoutTrip } from "@api/services/mainServices";
 import navigationStrings from "@navigation/navigationStrings";
+import { showToast } from "@components/AppToast";
 
 const TripDetails = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
@@ -81,7 +82,31 @@ const TripDetails = ({ navigation, route }) => {
     // TODO: Navigate to activity details
   };
 
-  const handleCheckout = () => {};
+  const handleCheckout = async () => {
+    if (!tripData?._id) {
+      showToast("error", "Trip ID not found");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const checkoutData = {
+        trip_id: tripData?._id,
+      };
+
+      const response = await checkoutTrip(checkoutData);
+
+      if (response?.success) {
+        navigation.navigate(navigationStrings.CART);
+      } else {
+        showToast("error", response?.message);
+      }
+    } catch (error) {
+      showToast("error", error?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCalendarView = () => {
     navigation.navigate(navigationStrings.CALENDAR_VIEW_TRIP_DETAIL, {
@@ -388,7 +413,7 @@ const TripDetails = ({ navigation, route }) => {
             {/* Floating Checkout Button */}
             <View style={styles.floatingButtonContainer}>
               <ButtonComp
-                disabled={false}
+                disabled={loading}
                 title="Checkout"
                 onPress={handleCheckout}
               />

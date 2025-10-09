@@ -23,5 +23,6 @@ export const endpoints = {
     getEventDates: "/get-event-dates",
     getEventDatesDetails: "/get-event-dates-details",
     addEventInTrip: "/addEventInTrip",
+    checkout: "/checkout",
   },
 };
