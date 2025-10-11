@@ -23,7 +23,7 @@ import {
   getFontSize,
   getVertiPadding,
 } from "@utils/responsive";
-import { formattedDate } from "@utils/uiUtils";
+import { formattedDate, isoDurationToHours } from "@utils/uiUtils";
 
 const Cart = ({ navigation }) => {
   const [cartList, setCartList] = useState([]);
@@ -55,15 +55,12 @@ const Cart = ({ navigation }) => {
       const tripIds = cartList
         .map((item) => item._id || item.id)
         .filter(Boolean);
-
       if (tripIds.length === 0) {
         showToast("error", "No valid trip IDs found");
         return;
       }
-
       const response = await cartCheckout({ trip_ids: tripIds });
       console.log("Checkout response:", response);
-
       showToast("success", "Checkout successful!");
     } catch (error) {
       showToast("error", error?.message || "Checkout failed");
@@ -77,22 +74,35 @@ const Cart = ({ navigation }) => {
     fetchCartList();
   }, []);
 
+  // Function to format tickets display like "1x Adult (12+), 1x Child (4-12)"
+  const formatTicketsDisplay = (activities) => {
+    if (!activities || activities.length === 0) return "";
+
+    return activities
+      .map((activity) => {
+        const quantity = activity?.quantity || 0;
+        const productName = activity?.product_name || "";
+        return `${quantity}x ${productName}`;
+      })
+      .join(", ");
+  };
+
   const renderItem = ({ item }) => {
     const firstActivity = item?.activities?.[0];
-
+    const ticketsDisplay = formatTicketsDisplay(item?.activities);
     return (
       <View style={styles.card}>
         <View style={styles.rowTop}>
           <OptimizedImage
             source={{
-              uri: firstActivity?.image || item?.city?.image,
+              uri: item?.event?.image,
             }}
             style={styles.thumb}
             resizeMode="cover"
           />
           <View style={styles.infoWrap}>
             <Text style={styles.title} numberOfLines={2}>
-              {firstActivity?.name || item?.city?.name || "Activity"}
+              {item?.event?.name}
             </Text>
             <Text style={styles.cityText} numberOfLines={1}>
               {item?.city?.name}, {item?.city?.country_name}
@@ -106,38 +116,36 @@ const Cart = ({ navigation }) => {
               item?.start_at
             )}`}</Text>
           )}
-          {!!(item?.option || item?.option_name || item?.option_text) && (
-            <Text style={styles.meta}>{`Options: ${
-              item?.option || item?.option_name || item?.option_text
-            }`}</Text>
-          )}
-          {!!firstActivity?.product_name && (
-            <Text
-              style={styles.meta}
-            >{`Ticket Type: ${firstActivity?.product_name}`}</Text>
-          )}
-          {!!firstActivity?.quantity && (
-            <Text
-              style={styles.meta}
-            >{`Quantity: ${firstActivity?.quantity}`}</Text>
+
+          {!!ticketsDisplay && (
+            <Text style={styles.meta}>{`Tickets: ${ticketsDisplay}`}</Text>
           )}
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.perksRow}>
-          <View style={styles.perkItem}>
-            <Image source={imagePath.CHECK_ICON} style={styles.perkIcon} />
-            <Text style={styles.perkText}>Free Cancellation</Text>
-          </View>
-          <View style={styles.perkItem}>
-            <Image source={imagePath.DURATION_ICON} style={styles.perkIcon} />
-            <Text style={styles.perkText}>Duration: 1.5 hours</Text>
-          </View>
-          <View style={styles.perkItem}>
-            <Image source={imagePath.INSTANT_ICON} style={styles.perkIcon} />
-            <Text style={styles.perkText}>Instant Confirmation</Text>
-          </View>
+          {item?.free_cancellation && (
+            <View style={styles.perkItem}>
+              <Image source={imagePath.CHECK_ICON} style={styles.perkIcon} />
+              <Text style={styles.perkText}>Free Cancellation</Text>
+            </View>
+          )}
+          {item?.duration && (
+            <View style={styles.perkItem}>
+              <Image source={imagePath.DURATION_ICON} style={styles.perkIcon} />
+              <Text style={styles.perkText}>
+                {" "}
+                Duration: {isoDurationToHours(item?.duration || 0)} hours
+              </Text>
+            </View>
+          )}
+          {item?.instant_confirmation && (
+            <View style={styles.perkItem}>
+              <Image source={imagePath.INSTANT_ICON} style={styles.perkIcon} />
+              <Text style={styles.perkText}>Instant Confirmation</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.actionsRow}>

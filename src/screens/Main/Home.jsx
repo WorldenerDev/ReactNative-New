@@ -63,19 +63,6 @@ const Home = ({ navigation }) => {
   const ListHeader = () => (
     <View>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.greeting}>{`Hi ${user?.name}!`}</Text>
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate(navigationStrings.SEARCH_CITY, {
-              mode: undefined, // Search both cities and events
-              fromScreen: "Home",
-            })
-          }
-        >
-          <Image style={styles.search} source={imagePath.SEARCH_ICON} />
-        </TouchableOpacity>
-      </View>
 
       {/* Where to next */}
       <Text style={styles.sectionTitle}>Where to next?</Text>
@@ -122,6 +109,19 @@ const Home = ({ navigation }) => {
 
   return (
     <MainContainer>
+      <View style={styles.header}>
+        <Text style={styles.greeting}>{`Hi ${user?.name}!`}</Text>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate(navigationStrings.SEARCH_CITY, {
+              mode: undefined, // Search both cities and events
+              fromScreen: "Home",
+            })
+          }
+        >
+          <Image style={styles.search} source={imagePath.SEARCH_ICON} />
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={eventForYou}
         renderItem={({ item }) => (
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: getFontSize(16),
     fontFamily: fonts.RobotoBold,
-    marginTop: getVertiPadding(30),
+    marginTop: getVertiPadding(10),
     marginBottom: getVertiPadding(10),
     color: colors.black,
   },

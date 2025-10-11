@@ -334,7 +334,7 @@ const TripDetails = ({ navigation, route }) => {
                 >
                   <Image
                     source={imagePath.CALENDER_ICON}
-                    style={styles.calendarIcon}
+                    style={styles.calendarIcon1}
                   />
                 </TouchableOpacity>
               </View>
@@ -509,6 +509,11 @@ const styles = StyleSheet.create({
     tintColor: colors.lightText,
     marginRight: getWidth(6),
   },
+  calendarIcon1: {
+    width: getWidth(20),
+    height: getHeight(20),
+    tintColor: colors.lightText,
+  },
   datesText: {
     fontSize: getHeight(13),
     fontFamily: fonts.RobotoRegular,
@@ -625,7 +630,7 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     flexDirection: "row",
-    backgroundColor: colors.light_bg,
+    backgroundColor: colors.input,
     borderRadius: getRadius(8),
     padding: getHeight(8),
     marginBottom: getHeight(4),

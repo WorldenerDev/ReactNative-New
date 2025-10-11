@@ -265,8 +265,12 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         event_id: eventData?.activityUuid,
         start_date: selectedDate,
         products: selectedProducts,
+        instant_confirmation: eventData?.instant_confirmation,
+        free_cancellation: eventData?.free_cancellation ? true : false,
+        duration: eventData?.duration,
       };
       setIsLoading(true);
+      console.log("requestData", requestData);
       const response = await addEventInTrip(requestData);
       showToast("success", response?.message);
       navigation.navigate(navigationStrings.TRIP_DETAILS, {

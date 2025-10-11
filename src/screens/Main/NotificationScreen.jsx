@@ -10,6 +10,7 @@ import {
 import React, { useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
+import TopTab from "@components/TopTab";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
@@ -22,6 +23,7 @@ import {
 } from "@utils/responsive";
 
 const NotificationScreen = () => {
+  const [activeTab, setActiveTab] = useState("Notifications");
   const [notifications, setNotifications] = useState([
     {
       id: "1",
@@ -36,40 +38,60 @@ const NotificationScreen = () => {
       isRead: false,
     },
   ]);
+  const [invitations, setInvitations] = useState([]);
 
   const markAsRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
+    if (activeTab === "Notifications") {
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === id
+            ? { ...notification, isRead: true }
+            : notification
+        )
+      );
+    } else {
+      setInvitations((prev) =>
+        prev.map((invitation) =>
+          invitation.id === id ? { ...invitation, isRead: true } : invitation
+        )
+      );
+    }
   };
 
-  const renderNotificationItem = ({ item, index }) => (
-    <View>
-      <TouchableOpacity
-        style={styles.notificationItem}
-        onPress={() => markAsRead(item.id)}
-      >
-        <View style={styles.notificationContent}>
-          <View style={styles.iconContainer}>
-            <Image
-              source={imagePath.NOTIFICATION_ICON}
-              style={styles.notificationIcon}
-              resizeMode="contain"
-            />
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+  };
+
+  const getCurrentData = () => {
+    return activeTab === "Notifications" ? notifications : invitations;
+  };
+
+  const renderNotificationItem = ({ item, index }) => {
+    const currentData = getCurrentData();
+    return (
+      <View>
+        <TouchableOpacity
+          style={styles.notificationItem}
+          onPress={() => markAsRead(item.id)}
+        >
+          <View style={styles.notificationContent}>
+            <View style={styles.iconContainer}>
+              <Image
+                source={imagePath.NOTIFICATION_ICON}
+                style={styles.notificationIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={styles.notificationMessage}>{item.message}</Text>
+              <Text style={styles.notificationTime}>{item.time}</Text>
+            </View>
           </View>
-          <View style={styles.textContainer}>
-            <Text style={styles.notificationMessage}>{item.message}</Text>
-            <Text style={styles.notificationTime}>{item.time}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-      {index < notifications.length - 1 && <View style={styles.separator} />}
-    </View>
-  );
+        </TouchableOpacity>
+        {index < currentData.length - 1 && <View style={styles.separator} />}
+      </View>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -78,9 +100,15 @@ const NotificationScreen = () => {
         style={styles.emptyIcon}
         resizeMode="contain"
       />
-      <Text style={styles.emptyTitle}>No Notifications</Text>
+      <Text style={styles.emptyTitle}>
+        {activeTab === "Notifications"
+          ? "No Notifications Yet"
+          : "No Invitations Yet"}
+      </Text>
       <Text style={styles.emptyMessage}>
-        You're all caught up! We'll notify you when something new happens.
+        {activeTab === "Notifications"
+          ? "You're all caught up! We'll notify you when something new happens."
+          : "No pending invitations at the moment."}
       </Text>
     </View>
   );
@@ -91,12 +119,19 @@ const NotificationScreen = () => {
       <Header title="Notifications" />
 
       <View style={styles.container}>
-        <Text style={styles.headerMessage}>
+        {/* <Text style={styles.headerMessage}>
           Stay updated with real time alerts!
-        </Text>
+        </Text> */}
+
+        <TopTab
+          tabs={["Notifications", "Invitations"]}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          containerStyle={styles.tabContainer}
+        />
 
         <FlatList
-          data={notifications}
+          data={getCurrentData()}
           renderItem={renderNotificationItem}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
@@ -120,6 +155,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoRegular,
     color: colors.lightText,
     paddingVertical: getVertiPadding(16),
+  },
+  tabContainer: {
+    marginVertical: getVertiPadding(10),
   },
   listContainer: {
     paddingBottom: getVertiPadding(20),

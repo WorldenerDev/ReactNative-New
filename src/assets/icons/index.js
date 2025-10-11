@@ -34,6 +34,7 @@ const imagePath = {
   NOTIFICATION_ICON: require("./source/notification.png"),
   CAMERA_ICON: require("./source/camra.png"),
   DUMMY_ICON: require("./source/dummy.jpg"),
+  NO_NOTIFICATION_ICON: require("./source/noNotification.png"),
 };
 
 export default imagePath;

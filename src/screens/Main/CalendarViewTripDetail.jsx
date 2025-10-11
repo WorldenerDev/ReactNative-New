@@ -330,7 +330,6 @@ const styles = StyleSheet.create({
   },
   calendarContainer: {
     backgroundColor: colors.white,
-    paddingHorizontal: getWidth(10),
     paddingVertical: getHeight(10),
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -345,7 +344,6 @@ const styles = StyleSheet.create({
   },
   activitiesContainer: {
     flex: 1,
-    paddingHorizontal: getWidth(20),
     paddingVertical: getHeight(20),
   },
   activitiesTitle: {
@@ -362,7 +360,7 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     flexDirection: "row",
-    backgroundColor: colors.light_bg,
+    backgroundColor: colors.input,
     borderRadius: getRadius(8),
     padding: getHeight(12),
     marginBottom: getHeight(8),

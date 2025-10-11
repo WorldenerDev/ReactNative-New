@@ -78,6 +78,9 @@ const ActivityDetails = ({ navigation, route }) => {
       pickupPointId: selectedPoint,
       activityName: eventData?.name,
       cityId: eventData?.city_data?.id,
+      instant_confirmation: eventDetail?.bookingPolicies?.maxConfirmationTime,
+      free_cancellation: eventDetail?.bookingPolicies?.freeCancellation,
+      duration: eventDetail?.tourDetails?.duration?.[0],
     };
     navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
       eventData: data,
