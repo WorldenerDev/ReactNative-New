@@ -16,6 +16,7 @@ import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import { getCartList, cartCheckout } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
+import navigationStrings from "@navigation/navigationStrings";
 import {
   getHeight,
   getWidth,
@@ -62,6 +63,9 @@ const Cart = ({ navigation }) => {
       const response = await cartCheckout({ trip_ids: tripIds });
       console.log("Checkout response:", response);
       showToast("success", "Checkout successful!");
+      navigation.navigate(navigationStrings.CART_CUSTOMER_INFO, {
+        cart_id: response?.data?.cart_id,
+      });
     } catch (error) {
       showToast("error", error?.message || "Checkout failed");
     } finally {

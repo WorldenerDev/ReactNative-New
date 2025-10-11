@@ -14,6 +14,7 @@ import {
   EditTrip,
   CalendarViewTripDetail,
   Cart,
+  CartCustomerInfo,
   NotificationSettings,
   NotificationScreen,
   EditProfile,
@@ -74,6 +75,10 @@ const MainNavigator = () => {
           component={CalendarViewTripDetail}
         />
         <MainStack.Screen name={navigationStrings.CART} component={Cart} />
+        <MainStack.Screen
+          name={navigationStrings.CART_CUSTOMER_INFO}
+          component={CartCustomerInfo}
+        />
         <MainStack.Screen
           name={navigationStrings.NOTIFICATION_SCREEN}
           component={NotificationScreen}

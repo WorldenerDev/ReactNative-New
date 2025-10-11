@@ -27,6 +27,7 @@ const CustomInput = ({
   variant = "default", // "default" | "textarea"
   containerStyle = {},
   inputStyle = {},
+  error = "",
   ...rest
 }) => {
   const [isSecure, setIsSecure] = useState(secure);
@@ -37,7 +38,13 @@ const CustomInput = ({
     <View style={[styles.container, containerStyle]}>
       {!!label && <Text style={styles.label}>{label}</Text>}
 
-      <View style={[styles.inputWrapper, isTextarea && styles.textareaWrapper]}>
+      <View
+        style={[
+          styles.inputWrapper,
+          isTextarea && styles.textareaWrapper,
+          error && styles.inputWrapperError,
+        ]}
+      >
         <TextInput
           style={[styles.input, isTextarea && styles.textareaInput, inputStyle]}
           placeholder={placeholder}
@@ -63,6 +70,8 @@ const CustomInput = ({
           </TouchableOpacity>
         )}
       </View>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 };
@@ -88,6 +97,10 @@ const styles = StyleSheet.create({
     height: getHeight(48),
     borderWidth: 0,
   },
+  inputWrapperError: {
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
   textareaWrapper: {
     borderRadius: getRadius(12),
     alignItems: "flex-start",
@@ -109,5 +122,12 @@ const styles = StyleSheet.create({
   iconImage: {
     width: 20,
     height: 20,
+  },
+  errorText: {
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.error,
+    marginTop: getVertiPadding(4),
+    marginLeft: getHoriPadding(4),
   },
 });

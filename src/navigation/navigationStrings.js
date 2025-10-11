@@ -26,6 +26,7 @@ export default {
   EDIT_TRIP: "EditTrip",
   CALENDAR_VIEW_TRIP_DETAIL: "CalendarViewTripDetail",
   CART: "Cart",
+  CART_CUSTOMER_INFO: "CartCustomerInfo",
   NOTIFICATION_SCREEN: "NotificationScreen",
   NOTIFICATION_SETTINGS: "NotificationSettings",
   EDIT_PROFILE: "EditProfile",
