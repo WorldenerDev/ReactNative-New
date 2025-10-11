@@ -32,3 +32,5 @@ export const addEventInTrip = (data) =>
   apiPost(endpoints?.main?.addEventInTrip, data);
 export const checkoutTrip = (data) => apiPost(endpoints?.main?.checkout, data);
 export const getCartList = () => apiGet(endpoints?.main?.getCartList);
+export const cartCheckout = (data) =>
+  apiPost(endpoints?.main?.cartCheckout, data);

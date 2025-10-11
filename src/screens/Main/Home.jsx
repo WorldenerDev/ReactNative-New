@@ -105,7 +105,9 @@ const Home = ({ navigation }) => {
           <CategoryCard
             item={item}
             onPress={() =>
-              navigation.navigate(navigationStrings.BROUSE_BY_CATEGORY)
+              navigation.navigate(navigationStrings.BROUSE_BY_CATEGORY, {
+                name: item?.name,
+              })
             }
           />
         )}

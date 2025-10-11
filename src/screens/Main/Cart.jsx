@@ -14,7 +14,7 @@ import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
-import { getCartList } from "@api/services/mainServices";
+import { getCartList, cartCheckout } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import {
   getHeight,
@@ -38,6 +38,35 @@ const Cart = ({ navigation }) => {
       setCartList(response?.data?.carts || []);
     } catch (error) {
       showToast("error", error?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to handle cart checkout
+  const handleCheckout = async () => {
+    if (cartList.length === 0) {
+      showToast("error", "Cart is empty");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const tripIds = cartList
+        .map((item) => item._id || item.id)
+        .filter(Boolean);
+
+      if (tripIds.length === 0) {
+        showToast("error", "No valid trip IDs found");
+        return;
+      }
+
+      const response = await cartCheckout({ trip_ids: tripIds });
+      console.log("Checkout response:", response);
+
+      showToast("success", "Checkout successful!");
+    } catch (error) {
+      showToast("error", error?.message || "Checkout failed");
     } finally {
       setLoading(false);
     }
@@ -144,7 +173,12 @@ const Cart = ({ navigation }) => {
         }
       />
       <View style={styles.floatingButtonContainer}>
-        <ButtonComp title="Next" disabled={false} onPress={() => {}} />
+        <ButtonComp
+          title="Next"
+          disabled={loading || cartList.length === 0}
+          onPress={handleCheckout}
+          loading={loading}
+        />
       </View>
     </MainContainer>
   );

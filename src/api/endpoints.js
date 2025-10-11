@@ -25,5 +25,6 @@ export const endpoints = {
     addEventInTrip: "/addEventInTrip",
     checkout: "/checkout",
     getCartList: "/getCartList",
+    cartCheckout: "/cart-checkout",
   },
 };

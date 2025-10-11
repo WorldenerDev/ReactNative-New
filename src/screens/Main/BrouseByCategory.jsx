@@ -32,8 +32,10 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const BrouseByCategory = ({ navigation }) => {
-  const [search, setSearch] = useState("");
+const BrouseByCategory = ({ navigation, route }) => {
+  const { name } = route.params || "";
+  console.log("name", name);
+  const [search, setSearch] = useState(name || "");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,7 +57,7 @@ const BrouseByCategory = ({ navigation }) => {
           availableFrom: dateRange.availableFrom,
           availableTo: dateRange.availableTo,
           categoryIn: "new-activities",
-          limit: 100,
+          limit: 20,
           sortBy: "rating",
           offset: 0,
           search: query || undefined,
@@ -77,8 +79,8 @@ const BrouseByCategory = ({ navigation }) => {
 
   // initial load
   useEffect(() => {
-    fetchData("");
-  }, [fetchData]);
+    fetchData(name || "");
+  }, [fetchData, name]);
 
   // debounce search
   useEffect(() => {
@@ -108,7 +110,7 @@ const BrouseByCategory = ({ navigation }) => {
           placeholderTextColor={colors.lightText}
           style={styles.searchInput}
           returnKeyType="search"
-          editable={false} // Make it non-editable since we're using it as a button
+          editable={true} // Make it editable so users can search
         />
         <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
       </TouchableOpacity>
