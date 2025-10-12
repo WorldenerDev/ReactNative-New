@@ -170,7 +170,7 @@ const Cart = ({ navigation }) => {
   };
 
   return (
-    <MainContainer loading={loading}>
+    <MainContainer loader={loading}>
       <Header title="Cart" />
       <FlatList
         data={cartList}

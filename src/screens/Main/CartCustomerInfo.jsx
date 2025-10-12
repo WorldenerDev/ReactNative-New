@@ -16,6 +16,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
   const { cart_id } = route.params;
   const [userData, setUserData] = useState({});
   const [formFields, setFormFields] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Update local state when Redux user data changes
   useEffect(() => {
@@ -76,6 +77,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
   useEffect(() => {
     const fetchCartSchema = async () => {
       try {
+        setLoading(true);
         const response = await getCartSchema({ cart_id });
         if (response?.data?.cartSchema) {
           const processedFields = processCartSchema(response.data.cartSchema);
@@ -89,6 +91,8 @@ const CartCustomerInfo = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error("Cart Schema API Error:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -144,7 +148,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
   };
 
   return (
-    <ResponsiveContainer>
+    <ResponsiveContainer loader={loading}>
       <Header title="Cart Customer Info" />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.formContainer}>
