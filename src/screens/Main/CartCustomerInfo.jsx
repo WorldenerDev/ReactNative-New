@@ -5,10 +5,17 @@ import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import Header from "@components/Header";
 import CustomInput from "@components/CustomInput";
 import CustomDropdown from "@components/CustomDropdown";
+import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
-import { getFontSize, getVertiPadding } from "@utils/responsive";
+import {
+  getFontSize,
+  getVertiPadding,
+  getHoriPadding,
+} from "@utils/responsive";
 import { getCartSchema } from "@api/services/mainServices";
+import { validateForm, validateLetter, validateEmail } from "@utils/validators";
+import { showToast } from "@components/AppToast";
 
 const CartCustomerInfo = ({ navigation, route }) => {
   // Get user data from Redux store
@@ -17,6 +24,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
   const [userData, setUserData] = useState({});
   const [formFields, setFormFields] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // Update local state when Redux user data changes
   useEffect(() => {
@@ -104,11 +112,99 @@ const CartCustomerInfo = ({ navigation, route }) => {
       ...prev,
       [field]: value,
     }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
+  };
+
+  // Validation functions for different field types
+  const validateField = (field, value) => {
+    const { key, title, type, format } = field;
+
+    // Required field validation
+    if (!value || value.trim() === "") {
+      return `${title} is required`;
+    }
+
+    // Type-specific validation
+    switch (type) {
+      case "string":
+        if (format === "email") {
+          const emailError = validateEmail(value);
+          if (emailError) return emailError;
+        } else if (title.toLowerCase().includes("name")) {
+          const nameError = validateLetter(value, title, 2);
+          if (nameError) return nameError;
+        }
+        break;
+      case "number":
+        if (isNaN(value) || value === "") {
+          return `${title} must be a valid number`;
+        }
+        break;
+      case "integer":
+        if (!Number.isInteger(Number(value)) || value === "") {
+          return `${title} must be a valid integer`;
+        }
+        break;
+      default:
+        break;
+    }
+
+    return null;
+  };
+
+  const validateAllFields = () => {
+    const newErrors = {};
+    let hasErrors = false;
+
+    // Validate basic fields
+    const basicFields = [
+      { key: "firstName", title: "First Name", type: "string" },
+      { key: "lastName", title: "Last Name", type: "string" },
+      { key: "email", title: "Email", type: "string", format: "email" },
+    ];
+
+    basicFields.forEach((field) => {
+      const error = validateField(field, userData[field.key]);
+      if (error) {
+        newErrors[field.key] = error;
+        hasErrors = true;
+      }
+    });
+
+    // Validate extra customer data fields
+    formFields.forEach((field) => {
+      const error = validateField(field, userData[field.key]);
+      if (error) {
+        newErrors[field.key] = error;
+        hasErrors = true;
+      }
+    });
+
+    setErrors(newErrors);
+    return !hasErrors;
+  };
+
+  const handleContinue = () => {
+    if (validateAllFields()) {
+      console.log("Continue button pressed with data:", userData);
+      showToast("success", "Form validated successfully!");
+      // You can add navigation or API call here
+    } else {
+      showToast("error", "Please fix the validation errors");
+    }
   };
 
   const renderFormField = (field) => {
     const { key, title, type, format, enum: enumValues, enum_titles } = field;
     const value = userData[key] || "";
+    const error = errors[key];
 
     if (enumValues?.length > 0) {
       const options = enumValues.map((val, index) => ({
@@ -126,6 +222,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
             handleInputChange(key, selectedValue)
           }
           containerStyle={styles.inputContainer}
+          error={error}
         />
       );
     }
@@ -135,6 +232,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
       value: value,
       onChangeText: (text) => handleInputChange(key, text),
       containerStyle: styles.inputContainer,
+      error: error,
     };
 
     if (type === "number") {
@@ -161,6 +259,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 value={userData.firstName}
                 onChangeText={(value) => handleInputChange("firstName", value)}
                 containerStyle={styles.inputContainer}
+                error={errors.firstName}
               />
             </View>
             <View style={styles.inputHalf}>
@@ -169,6 +268,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 value={userData.lastName}
                 onChangeText={(value) => handleInputChange("lastName", value)}
                 containerStyle={styles.inputContainer}
+                error={errors.lastName}
               />
             </View>
           </View>
@@ -179,10 +279,21 @@ const CartCustomerInfo = ({ navigation, route }) => {
             keyboardType="email-address"
             autoCapitalize="none"
             containerStyle={styles.inputContainer}
+            error={errors.email}
           />
           {formFields.map((field) => renderFormField(field))}
         </View>
       </ScrollView>
+
+      {/* Floating Continue Button */}
+      <View style={styles.floatingButtonContainer}>
+        <ButtonComp
+          title="Continue"
+          onPress={handleContinue}
+          disabled={false}
+          containerStyle={styles.continueButton}
+        />
+      </View>
     </ResponsiveContainer>
   );
 };
@@ -196,6 +307,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     paddingTop: getVertiPadding(20),
+    paddingBottom: getVertiPadding(100), // Add bottom padding to prevent content from being hidden behind floating button
   },
   sectionTitle: {
     fontSize: getFontSize(18),
@@ -213,5 +325,18 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     paddingVertical: getVertiPadding(10),
+  },
+  floatingButtonContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: getHoriPadding(20),
+    paddingVertical: getVertiPadding(15),
+    paddingBottom: getVertiPadding(25),
+  },
+  continueButton: {
+    width: "100%",
+    marginVertical: 0,
   },
 });
