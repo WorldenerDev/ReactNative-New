@@ -1,4 +1,11 @@
-import { StyleSheet, Text, View, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Image,
+  Keyboard,
+} from "react-native";
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
@@ -12,9 +19,13 @@ import {
   getVertiPadding,
   getHoriPadding,
 } from "@utils/responsive";
-import { getCartSchema } from "@api/services/mainServices";
+import {
+  getCartSchema,
+  getParticipantSchema,
+} from "@api/services/mainServices";
 import { validateForm, validateLetter, validateEmail } from "@utils/validators";
 import { showToast } from "@components/AppToast";
+import ParticipantAccordion from "@components/ParticipantAccordion";
 
 const CartCustomerInfo = ({ navigation, route }) => {
   // Get user data from Redux store
@@ -24,6 +35,9 @@ const CartCustomerInfo = ({ navigation, route }) => {
   const [formFields, setFormFields] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [participantData, setParticipantData] = useState({});
+  const [participantSchemaData, setParticipantSchemaData] = useState(null);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   // Update local state when Redux user data changes
   useEffect(() => {
@@ -95,6 +109,17 @@ const CartCustomerInfo = ({ navigation, route }) => {
             initialData[field.key] = "";
           });
           setUserData((prev) => ({ ...prev, ...initialData }));
+
+          // Call participant schema API after cart schema success
+          try {
+            const participantResponse = await getParticipantSchema({
+              cart_uuid: cart_id,
+            });
+            console.log("Participant Schema API Success:", participantResponse);
+            setParticipantSchemaData(participantResponse?.data);
+          } catch (participantError) {
+            console.error("Participant Schema API Error:", participantError);
+          }
         }
       } catch (error) {
         console.error("Cart Schema API Error:", error);
@@ -105,6 +130,27 @@ const CartCustomerInfo = ({ navigation, route }) => {
 
     if (cart_id) fetchCartSchema();
   }, [cart_id]);
+
+  // Keyboard event listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setIsKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setIsKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
 
   const handleInputChange = (field, value) => {
     setUserData((prev) => ({
@@ -119,6 +165,49 @@ const CartCustomerInfo = ({ navigation, route }) => {
         [field]: "",
       }));
     }
+  };
+
+  const handleParticipantDataChange = (fieldPath, value) => {
+    setParticipantData((prev) => ({
+      ...prev,
+      [fieldPath]: value,
+    }));
+  };
+
+  // Create individual participants from items
+  const createIndividualParticipants = () => {
+    if (!participantSchemaData?.items) return [];
+
+    const participants = [];
+    participantSchemaData.items.forEach((item) => {
+      for (let i = 0; i < item.quantity; i++) {
+        participants.push({
+          ...item,
+          participantIndex: i,
+        });
+      }
+    });
+    return participants;
+  };
+
+  // Group products by activity_uuid for display
+  const groupProductsForDisplay = () => {
+    if (!participantSchemaData?.items) return {};
+
+    return participantSchemaData.items.reduce((groups, item) => {
+      const activityUuid = item.product?.activity_uuid;
+      if (activityUuid) {
+        if (!groups[activityUuid]) {
+          groups[activityUuid] = {
+            title: item.product?.title,
+            coverImage: item.product?.cover_image_url,
+            items: [],
+          };
+        }
+        groups[activityUuid].items.push(item);
+      }
+      return groups;
+    }, {});
   };
 
   // Validation functions for different field types
@@ -260,6 +349,47 @@ const CartCustomerInfo = ({ navigation, route }) => {
             error={errors.email}
           />
           {formFields.map((field) => renderFormField(field))}
+
+          {/* Participant Information Section */}
+          {participantSchemaData && (
+            <View style={styles.participantSection}>
+              <Text style={styles.sectionTitle}>Participant Information</Text>
+
+              {/* Product Information - Above each participant group */}
+              {Object.entries(groupProductsForDisplay()).map(
+                ([activityUuid, productGroup]) => (
+                  <View key={activityUuid}>
+                    <Text style={styles.requestedByText}>
+                      This info is requested by our partner
+                    </Text>
+                    <View style={styles.productCard}>
+                      <Image
+                        source={{ uri: productGroup.coverImage }}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.productInfo}>
+                        <Text style={styles.productTitle}>
+                          {productGroup.title}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )
+              )}
+
+              {/* Individual Participants */}
+              {createIndividualParticipants().map((participant, index) => (
+                <ParticipantAccordion
+                  key={`${participant.uuid}-${participant.participantIndex}`}
+                  participant={participant}
+                  participantIndex={index}
+                  participantData={participantData}
+                  onParticipantDataChange={handleParticipantDataChange}
+                />
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -316,5 +446,51 @@ const styles = StyleSheet.create({
   continueButton: {
     width: "100%",
     marginVertical: 0,
+  },
+  participantSection: {
+    marginTop: getVertiPadding(20),
+    paddingTop: getVertiPadding(20),
+    borderTopWidth: 1,
+    borderTopColor: colors.lightGray || "#e0e0e0",
+  },
+  productCard: {
+    flexDirection: "row",
+    backgroundColor: colors.white,
+    borderRadius: 6,
+    marginVertical: getVertiPadding(4),
+    padding: getHoriPadding(8),
+    borderWidth: 1,
+    borderColor: colors.lightGray || "#e0e0e0",
+    shadowColor: colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  productImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 4,
+    marginRight: getHoriPadding(8),
+  },
+  productInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  productTitle: {
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.black,
+    lineHeight: getFontSize(14),
+  },
+  requestedByText: {
+    fontSize: getFontSize(11),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.gray || "#666",
+    marginBottom: getVertiPadding(4),
+    marginTop: getVertiPadding(8),
   },
 });

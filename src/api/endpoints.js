@@ -27,5 +27,6 @@ export const endpoints = {
     getCartList: "/getCartList",
     cartCheckout: "/cart-checkout",
     cartSchema: "/cart-schema",
+    getParticipantSchema: "/get-participant-schema",
   },
 };

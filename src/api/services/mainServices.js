@@ -36,3 +36,5 @@ export const cartCheckout = (data) =>
   apiPost(endpoints?.main?.cartCheckout, data);
 export const getCartSchema = (data) =>
   apiPost(endpoints?.main?.cartSchema, data);
+export const getParticipantSchema = (data) =>
+  apiPost(endpoints?.main?.getParticipantSchema, data);
