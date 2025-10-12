@@ -4,7 +4,6 @@ import { useSelector } from "react-redux";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import Header from "@components/Header";
 import CustomInput from "@components/CustomInput";
-import CustomDropdown from "@components/CustomDropdown";
 import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
@@ -202,30 +201,9 @@ const CartCustomerInfo = ({ navigation, route }) => {
   };
 
   const renderFormField = (field) => {
-    const { key, title, type, format, enum: enumValues, enum_titles } = field;
+    const { key, title, type, format } = field;
     const value = userData[key] || "";
     const error = errors[key];
-
-    if (enumValues?.length > 0) {
-      const options = enumValues.map((val, index) => ({
-        label: enum_titles?.[index] || val,
-        value: val,
-      }));
-
-      return (
-        <CustomDropdown
-          key={key}
-          placeholder={`Select ${title}`}
-          options={options}
-          selectedValue={value}
-          onValueChange={(selectedValue) =>
-            handleInputChange(key, selectedValue)
-          }
-          containerStyle={styles.inputContainer}
-          error={error}
-        />
-      );
-    }
 
     const inputProps = {
       placeholder: title,
