@@ -1,11 +1,16 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Linking } from "react-native";
 import React, { useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import ButtonComp from "@components/ButtonComp";
 import Header from "@components/Header";
 import colors from "@assets/colors";
-import { createOrder, createNoPayment } from "@api/services/mainServices";
+import {
+  createOrder,
+  createNoPayment,
+  downloadVoucher,
+} from "@api/services/mainServices";
 import { getHeight, getHoriPadding } from "@utils/responsive";
+import { showToast } from "@components/AppToast";
 
 const Payment = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
@@ -40,10 +45,57 @@ const Payment = ({ navigation, route }) => {
       setLoading(false);
     }
   };
+  const createDownloadApi = async () => {
+    try {
+      setLoading(true);
+      const downloadResponse = await downloadVoucher({
+        orderUuid: orderUuid,
+      });
+      console.log("downloadResponse", downloadResponse);
+
+      // Check if there are any vouchers with URLs in the items
+      let voucherUrl = null;
+      if (downloadResponse?.data?.items) {
+        for (const item of downloadResponse.data.items) {
+          if (item.vouchers && item.vouchers.length > 0) {
+            for (const voucher of item.vouchers) {
+              if (voucher.url) {
+                voucherUrl = voucher.url;
+                break;
+              }
+            }
+            if (voucherUrl) break;
+          }
+        }
+      }
+
+      if (voucherUrl) {
+        console.log("voucherUrl", voucherUrl);
+        // Open the voucher URL
+        const supported = await Linking.canOpenURL(voucherUrl);
+        if (supported) {
+          await Linking.openURL(voucherUrl);
+        } else {
+          console.log("Cannot open URL:", voucherUrl);
+          showToast("error", "Cannot open voucher URL");
+        }
+      } else {
+        // Show toast if no voucher URL found
+        showToast("info", "No voucher available for download");
+      }
+    } catch (error) {
+      console.log("error", error);
+      showToast("error", "Failed to download voucher");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <MainContainer loader={loading}>
       <Header title="Payment" />
+      <View style={styles.buttonContainer}></View>
+
       <View style={styles.container}>
         <ButtonComp disabled={false} title="Pay Now" onPress={createOrderApi} />
         <View style={styles.buttonContainer}></View>
@@ -51,6 +103,12 @@ const Payment = ({ navigation, route }) => {
           disabled={false}
           title="Buy Now"
           onPress={createNoPaymentApi}
+        />
+        <View style={styles.buttonContainer}></View>
+        <ButtonComp
+          disabled={false}
+          title="Download Now"
+          onPress={createDownloadApi}
         />
       </View>
     </MainContainer>

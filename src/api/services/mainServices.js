@@ -44,3 +44,5 @@ export const createOrder = (data) =>
   apiPost(endpoints?.main?.createOrder, data);
 export const createNoPayment = (data) =>
   apiPost(endpoints?.main?.createNoPayment, data);
+export const downloadVoucher = (data) =>
+  apiPost(endpoints?.main?.downloadVoucher, data);
