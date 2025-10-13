@@ -28,5 +28,8 @@ export const endpoints = {
     cartCheckout: "/cart-checkout",
     cartSchema: "/cart-schema",
     getParticipantSchema: "/get-participant-schema",
+    cartCustomerInfo: "/cart-customer",
+    createOrder: "/create-order",
+    createNoPayment: "/create-no-payment",
   },
 };

@@ -18,6 +18,7 @@ import {
   NotificationSettings,
   NotificationScreen,
   EditProfile,
+  Payment,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -90,6 +91,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.EDIT_PROFILE}
           component={EditProfile}
+        />
+        <MainStack.Screen
+          name={navigationStrings.PAYMENT}
+          component={Payment}
         />
       </MainStack.Navigator>
     </>

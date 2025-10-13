@@ -30,4 +30,5 @@ export default {
   NOTIFICATION_SCREEN: "NotificationScreen",
   NOTIFICATION_SETTINGS: "NotificationSettings",
   EDIT_PROFILE: "EditProfile",
+  PAYMENT: "Payment",
 };

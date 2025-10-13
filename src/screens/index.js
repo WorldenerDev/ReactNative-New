@@ -28,3 +28,4 @@ export { default as CartCustomerInfo } from "./Main/CartCustomerInfo";
 export { default as NotificationScreen } from "./Main/NotificationScreen";
 export { default as NotificationSettings } from "./Main/NotificationSettings";
 export { default as EditProfile } from "./Main/EditProfile";
+export { default as Payment } from "./Main/Payment";

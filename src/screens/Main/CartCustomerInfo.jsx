@@ -22,15 +22,17 @@ import {
 import {
   getCartSchema,
   getParticipantSchema,
+  cartCustomerInfo,
 } from "@api/services/mainServices";
 import { validateForm, validateLetter, validateEmail } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import ParticipantAccordion from "@components/ParticipantAccordion";
+import navigationStrings from "@navigation/navigationStrings";
 
 const CartCustomerInfo = ({ navigation, route }) => {
   // Get user data from Redux store
   const { user } = useSelector((state) => state.auth);
-  const { cart_id } = route.params;
+  const { cart_id, trip_id } = route.params;
   const [userData, setUserData] = useState({});
   const [formFields, setFormFields] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -279,11 +281,50 @@ const CartCustomerInfo = ({ navigation, route }) => {
     return !hasErrors;
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (validateAllFields()) {
-      console.log("Continue button pressed with data:", userData);
-      showToast("success", "Form validated successfully!");
-      // You can add navigation or API call here
+      try {
+        setLoading(true);
+
+        // Prepare API payload with default values
+        const apiPayload = {
+          trip_id: trip_id,
+          allow_profiling: "NO",
+          email: userData.email,
+          events_related_newsletter: "NO",
+          firstname: userData.firstName,
+          lastname: userData.lastName,
+          musement_newsletter: "NO",
+          thirdparty_newsletter: "NO",
+        };
+
+        console.log("Calling cart-customer API with payload:", apiPayload);
+
+        const response = await cartCustomerInfo(apiPayload);
+
+        if (response?.success) {
+          showToast("success", "Customer information submitted successfully!");
+          // Navigate to next screen or back to cart
+          // navigation.goBack();
+
+          navigation.navigate(navigationStrings.PAYMENT, {
+            trip_id: trip_id,
+          });
+        } else {
+          showToast(
+            "error",
+            response?.message || "Failed to submit customer information"
+          );
+        }
+      } catch (error) {
+        console.error("Error submitting customer info:", error);
+        showToast(
+          "error",
+          error?.message || "Failed to submit customer information"
+        );
+      } finally {
+        setLoading(false);
+      }
     } else {
       showToast("error", "Please fix the validation errors");
     }
@@ -448,10 +489,7 @@ const styles = StyleSheet.create({
     marginVertical: 0,
   },
   participantSection: {
-    marginTop: getVertiPadding(20),
-    paddingTop: getVertiPadding(20),
-    borderTopWidth: 1,
-    borderTopColor: colors.lightGray || "#e0e0e0",
+    marginTop: getVertiPadding(10),
   },
   productCard: {
     flexDirection: "row",

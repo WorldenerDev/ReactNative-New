@@ -38,3 +38,9 @@ export const getCartSchema = (data) =>
   apiPost(endpoints?.main?.cartSchema, data);
 export const getParticipantSchema = (data) =>
   apiPost(endpoints?.main?.getParticipantSchema, data);
+export const cartCustomerInfo = (data) =>
+  apiPost(endpoints?.main?.cartCustomerInfo, data);
+export const createOrder = (data) =>
+  apiPost(endpoints?.main?.createOrder, data);
+export const createNoPayment = (data) =>
+  apiPost(endpoints?.main?.createNoPayment, data);

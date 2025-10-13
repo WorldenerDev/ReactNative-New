@@ -60,11 +60,13 @@ const Cart = ({ navigation }) => {
         showToast("error", "No valid trip IDs found");
         return;
       }
+      console.log("tripIds", tripIds);
       const response = await cartCheckout({ trip_ids: tripIds });
       console.log("Checkout response:", response);
       showToast("success", "Checkout successful!");
       navigation.navigate(navigationStrings.CART_CUSTOMER_INFO, {
         cart_id: response?.data?.cart_id,
+        trip_id: tripIds[0], // Pass the first trip_id from the array
       });
     } catch (error) {
       showToast("error", error?.message || "Checkout failed");
