@@ -23,7 +23,12 @@ const Payment = ({ navigation, route }) => {
         trip_id: trip_id,
         email_notification: "NONE",
       });
-      setOrderUuid(orderResponse?.data?.order_id);
+      if (orderResponse?.success === true) {
+        setOrderUuid(orderResponse?.data?.order_id);
+        showToast("success", orderResponse?.message);
+      } else {
+        showToast("error", orderResponse?.data?.message);
+      }
       console.log("orderResponse", orderResponse);
     } catch (error) {
       console.log("error", error);
@@ -38,6 +43,11 @@ const Payment = ({ navigation, route }) => {
       const noPaymentResponse = await createNoPayment({
         orderUuid: orderUuid,
       });
+      if (noPaymentResponse?.success === true) {
+        showToast("success", noPaymentResponse?.message);
+      } else {
+        showToast("error", noPaymentResponse?.data?.message);
+      }
       console.log("noPaymentResponse", noPaymentResponse);
     } catch (error) {
       console.log("error", error);
@@ -81,7 +91,7 @@ const Payment = ({ navigation, route }) => {
         }
       } else {
         // Show toast if no voucher URL found
-        showToast("info", "No voucher available for download");
+        showToast("success", downloadResponse?.message);
       }
     } catch (error) {
       console.log("error", error);
