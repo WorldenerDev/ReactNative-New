@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Linking } from "react-native";
+import { StyleSheet, Text, View, Linking, Alert } from "react-native";
 import React, { useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import ButtonComp from "@components/ButtonComp";
@@ -11,6 +11,7 @@ import {
 } from "@api/services/mainServices";
 import { getHeight, getHoriPadding } from "@utils/responsive";
 import { showToast } from "@components/AppToast";
+import navigationStrings from "@navigation/navigationStrings";
 
 const Payment = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
@@ -90,8 +91,63 @@ const Payment = ({ navigation, route }) => {
           showToast("error", "Cannot open voucher URL");
         }
       } else {
-        // Show toast if no voucher URL found
-        showToast("success", downloadResponse?.message);
+        // Show booking details in alert if no voucher URL found
+        try {
+          const data = downloadResponse?.data;
+          if (data?.items?.[0]?.product) {
+            const item = data.items[0];
+            const product = item.product;
+            const customer = data.customer;
+
+            const alertMessage = `Title: ${
+              product?.title || "N/A"
+            }\nTicket Type: ${
+              product?.price_tag?.price_feature || "N/A"
+            }\nTicket Holder: ${
+              product?.price_tag?.ticket_holder || "N/A"
+            }\nDate: ${product?.date || "N/A"}\n\nTransaction Code: ${
+              item?.transaction_code || "N/A"
+            }\nOrder By: ${
+              customer
+                ? `${customer?.firstname || ""} ${
+                    customer?.lastname || ""
+                  }`.trim()
+                : "N/A"
+            }\nPurchase Date: ${data?.date || "N/A"}\n\nReference No: ${
+              data?.identifier || "N/A"
+            }\nMeeting Point: ${
+              product?.meeting_point || "N/A"
+            }\nTotal Price: ${data?.total_price?.formatted_value || "N/A"}`;
+
+            Alert.alert("Booking Details", alertMessage, [
+              {
+                text: "OK",
+                onPress: () => {
+                  navigation.reset({
+                    index: 0,
+                    routes: [
+                      {
+                        name: navigationStrings.BOTTOM_TAB,
+                        state: {
+                          routes: [
+                            {
+                              name: navigationStrings.HOME,
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  });
+                },
+              },
+            ]);
+          } else {
+            showToast("success", downloadResponse?.message);
+          }
+        } catch (error) {
+          console.log("Error extracting booking details:", error);
+          showToast("success", downloadResponse?.message);
+        }
       }
     } catch (error) {
       console.log("error", error);
