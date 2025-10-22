@@ -21,6 +21,7 @@ import { googleAppleSignIn, loginUser, setUser } from "@redux/slices/authSlice";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 import { getDeviceId, getDeviceType } from "@utils/uiUtils";
+import messaging from '@react-native-firebase/messaging';
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -36,9 +37,22 @@ const SignInScreen = ({ navigation }) => {
     setData((prev) => ({ ...prev, countryCode: code }));
   };
 
+  const getFCMToken = async () => {
+    try {
+      const fcmToken = await messaging().getToken();
+      console.log('FCM Token:', fcmToken);
+      return fcmToken;
+    } catch (error) {
+      console.error('Error getting FCM token:', error);
+      return null;
+    }
+  };
+
   const onPressSignin = async () => {
     try {
       const deviceId = await getDeviceId();
+      const fcmToken = await getFCMToken();
+      console.log ('fcmToken', fcmToken);
       const error = validateForm([
         { validator: validateMobileNumber, values: [data?.phoneNumber] },
       ]);
@@ -51,6 +65,7 @@ const SignInScreen = ({ navigation }) => {
         phone_number: data?.countryCode + data?.phoneNumber,
         device_type: Platform.OS,
         device_id: deviceId,
+        fcm_token: fcmToken || "not_available",
       };
       const result = await dispatch(loginUser(sendData));
       console.log("Login result:", result);
@@ -58,6 +73,7 @@ const SignInScreen = ({ navigation }) => {
         navigation.navigate(navigationStrings.OTPSCREEN, {
           fromScreen: "signin",
           phoneNumber: data?.countryCode + data?.phoneNumber,
+          fcm_Token: fcmToken,
         });
       } else {
         showToast("error", result?.payload);
@@ -74,6 +90,7 @@ const SignInScreen = ({ navigation }) => {
     console.log("Social login result receiveddd:", result, provider);
 
     const deviceId = await getDeviceId();
+    const fcmToken = await getFCMToken();
     try {
       if (result?.provider === "google") {
         console.log("google provider result ", result);
@@ -83,7 +100,7 @@ const SignInScreen = ({ navigation }) => {
           device_type: getDeviceType(),
           social_id: result?.userData?.id,
           device_id: deviceId,
-          fcm_token: "not given",
+          fcm_token: fcmToken || "not_available",
         };
         const loginResult = await dispatch(googleAppleSignIn(data));
         console.log("Google login result in signin", loginResult);
@@ -100,7 +117,7 @@ const SignInScreen = ({ navigation }) => {
           device_type: getDeviceType(),
           social_id: result?.userData?.id,
           device_id: deviceId,
-          fcm_token: "not given",
+          fcm_token: fcmToken || "not_available",
         };
         const loginResult = await dispatch(googleAppleSignIn(data));
         console.log("Google login result in signin", loginResult);

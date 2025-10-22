@@ -42,6 +42,8 @@ if linkage != nil
 end
 
 target 'WApp' do
+  use_frameworks! :linkage => :static
+  $RNFirebaseAsStaticFramework = true
   config = use_native_modules!
 
   use_react_native!(
@@ -49,6 +51,9 @@ target 'WApp' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+
+  # Enable modular headers for Firebase
+  use_modular_headers!
 
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
@@ -58,5 +63,23 @@ target 'WApp' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    
+    # Optimize build performance
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        # Enable build active architecture only for debug builds
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES' if config.name == 'Debug'
+        
+        # Set debug information format to DWARF for faster builds
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf' if config.name == 'Debug'
+        
+        # Disable bitcode for faster builds
+        config.build_settings['ENABLE_BITCODE'] = 'NO'
+        
+        # Optimize Swift compilation
+        config.build_settings['SWIFT_COMPILATION_MODE'] = 'incremental' if config.name == 'Debug'
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone' if config.name == 'Debug'
+      end
+    end
   end
 end

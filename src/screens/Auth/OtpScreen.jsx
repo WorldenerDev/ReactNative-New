@@ -29,7 +29,8 @@ import { setItem } from "@utils/storage";
 
 const OtpScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
-  const { fromScreen, phoneNumber } = route?.params || {};
+  const { fromScreen, phoneNumber ,fcm_Token} = route?.params || {};
+  console.log('fcmToken in otp screen', fcm_Token);
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -94,6 +95,7 @@ const OtpScreen = ({ navigation, route }) => {
       const sendData = {
         phone_number: phoneNumber,
         otp: codeString,
+        fcm_token: fcm_Token || "not_available",
       };
       const result = await dispatch(onOtp(sendData));
       console.log("signup Otp Verify result ", result);
