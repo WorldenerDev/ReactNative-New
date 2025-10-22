@@ -4,25 +4,34 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppToast } from "@components/AppToast";
 import { Provider } from "react-redux";
 import { store } from "@redux/store";
-import firestore from '@react-native-firebase/firestore';
+import messaging from "@react-native-firebase/messaging";
+import { Platform } from "react-native";
 
 const App = () => {
   useEffect(() => {
-    // Test Firebase connection
-    const testFirebase = async () => {
+    const initNotifications = async () => {
       try {
-        console.log('🔥 Firebase App initialized successfully!');
-        console.log('📊 Firestore instance:', firestore());
-        
-        // Test a simple Firestore operation
-        const testCollection = firestore().collection('test');
-        console.log('✅ Firestore collection reference created successfully');
-      } catch (error) {
-        console.error('❌ Firebase initialization error:', error);
+        await messaging().setAutoInitEnabled(true);
+
+        if (Platform.OS === "ios") {
+          await messaging().registerDeviceForRemoteMessages();
+        }
+
+        const authorizationStatus = await messaging().requestPermission();
+        const enabled =
+          authorizationStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authorizationStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+        if (!enabled) {
+          // Permission not granted; FCM token may be unavailable
+          return;
+        }
+      } catch (e) {
+        // Swallow to avoid blocking app startup
       }
     };
 
-    testFirebase();
+    initNotifications();
   }, []);
 
   return (

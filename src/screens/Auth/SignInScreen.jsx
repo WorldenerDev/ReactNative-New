@@ -39,6 +39,21 @@ const SignInScreen = ({ navigation }) => {
 
   const getFCMToken = async () => {
     try {
+      // Ensure device is registered for remote messages on iOS
+      if (Platform.OS === 'ios') {
+        await messaging().registerDeviceForRemoteMessages();
+      }
+
+      // Ensure permissions are granted
+      const authStatus = await messaging().hasPermission();
+      if (!authStatus) {
+        const requestStatus = await messaging().requestPermission();
+        const granted = requestStatus === messaging.AuthorizationStatus.AUTHORIZED || requestStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        if (!granted) {
+          return null;
+        }
+      }
+
       const fcmToken = await messaging().getToken();
       console.log('FCM Token:', fcmToken);
       return fcmToken;
