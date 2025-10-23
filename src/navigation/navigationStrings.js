@@ -31,4 +31,5 @@ export default {
   NOTIFICATION_SETTINGS: "NotificationSettings",
   EDIT_PROFILE: "EditProfile",
   PAYMENT: "Payment",
+  PAYMENT_SUCCESS: "PaymentSuccess",
 };

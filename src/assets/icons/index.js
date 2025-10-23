@@ -35,6 +35,8 @@ const imagePath = {
   CAMERA_ICON: require("./source/camra.png"),
   DUMMY_ICON: require("./source/dummy.jpg"),
   NO_NOTIFICATION_ICON: require("./source/noNotification.png"),
+  SUCCESS_ICON: require("./source/success.png"),
+  CARD_ICON: require("./source/pay.png"),
 };
 
 export default imagePath;

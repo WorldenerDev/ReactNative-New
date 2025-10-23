@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, Linking, Alert } from "react-native";
+import { StyleSheet, Text, View, Image } from "react-native";
 import React, { useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import ButtonComp from "@components/ButtonComp";
@@ -7,15 +7,14 @@ import colors from "@assets/colors";
 import {
   createOrder,
   createNoPayment,
-  downloadVoucher,
 } from "@api/services/mainServices";
-import { getHeight, getHoriPadding } from "@utils/responsive";
+import { getHeight, getHoriPadding, getVertiPadding, getWidth } from "@utils/responsive";
 import { showToast } from "@components/AppToast";
 import navigationStrings from "@navigation/navigationStrings";
+import imagePath from "@assets/icons";
 
 const Payment = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
-  const [orderUuid, setOrderUuid] = useState("");
   const { trip_id } = route.params;
   const createOrderApi = async () => {
     try {
@@ -25,8 +24,8 @@ const Payment = ({ navigation, route }) => {
         email_notification: "NONE",
       });
       if (orderResponse?.success === true) {
-        setOrderUuid(orderResponse?.data?.order_id);
-        showToast("success", orderResponse?.message);
+        // setOrderUuid(orderResponse?.data?.order_id);
+        createNoPaymentApi(orderResponse?.data?.order_id);
       } else {
         showToast("error", orderResponse?.data?.message);
       }
@@ -38,14 +37,17 @@ const Payment = ({ navigation, route }) => {
     }
   };
 
-  const createNoPaymentApi = async () => {
+  const createNoPaymentApi = async (orderUuid) => {
     try {
       setLoading(true);
       const noPaymentResponse = await createNoPayment({
         orderUuid: orderUuid,
       });
-      if (noPaymentResponse?.success === true) {
-        showToast("success", noPaymentResponse?.message);
+          if (noPaymentResponse?.success === true) {
+            navigation.navigate(navigationStrings.PAYMENT_SUCCESS,{
+              orderUuid: orderUuid,
+            });
+
       } else {
         showToast("error", noPaymentResponse?.data?.message);
       }
@@ -56,115 +58,16 @@ const Payment = ({ navigation, route }) => {
       setLoading(false);
     }
   };
-  const createDownloadApi = async () => {
-    try {
-      setLoading(true);
-      const downloadResponse = await downloadVoucher({
-        orderUuid: orderUuid,
-      });
-      console.log("downloadResponse", downloadResponse);
-
-      // Check if there are any vouchers with URLs in the items
-      let voucherUrl = null;
-      if (downloadResponse?.data?.items) {
-        for (const item of downloadResponse.data.items) {
-          if (item.vouchers && item.vouchers.length > 0) {
-            for (const voucher of item.vouchers) {
-              if (voucher.url) {
-                voucherUrl = voucher.url;
-                break;
-              }
-            }
-            if (voucherUrl) break;
-          }
-        }
-      }
-
-      if (voucherUrl) {
-        console.log("voucherUrl", voucherUrl);
-        // Open the voucher URL
-        const supported = await Linking.canOpenURL(voucherUrl);
-        if (supported) {
-          await Linking.openURL(voucherUrl);
-        } else {
-          console.log("Cannot open URL:", voucherUrl);
-          showToast("error", "Cannot open voucher URL");
-        }
-      } else {
-        // Show booking details in alert if no voucher URL found
-        try {
-          const data = downloadResponse?.data;
-          if (data?.items?.[0]?.product) {
-            const item = data.items[0];
-            const product = item.product;
-            const customer = data.customer;
-
-            const alertMessage = `Title: ${
-              product?.title || "N/A"
-            }\nTicket Type: ${
-              product?.price_tag?.price_feature || "N/A"
-            }\nTicket Holder: ${
-              product?.price_tag?.ticket_holder || "N/A"
-            }\nDate: ${product?.date || "N/A"}\n\nTransaction Code: ${
-              item?.transaction_code || "N/A"
-            }\nOrder By: ${
-              customer
-                ? `${customer?.firstname || ""} ${
-                    customer?.lastname || ""
-                  }`.trim()
-                : "N/A"
-            }\nPurchase Date: ${data?.date || "N/A"}\n\nReference No: ${
-              data?.identifier || "N/A"
-            }\nMeeting Point: ${
-              product?.meeting_point || "N/A"
-            }\nTotal Price: ${data?.total_price?.formatted_value || "N/A"}`;
-
-            Alert.alert("Booking Details", alertMessage, [
-              {
-                text: "OK",
-                onPress: () => {
-                  navigation.reset({
-                    index: 0,
-                    routes: [
-                      {
-                        name: navigationStrings.BOTTOM_TAB,
-                        state: {
-                          routes: [
-                            {
-                              name: navigationStrings.HOME,
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  });
-                },
-              },
-            ]);
-          } else {
-            showToast("success", downloadResponse?.message);
-          }
-        } catch (error) {
-          console.log("Error extracting booking details:", error);
-          showToast("success", downloadResponse?.message);
-        }
-      }
-    } catch (error) {
-      console.log("error", error);
-      showToast("error", "Failed to download voucher");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <MainContainer loader={loading}>
       <Header title="Payment" />
-      <View style={styles.buttonContainer}></View>
+     
 
       <View style={styles.container}>
+        <Image source={imagePath.CARD_ICON} style={styles.cardIcon} resizeMode="contain" />
         <ButtonComp disabled={false} title="Pay Now" onPress={createOrderApi} />
-        <View style={styles.buttonContainer}></View>
+        {/* <View style={styles.buttonContainer}></View>
         <ButtonComp
           disabled={false}
           title="Buy Now"
@@ -175,7 +78,7 @@ const Payment = ({ navigation, route }) => {
           disabled={false}
           title="Download Now"
           onPress={createDownloadApi}
-        />
+        /> */}
       </View>
     </MainContainer>
   );
@@ -187,6 +90,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
+    justifyContent: 'space-evenly'
+  },
+  cardIcon: {
+    height: getHeight(200),
+    width: "100%",
+    alignSelf: "center",
   },
   buttonContainer: {
     flexDirection: "row",

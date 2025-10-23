@@ -19,6 +19,7 @@ import {
   NotificationScreen,
   EditProfile,
   Payment,
+  PaymentSuccess,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -31,6 +32,10 @@ const MainNavigator = () => {
           headerShown: false,
         }}
       >
+         <MainStack.Screen
+          name={navigationStrings.PAYMENT_SUCCESS}
+          component={PaymentSuccess}
+        />
         <MainStack.Screen
           name={navigationStrings.BOTTOM_TAB}
           component={BottomTabNavigator}
