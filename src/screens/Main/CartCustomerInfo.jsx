@@ -40,6 +40,8 @@ const CartCustomerInfo = ({ navigation, route }) => {
   const [participantData, setParticipantData] = useState({});
   const [participantSchemaData, setParticipantSchemaData] = useState(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [hasExtraCustomerData, setHasExtraCustomerData] = useState(false);
+  const [extraCustomerDataKey, setExtraCustomerDataKey] = useState(null);
 
   // Update local state when Redux user data changes
   useEffect(() => {
@@ -57,6 +59,12 @@ const CartCustomerInfo = ({ navigation, route }) => {
 
     const fields = [];
     const extraCustomerData = schema.properties.extra_customer_data;
+
+    // Check if extra customer data exists and get the key
+    if (extraCustomerData.title && extraCustomerData.properties) {
+      setHasExtraCustomerData(true);
+      setExtraCustomerDataKey(extraCustomerData.title);
+    }
 
     Object.keys(extraCustomerData.properties).forEach((extraKey) => {
       const extraProperty = extraCustomerData.properties[extraKey];
@@ -298,7 +306,41 @@ const CartCustomerInfo = ({ navigation, route }) => {
           thirdparty_newsletter: "NO",
         };
 
-        console.log("Calling cart-customer API with payload:", apiPayload);
+        // Conditionally add extra_customer_data if it exists
+        if (hasExtraCustomerData && extraCustomerDataKey) {
+          const extraCustomerData = {};
+          
+          // Group form fields by their parent key (the extra customer data key)
+          const extraFields = formFields.filter(field => 
+            field.key.startsWith('extra_customer_data.')
+          );
+          
+          if (extraFields.length > 0) {
+            // Create the nested structure for extra customer data
+            extraCustomerData[extraCustomerDataKey] = {};
+            
+            extraFields.forEach(field => {
+              const fieldPath = field.key.split('.');
+              if (fieldPath.length === 3) {
+                // This is a nested field like extra_customer_data.165fcd0d-2046-11e7-9cc9-06a7e332783f.phone_number
+                const parentKey = fieldPath[1];
+                const fieldName = fieldPath[2];
+                
+                if (!extraCustomerData[extraCustomerDataKey][parentKey]) {
+                  extraCustomerData[extraCustomerDataKey][parentKey] = {};
+                }
+                
+                extraCustomerData[extraCustomerDataKey][parentKey][fieldName] = userData[field.key];
+              } else if (fieldPath.length === 2) {
+                // This is a direct field like extra_customer_data.phone_number
+                const fieldName = fieldPath[1];
+                extraCustomerData[extraCustomerDataKey][fieldName] = userData[field.key];
+              }
+            });
+          }
+          
+          apiPayload.extra_customer_data = extraCustomerData;
+        }
 
         const response = await cartCustomerInfo(apiPayload);
 

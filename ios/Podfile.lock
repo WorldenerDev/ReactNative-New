@@ -2602,7 +2602,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNScreens (4.17.1):
+  - RNScreens (4.18.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2629,10 +2629,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNScreens/common (= 4.17.1)
+    - RNScreens/common (= 4.18.0)
     - SocketRocket
     - Yoga
-  - RNScreens/common (4.17.1):
+  - RNScreens/common (4.18.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3098,7 +3098,7 @@ SPEC CHECKSUMS:
   RNFBMessaging: 50ae400edc5874bde8720104cdfc4b898be07479
   RNGoogleSignin: 39750df541b62de6de41396e63b3ec0b546927e9
   RNPermissions: fac73ac32a3d0a8d7a4a38d0b3313e0777aabfb9
-  RNScreens: ccfcc2f7d9c0d458b7fc41b3f4f0bea054602b3a
+  RNScreens: 98771ad898d1c0528fc8139606bbacf5a2e9d237
   RNSVG: 65335d69b8e372837ccad79307b1190d5cc1d0a9
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: f95f7e60346fa6828def95fbe5017346ccc8940e
