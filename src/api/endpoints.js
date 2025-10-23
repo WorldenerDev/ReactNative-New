@@ -32,5 +32,6 @@ export const endpoints = {
     createOrder: "/create-order",
     createNoPayment: "/create-no-payment",
     downloadVoucher: "/download-voucher",
+    removeItemFromCart: "/remove-item-from-cart",
   },
 };

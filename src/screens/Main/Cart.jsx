@@ -14,7 +14,7 @@ import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
-import { getCartList, cartCheckout } from "@api/services/mainServices";
+import { getCartList, cartCheckout, removeItemFromCart } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import navigationStrings from "@navigation/navigationStrings";
 import {
@@ -70,6 +70,24 @@ const Cart = ({ navigation }) => {
       });
     } catch (error) {
       showToast("error", error?.message || "Checkout failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to handle remove item from cart
+  const handleRemoveItem = async (item) => {
+    try {
+      setLoading(true);
+      const tripId = item._id || item.id;
+      if (!tripId) {
+        showToast("error", "Invalid item ID");
+        return;
+      }
+      const response = await removeItemFromCart({ trip_id: tripId });
+      await fetchCartList();
+    } catch (error) {
+      showToast("error", error?.message || "Failed to remove item from cart");
     } finally {
       setLoading(false);
     }
@@ -159,7 +177,7 @@ const Cart = ({ navigation }) => {
             <TouchableOpacity style={styles.editBtn} onPress={() => {}}>
               <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.removeBtn} onPress={() => {}}>
+            <TouchableOpacity style={styles.removeBtn} onPress={() => handleRemoveItem(item)}>
               <Text style={styles.removeText}>Remove</Text>
             </TouchableOpacity>
           </View>
