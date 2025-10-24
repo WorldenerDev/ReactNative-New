@@ -13,6 +13,7 @@ const ParticipantAccordion = ({
   participant,
   participantIndex,
   participantData,
+  participantErrors,
   onParticipantDataChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -48,11 +49,7 @@ const ParticipantAccordion = ({
                 onParticipantDataChange(fieldPath, value)
               }
               containerStyle={styles.inputContainer}
-              error={
-                isRequired && !participantData[fieldPath]
-                  ? `${field.title} is required`
-                  : ""
-              }
+              error={participantErrors?.[fieldPath] || ""}
             />
           );
         })}

@@ -33,5 +33,6 @@ export const endpoints = {
     createNoPayment: "/create-no-payment",
     downloadVoucher: "/download-voucher",
     removeItemFromCart: "/remove-item-from-cart",
+    updateParticipants: "/update-participants",
   },
 };

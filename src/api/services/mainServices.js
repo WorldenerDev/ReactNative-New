@@ -48,3 +48,5 @@ export const downloadVoucher = (data) =>
   apiPost(endpoints?.main?.downloadVoucher, data);
 export const removeItemFromCart = (data) =>
   apiPost(endpoints?.main?.removeItemFromCart, data);
+export const updateParticipants = (data) =>
+  apiPost(endpoints?.main?.updateParticipants, data);

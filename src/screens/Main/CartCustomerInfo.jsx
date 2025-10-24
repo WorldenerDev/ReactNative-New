@@ -23,6 +23,7 @@ import {
   getCartSchema,
   getParticipantSchema,
   cartCustomerInfo,
+  updateParticipants,
 } from "@api/services/mainServices";
 import { validateForm, validateLetter, validateEmail } from "@utils/validators";
 import { showToast } from "@components/AppToast";
@@ -38,6 +39,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [participantData, setParticipantData] = useState({});
+  const [participantErrors, setParticipantErrors] = useState({});
   const [participantSchemaData, setParticipantSchemaData] = useState(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [hasExtraCustomerData, setHasExtraCustomerData] = useState(false);
@@ -182,6 +184,14 @@ const CartCustomerInfo = ({ navigation, route }) => {
       ...prev,
       [fieldPath]: value,
     }));
+
+    // Clear error when user starts typing
+    if (participantErrors[fieldPath]) {
+      setParticipantErrors((prev) => ({
+        ...prev,
+        [fieldPath]: "",
+      }));
+    }
   };
 
   // Create individual participants from items
@@ -289,86 +299,200 @@ const CartCustomerInfo = ({ navigation, route }) => {
     return !hasErrors;
   };
 
+  const validateParticipantFields = () => {
+    const newParticipantErrors = {};
+    let hasErrors = false;
+
+    if (!participantSchemaData?.items) return true;
+
+    participantSchemaData.items.forEach((item) => {
+      const schema = item.participantSchema;
+      if (!schema?.properties?.participants?.items?.properties) return;
+
+      const participantFields = schema.properties.participants.items.properties;
+      const requiredFields = schema.properties.participants.items.required || [];
+
+      // Validate each participant instance
+      for (let i = 0; i < item.quantity; i++) {
+        Object.keys(participantFields).forEach((fieldKey) => {
+          const field = participantFields[fieldKey];
+          const isRequired = requiredFields.includes(fieldKey);
+          const fieldPath = `${item.uuid}.${i}.${fieldKey}`;
+          const value = participantData[fieldPath];
+
+          if (isRequired && (!value || value.trim() === "")) {
+            newParticipantErrors[fieldPath] = `${field.title || fieldKey} is required`;
+            hasErrors = true;
+          }
+        });
+      }
+    });
+
+    setParticipantErrors(newParticipantErrors);
+    return !hasErrors;
+  };
+
   const handleContinue = async () => {
-    if (validateAllFields()) {
-      try {
-        setLoading(true);
+    // Validate all fields including participants
+    const isPersonalDataValid = validateAllFields();
+    const isParticipantDataValid = validateParticipantFields();
 
-        // Prepare API payload with default values
-        const apiPayload = {
-          trip_id: trip_id,
-          allow_profiling: "NO",
-          email: userData.email,
-          events_related_newsletter: "NO",
-          firstname: userData.firstName,
-          lastname: userData.lastName,
-          musement_newsletter: "NO",
-          thirdparty_newsletter: "NO",
-        };
+    if (!isPersonalDataValid || !isParticipantDataValid) {
+      if (!isPersonalDataValid) {
+        showToast("error", "Please fix the validation errors in personal details");
+      } else if (!isParticipantDataValid) {
+        showToast("error", "Please fill all required participant information");
+      }
+      return;
+    }
 
-        // Conditionally add extra_customer_data if it exists
-        if (hasExtraCustomerData && extraCustomerDataKey) {
-          const extraCustomerData = {};
+    try {
+      setLoading(true);
+
+      // Prepare API payload with default values
+      const apiPayload = {
+        trip_id: trip_id,
+        allow_profiling: "NO",
+        email: userData.email,
+        events_related_newsletter: "NO",
+        firstname: userData.firstName,
+        lastname: userData.lastName,
+        musement_newsletter: "NO",
+        thirdparty_newsletter: "NO",
+      };
+
+      // Conditionally add extra_customer_data if it exists
+      if (hasExtraCustomerData && extraCustomerDataKey) {
+        const extraCustomerData = {};
+        
+        // Group form fields by their parent key (the extra customer data key)
+        const extraFields = formFields.filter(field => 
+          field.key.startsWith('extra_customer_data.')
+        );
+        
+        if (extraFields.length > 0) {
+          // Create the nested structure for extra customer data
+          extraCustomerData[extraCustomerDataKey] = {};
           
-          // Group form fields by their parent key (the extra customer data key)
-          const extraFields = formFields.filter(field => 
-            field.key.startsWith('extra_customer_data.')
-          );
-          
-          if (extraFields.length > 0) {
-            // Create the nested structure for extra customer data
-            extraCustomerData[extraCustomerDataKey] = {};
+          extraFields.forEach(field => {
+            const fieldPath = field.key.split('.');
+            if (fieldPath.length === 3) {
+              // This is a nested field like extra_customer_data.165fcd0d-2046-11e7-9cc9-06a7e332783f.phone_number
+              const parentKey = fieldPath[1];
+              const fieldName = fieldPath[2];
+              
+              if (!extraCustomerData[extraCustomerDataKey][parentKey]) {
+                extraCustomerData[extraCustomerDataKey][parentKey] = {};
+              }
+              
+              extraCustomerData[extraCustomerDataKey][parentKey][fieldName] = userData[field.key];
+            } else if (fieldPath.length === 2) {
+              // This is a direct field like extra_customer_data.phone_number
+              const fieldName = fieldPath[1];
+              extraCustomerData[extraCustomerDataKey][fieldName] = userData[field.key];
+            }
+          });
+        }
+        
+        apiPayload.extra_customer_data = extraCustomerData;
+      }
+
+      const response = await cartCustomerInfo(apiPayload);
+
+      if (response?.success) {
+        showToast("success", "Customer information submitted successfully!");
+        
+        // If participant schema exists, call update participants API
+        if (participantSchemaData?.items && Object.keys(participantData).length > 0) {
+          try {
+            // Prepare participant info payload
+            const participantInfo = [];
             
-            extraFields.forEach(field => {
-              const fieldPath = field.key.split('.');
-              if (fieldPath.length === 3) {
-                // This is a nested field like extra_customer_data.165fcd0d-2046-11e7-9cc9-06a7e332783f.phone_number
-                const parentKey = fieldPath[1];
-                const fieldName = fieldPath[2];
+            participantSchemaData.items.forEach((item) => {
+              const participants = [];
+              
+              // Collect data for each participant instance
+              for (let i = 0; i < item.quantity; i++) {
+                const participantFields = {};
+                const schema = item.participantSchema;
                 
-                if (!extraCustomerData[extraCustomerDataKey][parentKey]) {
-                  extraCustomerData[extraCustomerDataKey][parentKey] = {};
+                if (schema?.properties?.participants?.items?.properties) {
+                  const fields = schema.properties.participants.items.properties;
+                  
+                  Object.keys(fields).forEach((fieldKey) => {
+                    const fieldPath = `${item.uuid}.${i}.${fieldKey}`;
+                    const value = participantData[fieldPath];
+                    
+                    if (value) {
+                      participantFields[fieldKey] = value;
+                    }
+                  });
+                  
+                  participants.push(participantFields);
                 }
-                
-                extraCustomerData[extraCustomerDataKey][parentKey][fieldName] = userData[field.key];
-              } else if (fieldPath.length === 2) {
-                // This is a direct field like extra_customer_data.phone_number
-                const fieldName = fieldPath[1];
-                extraCustomerData[extraCustomerDataKey][fieldName] = userData[field.key];
+              }
+              
+              if (participants.length > 0) {
+                participantInfo.push({
+                  cart_item_uuid: item.uuid,
+                  participants: participants,
+                });
               }
             });
+
+            // Call update participants API if there's data to send
+            if (participantInfo.length > 0) {
+              const participantPayload = {
+                cart_uuid: cart_id,
+                participantInfo: participantInfo,
+              };
+
+              const participantResponse = await updateParticipants(participantPayload);
+
+              if (participantResponse?.success) {
+                showToast("success", "Participant information submitted successfully!");
+                navigation.navigate(navigationStrings.PAYMENT, {
+                  trip_id: trip_id,
+                });
+              } else {
+                showToast(
+                  "error",
+                  participantResponse?.message || "Failed to submit participant information"
+                );
+              }
+            } else {
+              // No participant data to send, navigate to payment
+              navigation.navigate(navigationStrings.PAYMENT, {
+                trip_id: trip_id,
+              });
+            }
+          } catch (participantError) {
+            console.error("Error submitting participant info:", participantError);
+            showToast(
+              "error",
+              participantError?.message || "Failed to submit participant information"
+            );
           }
-          
-          apiPayload.extra_customer_data = extraCustomerData;
-        }
-
-        const response = await cartCustomerInfo(apiPayload);
-
-        if (response?.success) {
-          showToast("success", "Customer information submitted successfully!");
-          // Navigate to next screen or back to cart
-          // navigation.goBack();
-
+        } else {
+          // No participant schema, navigate directly to payment
           navigation.navigate(navigationStrings.PAYMENT, {
             trip_id: trip_id,
           });
-        } else {
-          showToast(
-            "error",
-            response?.message || "Failed to submit customer information"
-          );
         }
-      } catch (error) {
-        console.error("Error submitting customer info:", error);
+      } else {
         showToast(
           "error",
-          error?.message || "Failed to submit customer information"
+          response?.message || "Failed to submit customer information"
         );
-      } finally {
-        setLoading(false);
       }
-    } else {
-      showToast("error", "Please fix the validation errors");
+    } catch (error) {
+      console.error("Error submitting customer info:", error);
+      showToast(
+        "error",
+        error?.message || "Failed to submit customer information"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -468,6 +592,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
                   participant={participant}
                   participantIndex={index}
                   participantData={participantData}
+                  participantErrors={participantErrors}
                   onParticipantDataChange={handleParticipantDataChange}
                 />
               ))}
