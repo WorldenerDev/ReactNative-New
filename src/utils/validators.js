@@ -83,6 +83,35 @@ export const validateTripMembers = (selectedMembers) => {
   return null;
 };
 
+export const validateDateOfBirth = (dateString) => {
+  if (!dateString) return "Date of birth is required";
+  
+  // Check if the date matches YYYY-MM-DD format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateString)) {
+    return "Date must be in YYYY-MM-DD format (e.g., 2005-10-11)";
+  }
+  
+  // Validate that it's a valid date
+  const date = new Date(dateString);
+  const isValidDate = date instanceof Date && !isNaN(date);
+  
+  if (!isValidDate) {
+    return "Please enter a valid date";
+  }
+  
+  // Check if the date is not in the future
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  
+  if (date > today) {
+    return "Date of birth cannot be in the future";
+  }
+  
+  return null;
+};
+
 export const validateForm = (fields) => {
   for (let field of fields) {
     const error = field.validator(...field.values);

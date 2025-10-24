@@ -25,7 +25,7 @@ import {
   cartCustomerInfo,
   updateParticipants,
 } from "@api/services/mainServices";
-import { validateForm, validateLetter, validateEmail } from "@utils/validators";
+import { validateForm, validateLetter, validateEmail, validateDateOfBirth } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import ParticipantAccordion from "@components/ParticipantAccordion";
 import navigationStrings from "@navigation/navigationStrings";
@@ -323,6 +323,13 @@ const CartCustomerInfo = ({ navigation, route }) => {
           if (isRequired && (!value || value.trim() === "")) {
             newParticipantErrors[fieldPath] = `${field.title || fieldKey} is required`;
             hasErrors = true;
+          } else if (value && fieldKey === "date_of_birth") {
+            // Special validation for date_of_birth field
+            const dateError = validateDateOfBirth(value);
+            if (dateError) {
+              newParticipantErrors[fieldPath] = dateError;
+              hasErrors = true;
+            }
           }
         });
       }
