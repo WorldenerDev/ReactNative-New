@@ -540,6 +540,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 value={userData.firstName}
                 onChangeText={(value) => handleInputChange("firstName", value)}
                 containerStyle={styles.inputContainer}
+                inputStyle={{color: colors.black}}
                 error={errors.firstName}
               />
             </View>
@@ -549,6 +550,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 value={userData.lastName}
                 onChangeText={(value) => handleInputChange("lastName", value)}
                 containerStyle={styles.inputContainer}
+                inputStyle={{color: colors.black}}
                 error={errors.lastName}
               />
             </View>
@@ -560,6 +562,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
             keyboardType="email-address"
             autoCapitalize="none"
             containerStyle={styles.inputContainer}
+            inputStyle={{color: colors.black}}
             error={errors.email}
           />
           {formFields.map((field) => renderFormField(field))}

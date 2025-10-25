@@ -50,3 +50,5 @@ export const removeItemFromCart = (data) =>
   apiPost(endpoints?.main?.removeItemFromCart, data);
 export const updateParticipants = (data) =>
   apiPost(endpoints?.main?.updateParticipants, data);
+export const updateCart = (data) =>
+  apiPost(endpoints?.main?.updateCart, data);

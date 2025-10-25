@@ -174,7 +174,26 @@ const Cart = ({ navigation }) => {
 
         <View style={styles.actionsRow}>
           <View style={styles.leftActions}>
-            <TouchableOpacity style={styles.editBtn} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => {
+                const eventData = {
+                  activityUuid: item?.event_id,
+                  cityId: item?.city?.city_id,
+                  activityName: item?.event?.name,
+                  instant_confirmation: item?.instant_confirmation,
+                  free_cancellation: item?.free_cancellation,
+                  duration: item?.duration,
+                  pickupPointId: item?.pickup_point_id,
+                  selectedDate: item?.activities?.[0]?.date
+                };
+
+                navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
+                  eventData,
+                  from: "cart",
+                });
+              }}
+            >
               <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.removeBtn} onPress={() => handleRemoveItem(item)}>

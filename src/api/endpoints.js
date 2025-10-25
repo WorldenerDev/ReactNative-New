@@ -34,5 +34,6 @@ export const endpoints = {
     downloadVoucher: "/download-voucher",
     removeItemFromCart: "/remove-item-from-cart",
     updateParticipants: "/update-participants",
+    updateCart: "/updateCart",
   },
 };

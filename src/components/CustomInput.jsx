@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: getFontSize(14),
-    color: colors.bodyText,
+    color: colors.black,
     fontFamily: fonts.RobotoRegular,
   },
   textareaInput: {

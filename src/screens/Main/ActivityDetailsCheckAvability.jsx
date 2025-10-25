@@ -22,12 +22,13 @@ import {
   getEventDates,
   getEventDatesDetails,
   addEventInTrip,
+  updateCart,
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import navigationStrings from "@navigation/navigationStrings";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
-  const { eventData } = route?.params || {};
+  const { eventData, from } = route?.params || {};
   const [eventDate, setEventDate] = useState([]);
   const [dateDetails, setDateDetails] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -64,9 +65,18 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const fetchEventDatesDetails = async (selectedDate) => {
     try {
       setIsLoading(true);
+      
+      // Format date to YYYY-MM-DD when coming from cart
+      let formattedDate = selectedDate;
+      if (from === "cart" && selectedDate) {
+        // Convert ISO string or any date format to YYYY-MM-DD
+        const date = new Date(selectedDate);
+        formattedDate = date.toISOString().split('T')[0];
+      }
+      
       const requestData = {
         activityUuid: eventData?.activityUuid,
-        date: selectedDate,
+        date: formattedDate,
         ...(eventData?.pickupPointId && { pickup: eventData?.pickupPointId }),
       };
       console.log(" Calling getEventDatesDetails with data:", requestData);
@@ -85,11 +95,18 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
   useEffect(() => {
     if (!selectedDate && eventDate.length > 0) {
-      setSelectedDate(eventDate[0].day);
-      // Call the API with the first available date
-      fetchEventDatesDetails(eventDate[0].day);
+      // If coming from cart, use the selectedDate from eventData
+      if (from === "cart" && eventData?.selectedDate) {
+        setSelectedDate(eventData.selectedDate);
+        // Call the API with the selected date from cart
+        fetchEventDatesDetails(eventData.selectedDate);
+      } else {
+        setSelectedDate(eventDate[0].day);
+        // Call the API with the first available date
+        fetchEventDatesDetails(eventDate[0].day);
+      }
     }
-  }, [eventDate]);
+  }, [eventDate, from, eventData?.selectedDate]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -103,6 +120,15 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   useEffect(() => {
     fetchEventDates();
   }, []);
+
+  // Additional effect to handle cart navigation
+  useEffect(() => {
+    if (from === "cart" && eventData?.selectedDate && eventDate.length > 0) {
+      // Set the selected date from cart and fetch details
+      setSelectedDate(eventData.selectedDate);
+      fetchEventDatesDetails(eventData.selectedDate);
+    }
+  }, [from, eventData?.selectedDate, eventDate]);
 
   // Get time slots from selected group
   const getTimeSlotsForSelectedGroup = () => {
@@ -238,14 +264,23 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       // Collect selected data for booking
       const selectedProducts = ticketTypes
         .filter((ticket) => (ticketQuantities[ticket.id] || 0) > 0)
-        .map((ticket) => ({
-          product_id: ticket.id,
-          product_name: ticket.name,
-          type: ticket?.type || "musement", // Based on the API example
-          quantity: ticketQuantities[ticket.id] || 0,
-          retail_price: ticket.price,
-          total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
-        }));
+        .map((ticket) => {
+          const baseProduct = {
+            product_id: ticket.id,
+            product_name: ticket.name,
+            type: ticket?.type || "musement", // Based on the API example
+            quantity: ticketQuantities[ticket.id] || 0,
+            retail_price: ticket.price,
+            total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
+          };
+          
+          // Only add id field when coming from cart (for updateCart API)
+          if (from === "cart") {
+            baseProduct.id = ticket.id;
+          }
+          
+          return baseProduct;
+        });
 
       // Check if any products are selected
       if (selectedProducts.length === 0) {
@@ -259,27 +294,53 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         return;
       }
 
-      // Prepare API request data
-      const requestData = {
-        city_id: String(eventData?.cityId || ""), // Ensure city_id is a string
-        event_id: eventData?.activityUuid,
-        start_date: selectedDate,
-        products: selectedProducts,
-        instant_confirmation: eventData?.instant_confirmation,
-        free_cancellation: eventData?.free_cancellation ? true : false,
-        duration: eventData?.duration,
-      };
       setIsLoading(true);
-      console.log("requestData", requestData);
-      const response = await addEventInTrip(requestData);
-      showToast("success", response?.message);
-      navigation.navigate(navigationStrings.TRIP_DETAILS, {
-        trip: response?.data,
-        tripId: response?.data?.id || response?.data?._id,
-      });
+
+      // Format date to YYYY-MM-DD for API
+      const formattedDate = new Date(selectedDate).toISOString().split('T')[0];
+
+      if (from === "cart") {
+        // Update cart when coming from cart
+        const updateCartData = {
+          city_id: String(eventData?.cityId || ""),
+          event_id: eventData?.activityUuid,
+          start_date: formattedDate,
+          products: selectedProducts,
+        };
+        
+        console.log("updateCart requestData", updateCartData);
+        const response = await updateCart(updateCartData);
+        showToast("success", response?.message || "Cart updated successfully");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: navigationStrings.CART }],
+        });
+      } else {
+        // Add to trip when coming from normal flow
+        const requestData = {
+          city_id: String(eventData?.cityId || ""), // Ensure city_id is a string
+          event_id: eventData?.activityUuid,
+          start_date: formattedDate,
+          products: selectedProducts,
+          instant_confirmation: eventData?.instant_confirmation,
+          free_cancellation: eventData?.free_cancellation ? true : false,
+          duration: eventData?.duration,
+        };
+        
+        console.log("addEventInTrip requestData", requestData);
+        const response = await addEventInTrip(requestData);
+        showToast("success", response?.message);
+        navigation.navigate(navigationStrings.TRIP_DETAILS, {
+          trip: response?.data,
+          tripId: response?.data?.id || response?.data?._id,
+        });
+      }
     } catch (error) {
-      console.error("❌ Error adding event to trip:", error);
-      showToast("error", error?.message || "Failed to add event to trip");
+      console.error("❌ Error:", error);
+      const errorMessage = from === "cart" 
+        ? "Failed to update cart" 
+        : "Failed to add event to trip";
+      showToast("error", error?.message || errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -494,7 +555,11 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       {/* Save Button */}
       <View style={styles.bottomContainer}>
         <ButtonComp
-          title={isLoading ? "Adding to Trip..." : "Add to Trip"}
+          title={
+            isLoading 
+              ? (from === "cart" ? "Updating Cart..." : "Adding to Trip...")
+              : (from === "cart" ? "Update Cart" : "Add to Trip")
+          }
           onPress={handleSave}
           disabled={isLoading}
           containerStyle={{ width: "100%" }}

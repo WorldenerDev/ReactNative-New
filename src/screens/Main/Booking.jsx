@@ -72,11 +72,11 @@ const Booking = () => {
     }
 
     if (activeTab === "Upcoming") {
-      return mockTrips.filter((trip) => trip.type === "upcoming");
+      return [];
     }
 
     if (activeTab === "Past") {
-      return mockTrips.filter((trip) => trip.type === "past");
+      return [];
     }
 
     return mockTrips;
