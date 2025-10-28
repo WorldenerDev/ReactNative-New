@@ -30,3 +30,4 @@ export { default as NotificationSettings } from "./Main/NotificationSettings";
 export { default as EditProfile } from "./Main/EditProfile";
 export { default as Payment } from "./Main/Payment";
 export { default as PaymentSuccess } from "./Main/PaymentSuccess";
+export { default as Chat } from "./Main/Chat";

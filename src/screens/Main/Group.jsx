@@ -13,8 +13,9 @@ import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import MainContainer from "@components/container/MainContainer";
+import navigationStrings from "@navigation/navigationStrings";
 
-const Group = () => {
+const Group = ({navigation}) => {
   // Sample data - replace with your actual data
   const [trips, setTrips] = useState([
     {
@@ -76,7 +77,7 @@ const Group = () => {
         <TouchableOpacity style={styles.actionButton}>
           <Text style={styles.actionButtonText}>View</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.CHAT)}>
           <Text style={styles.actionButtonText}>Chat</Text>
         </TouchableOpacity>
       </View>

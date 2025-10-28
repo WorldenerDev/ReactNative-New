@@ -32,4 +32,5 @@ export default {
   EDIT_PROFILE: "EditProfile",
   PAYMENT: "Payment",
   PAYMENT_SUCCESS: "PaymentSuccess",
+  CHAT: "Chat",
 };

@@ -19,6 +19,6 @@ module.exports = {
         },
       },
     ],
-    // 'react-native-worklets/plugin',
+    'react-native-worklets/plugin',
   ],
 };
