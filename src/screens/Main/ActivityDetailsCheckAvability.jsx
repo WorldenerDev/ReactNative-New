@@ -95,8 +95,9 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
   useEffect(() => {
     if (!selectedDate && eventDate.length > 0) {
-      // If coming from cart, use the selectedDate from eventData
+      // If coming from cart, use the selectedDate from eventData (item?.activities?.[0]?.date from Cart.jsx)
       if (from === "cart" && eventData?.selectedDate) {
+        console.log("📅 Setting selectedDate from cart:", eventData.selectedDate);
         setSelectedDate(eventData.selectedDate);
         // Call the API with the selected date from cart
         fetchEventDatesDetails(eventData.selectedDate);
@@ -121,14 +122,22 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     fetchEventDates();
   }, []);
 
-  // Additional effect to handle cart navigation
+  // Additional effect to handle cart navigation - set date immediately if coming from cart
   useEffect(() => {
-    if (from === "cart" && eventData?.selectedDate && eventDate.length > 0) {
-      // Set the selected date from cart and fetch details
+    if (from === "cart" && eventData?.selectedDate && !selectedDate) {
+      // Set the selected date from cart immediately (from item?.activities?.[0]?.date in Cart.jsx)
+      console.log("📅 Initializing selectedDate from cart (early):", eventData.selectedDate);
       setSelectedDate(eventData.selectedDate);
-      fetchEventDatesDetails(eventData.selectedDate);
     }
-  }, [from, eventData?.selectedDate, eventDate]);
+  }, [from, eventData?.selectedDate]);
+
+  // Fetch event dates details when date is available and eventDate list is loaded
+  useEffect(() => {
+    if (from === "cart" && eventData?.selectedDate && selectedDate && eventDate.length > 0) {
+      // Fetch details for the selected date from cart
+      fetchEventDatesDetails(selectedDate);
+    }
+  }, [from, selectedDate, eventDate]);
 
   // Get time slots from selected group
   const getTimeSlotsForSelectedGroup = () => {
@@ -274,9 +283,10 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
             total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
           };
           
-          // Only add id field when coming from cart (for updateCart API)
-          if (from === "cart") {
-            baseProduct.id = ticket.id;
+          // Only add id field (cart_id) when coming from cart (for updateCart API)
+          // The id should be the cart item ID (item?._id from Cart.jsx)
+          if (from === "cart" && eventData?.cart_id) {
+            baseProduct.id = eventData.cart_id;
           }
           
           return baseProduct;
@@ -297,7 +307,28 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       setIsLoading(true);
 
       // Format date to YYYY-MM-DD for API
-      const formattedDate = new Date(selectedDate).toISOString().split('T')[0];
+      // Use selectedDate state (from eventData.selectedDate = item?.activities?.[0]?.date in Cart.jsx)
+      const dateToFormat = selectedDate || eventData?.selectedDate;
+      
+      if (!dateToFormat) {
+        showToast("error", "Date is required");
+        setIsLoading(false);
+        return;
+      }
+
+      // Format date: extract YYYY-MM-DD from any valid date format
+      let formattedDate;
+      try {
+        const dateObj = new Date(dateToFormat);
+        if (isNaN(dateObj.getTime())) {
+          throw new Error("Invalid date");
+        }
+        formattedDate = dateObj.toISOString().split('T')[0];
+      } catch (error) {
+        showToast("error", "Invalid date selected");
+        setIsLoading(false);
+        return;
+      }
 
       if (from === "cart") {
         // Update cart when coming from cart
@@ -308,7 +339,15 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           products: selectedProducts,
         };
         
-        console.log("updateCart requestData", updateCartData);
+        // Ensure start_date is always included
+        if (!updateCartData.start_date) {
+          console.error("❌ start_date is missing!");
+          showToast("error", "Date is required for cart update");
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log("updateCart requestData", JSON.stringify(updateCartData, null, 2));
         const response = await updateCart(updateCartData);
         showToast("success", response?.message || "Cart updated successfully");
         navigation.reset({

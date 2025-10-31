@@ -180,12 +180,8 @@ const Cart = ({ navigation }) => {
                 const eventData = {
                   activityUuid: item?.event_id,
                   cityId: item?.city?.city_id,
-                  activityName: item?.event?.name,
-                  instant_confirmation: item?.instant_confirmation,
-                  free_cancellation: item?.free_cancellation,
-                  duration: item?.duration,
-                  pickupPointId: item?.pickup_point_id,
-                  selectedDate: item?.activities?.[0]?.date
+                  selectedDate: item?.activities?.[0]?.date,
+                  cart_id: item?._id,
                 };
 
                 navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {

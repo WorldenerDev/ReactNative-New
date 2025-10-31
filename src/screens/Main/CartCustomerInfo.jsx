@@ -568,7 +568,9 @@ const CartCustomerInfo = ({ navigation, route }) => {
           {formFields.map((field) => renderFormField(field))}
 
           {/* Participant Information Section */}
-          {participantSchemaData && (
+          {participantSchemaData?.items && 
+           participantSchemaData.items.length > 0 && 
+           participantSchemaData.items.some(item => item.quantity > 0) && (
             <View style={styles.participantSection}>
               <Text style={styles.sectionTitle}>Participant Information</Text>
 
