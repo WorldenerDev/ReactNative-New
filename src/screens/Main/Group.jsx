@@ -74,7 +74,7 @@ const Group = ({navigation}) => {
       </View>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.GROUP_DETAILS)}>
           <Text style={styles.actionButtonText}>View</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.CHAT)}>
