@@ -35,5 +35,6 @@ export const endpoints = {
     removeItemFromCart: "/remove-item-from-cart",
     updateParticipants: "/update-participants",
     updateCart: "/updateCart",
+    getOrders: "/getOrders",
   },
 };
