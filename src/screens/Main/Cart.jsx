@@ -54,7 +54,7 @@ const Cart = ({ navigation }) => {
     try {
       setLoading(true);
       const tripIds = cartList
-        .map((item) => item._id || item.id)
+        .map((item) => item?.trip_id)
         .filter(Boolean);
       if (tripIds.length === 0) {
         showToast("error", "No valid trip IDs found");
@@ -79,12 +79,12 @@ const Cart = ({ navigation }) => {
   const handleRemoveItem = async (item) => {
     try {
       setLoading(true);
-      const tripId = item._id || item.id;
-      if (!tripId) {
-        showToast("error", "Invalid item ID");
-        return;
-      }
-      const response = await removeItemFromCart({ trip_id: tripId });
+      const response = await removeItemFromCart({
+        trip_id: item?.trip_id,
+        event_id: item?.event_id,
+        date: item?.date
+
+      });
       await fetchCartList();
     } catch (error) {
       showToast("error", error?.message || "Failed to remove item from cart");

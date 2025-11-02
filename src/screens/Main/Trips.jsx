@@ -6,7 +6,8 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TripCard from "@components/TripCard";
@@ -22,17 +23,25 @@ const Trips = ({ navigation }) => {
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  useEffect(() => {
-    getAllTrips();
-  }, [dispatch]);
 
-  const getAllTrips = async () => {
+  const getAllTrips = useCallback(async () => {
     try {
-      const response = await dispatch(fetchUserTrip());
+      await dispatch(fetchUserTrip());
     } catch (error) {
       console.error("Failed to fetch trips: ", error);
     }
-  };
+  }, [dispatch]);
+
+  useEffect(() => {
+    getAllTrips();
+  }, [getAllTrips]);
+
+  // Refresh data when screen comes into focus (e.g., returning from Create Trip)
+  useFocusEffect(
+    useCallback(() => {
+      getAllTrips();
+    }, [getAllTrips])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -59,6 +68,8 @@ const Trips = ({ navigation }) => {
           setDeleteLoading(true);
           try {
             await dispatch(deleteUserTrip(tripId));
+            // Automatically refresh trips after successful deletion
+            await getAllTrips();
           } catch (error) {
             Alert.alert("Error", "Failed to delete trip. Please try again.");
           } finally {
@@ -79,7 +90,7 @@ const Trips = ({ navigation }) => {
       />
 
       <FlatList
-        data={trip}
+        data={trip || []}
         renderItem={({ item }) => (
           <TripCard
             image={item?.city?.image}
@@ -91,7 +102,7 @@ const Trips = ({ navigation }) => {
                 tripId: item?._id,
               })
             }
-            onGroupPress={() => {}}
+            onGroupPress={() => { }}
             onDeletePress={() => handleDelete(item._id)}
             onPressCard={() =>
               navigation.navigate(navigationStrings.TRIP_DETAILS, {

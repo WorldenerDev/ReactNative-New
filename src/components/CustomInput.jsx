@@ -48,7 +48,7 @@ const CustomInput = ({
         <TextInput
           style={[styles.input, isTextarea && styles.textareaInput, inputStyle]}
           placeholder={placeholder}
-          placeholderTextColor={colors.placeholderText}
+          placeholderTextColor={colors.lightText}
           secureTextEntry={secure && !isTextarea && isSecure}
           value={value}
           onChangeText={onChangeText}

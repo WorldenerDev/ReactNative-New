@@ -371,27 +371,27 @@ const CartCustomerInfo = ({ navigation, route }) => {
       // Conditionally add extra_customer_data if it exists
       if (hasExtraCustomerData && extraCustomerDataKey) {
         const extraCustomerData = {};
-        
+
         // Group form fields by their parent key (the extra customer data key)
-        const extraFields = formFields.filter(field => 
+        const extraFields = formFields.filter(field =>
           field.key.startsWith('extra_customer_data.')
         );
-        
+
         if (extraFields.length > 0) {
           // Create the nested structure for extra customer data
           extraCustomerData[extraCustomerDataKey] = {};
-          
+
           extraFields.forEach(field => {
             const fieldPath = field.key.split('.');
             if (fieldPath.length === 3) {
               // This is a nested field like extra_customer_data.165fcd0d-2046-11e7-9cc9-06a7e332783f.phone_number
               const parentKey = fieldPath[1];
               const fieldName = fieldPath[2];
-              
+
               if (!extraCustomerData[extraCustomerDataKey][parentKey]) {
                 extraCustomerData[extraCustomerDataKey][parentKey] = {};
               }
-              
+
               extraCustomerData[extraCustomerDataKey][parentKey][fieldName] = userData[field.key];
             } else if (fieldPath.length === 2) {
               // This is a direct field like extra_customer_data.phone_number
@@ -400,7 +400,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
             }
           });
         }
-        
+
         apiPayload.extra_customer_data = extraCustomerData;
       }
 
@@ -408,37 +408,37 @@ const CartCustomerInfo = ({ navigation, route }) => {
 
       if (response?.success) {
         showToast("success", "Customer information submitted successfully!");
-        
+
         // If participant schema exists, call update participants API
         if (participantSchemaData?.items && Object.keys(participantData).length > 0) {
           try {
             // Prepare participant info payload
             const participantInfo = [];
-            
+
             participantSchemaData.items.forEach((item) => {
               const participants = [];
-              
+
               // Collect data for each participant instance
               for (let i = 0; i < item.quantity; i++) {
                 const participantFields = {};
                 const schema = item.participantSchema;
-                
+
                 if (schema?.properties?.participants?.items?.properties) {
                   const fields = schema.properties.participants.items.properties;
-                  
+
                   Object.keys(fields).forEach((fieldKey) => {
                     const fieldPath = `${item.uuid}.${i}.${fieldKey}`;
                     const value = participantData[fieldPath];
-                    
+
                     if (value) {
                       participantFields[fieldKey] = value;
                     }
                   });
-                  
+
                   participants.push(participantFields);
                 }
               }
-              
+
               if (participants.length > 0) {
                 participantInfo.push({
                   cart_item_uuid: item.uuid,
@@ -540,7 +540,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 value={userData.firstName}
                 onChangeText={(value) => handleInputChange("firstName", value)}
                 containerStyle={styles.inputContainer}
-                inputStyle={{color: colors.black}}
+                inputStyle={{ color: colors.black }}
                 error={errors.firstName}
               />
             </View>
@@ -550,7 +550,8 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 value={userData.lastName}
                 onChangeText={(value) => handleInputChange("lastName", value)}
                 containerStyle={styles.inputContainer}
-                inputStyle={{color: colors.black}}
+                inputStyle={{ color: colors.black }}
+
                 error={errors.lastName}
               />
             </View>
@@ -562,54 +563,54 @@ const CartCustomerInfo = ({ navigation, route }) => {
             keyboardType="email-address"
             autoCapitalize="none"
             containerStyle={styles.inputContainer}
-            inputStyle={{color: colors.black}}
+            inputStyle={{ color: colors.black }}
             error={errors.email}
           />
           {formFields.map((field) => renderFormField(field))}
 
           {/* Participant Information Section */}
-          {participantSchemaData?.items && 
-           participantSchemaData.items.length > 0 && 
-           participantSchemaData.items.some(item => item.quantity > 0) && (
-            <View style={styles.participantSection}>
-              <Text style={styles.sectionTitle}>Participant Information</Text>
+          {participantSchemaData?.items &&
+            participantSchemaData.items.length > 0 &&
+            participantSchemaData.items.some(item => item.quantity > 0) && (
+              <View style={styles.participantSection}>
+                <Text style={styles.sectionTitle}>Participant Information</Text>
 
-              {/* Product Information - Above each participant group */}
-              {Object.entries(groupProductsForDisplay()).map(
-                ([activityUuid, productGroup]) => (
-                  <View key={activityUuid}>
-                    <Text style={styles.requestedByText}>
-                      This info is requested by our partner
-                    </Text>
-                    <View style={styles.productCard}>
-                      <Image
-                        source={{ uri: productGroup.coverImage }}
-                        style={styles.productImage}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.productInfo}>
-                        <Text style={styles.productTitle}>
-                          {productGroup.title}
-                        </Text>
+                {/* Product Information - Above each participant group */}
+                {Object.entries(groupProductsForDisplay()).map(
+                  ([activityUuid, productGroup]) => (
+                    <View key={activityUuid}>
+                      <Text style={styles.requestedByText}>
+                        This info is requested by our partner
+                      </Text>
+                      <View style={styles.productCard}>
+                        <Image
+                          source={{ uri: productGroup.coverImage }}
+                          style={styles.productImage}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.productInfo}>
+                          <Text style={styles.productTitle}>
+                            {productGroup.title}
+                          </Text>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                )
-              )}
+                  )
+                )}
 
-              {/* Individual Participants */}
-              {createIndividualParticipants().map((participant, index) => (
-                <ParticipantAccordion
-                  key={`${participant.uuid}-${participant.participantIndex}`}
-                  participant={participant}
-                  participantIndex={index}
-                  participantData={participantData}
-                  participantErrors={participantErrors}
-                  onParticipantDataChange={handleParticipantDataChange}
-                />
-              ))}
-            </View>
-          )}
+                {/* Individual Participants */}
+                {createIndividualParticipants().map((participant, index) => (
+                  <ParticipantAccordion
+                    key={`${participant.uuid}-${participant.participantIndex}`}
+                    participant={participant}
+                    participantIndex={index}
+                    participantData={participantData}
+                    participantErrors={participantErrors}
+                    onParticipantDataChange={handleParticipantDataChange}
+                  />
+                ))}
+              </View>
+            )}
         </View>
       </ScrollView>
 
