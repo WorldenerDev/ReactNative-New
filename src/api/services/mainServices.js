@@ -52,4 +52,4 @@ export const updateParticipants = (data) =>
   apiPost(endpoints?.main?.updateParticipants, data);
 export const updateCart = (data) =>
   apiPost(endpoints?.main?.updateCart, data);
-export const getOrders = () => apiGet(endpoints?.main?.getOrders);
+export const getOrders = (params) => apiGet(endpoints?.main?.getOrders, params);

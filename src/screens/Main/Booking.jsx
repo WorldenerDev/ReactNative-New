@@ -16,41 +16,58 @@ const Booking = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-
-  // Fetch orders from API
+  // Fetch orders from API based on active tab
   useEffect(() => {
     const fetchOrders = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await getOrders();
+        // Build query params based on active tab
+        const params = {};
+        if (activeTab === "Upcoming") {
+          params.status = "upcoming";
+        } else if (activeTab === "Past") {
+          params.status = "past";
+        } else if (activeTab === "Cancelled") {
+          params.status = "cancelled";
+        }
+        // For "All" tab, params will be empty {} which means no status filter
+
+        // Call API with appropriate params
+        // If params object has keys, pass it; otherwise pass empty object (no query params)
+        const apiParams = Object.keys(params).length > 0 ? params : {};
+        const response = await getOrders(apiParams);
+
         if (response?.success && response?.data) {
-          setOrders(response.data);
+          setOrders(Array.isArray(response.data) ? response.data : []);
+        } else {
+          setOrders([]);
         }
       } catch (err) {
         console.error("Error fetching orders:", err);
         setError(err.message || "Failed to fetch orders");
+        setOrders([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, []);
+  }, [activeTab]);
 
   // Transform API data to match UI structure
-  const transformOrdersToTrips = (ordersData) => {
+  const transformOrdersToTrips = (ordersData, currentTab) => {
     const trips = [];
-    
+
     ordersData.forEach((order) => {
       const tripId = order.trip?.trip_id || order._id;
       const tripTitle = order.city?.name || "Trip";
-      const tripDates = order.trip ? 
+      const tripDates = order.trip ?
         `${new Date(order.trip.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(order.trip.end_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` :
         new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      
+
       const orderType = new Date(order.trip?.end_at || order.createdAt) > new Date() ? "upcoming" : "past";
-      
+
       // Create a separate trip for each order
       const trip = {
         tripId: `${tripId}_${order._id}`, // Make each trip unique
@@ -59,7 +76,15 @@ const Booking = () => {
         type: orderType,
         bookings: []
       };
-      
+
+      // Only mark as cancelled if:
+      // 1. We're on Cancelled tab (all bookings on this tab are cancelled)
+      // 2. OR the order status is explicitly "cancelled"
+      // Note: Don't mark past bookings as cancelled
+      const isCancelled = currentTab === "Cancelled" ||
+        (order.status === "cancelled" && currentTab !== "Past") ||
+        (order.order_status === "cancelled" && currentTab !== "Past");
+
       // Transform each order item to booking
       order.musement_data?.items?.forEach((item) => {
         const booking = {
@@ -67,54 +92,58 @@ const Booking = () => {
           activityTitle: item.product?.title || "Activity",
           bookingId: order.order_identifier || order.order_id,
           price: item.total_retail_price_in_order_currency?.formatted_value || "$0.00",
-          dateTime: item.product?.date ? 
-            new Date(item.product.date).toLocaleDateString('en-US', { 
-              day: 'numeric', 
-              month: 'short', 
-              year: 'numeric', 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            }) : 
-            new Date(order.createdAt).toLocaleDateString('en-US', { 
-              day: 'numeric', 
-              month: 'short', 
-              year: 'numeric', 
-              hour: '2-digit', 
-              minute: '2-digit' 
+          dateTime: item.product?.date ?
+            new Date(item.product.date).toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }) :
+            new Date(order.createdAt).toLocaleDateString('en-US', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
             }),
           image: {
             uri: item.product?.cover_image_url || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&h=300&fit=crop"
-          }
+          },
+          isCancelled: isCancelled // This will be true for cancelled tab
         };
-        
+
         trip.bookings.push(booking);
       });
-      
+
       trips.push(trip);
     });
-    
+
     return trips;
   };
 
   const currentTrips = useMemo(() => {
     // Use real data from API
-    const tripsData = transformOrdersToTrips(orders);
-    
-    // Filter trips based on active tab
-    if (activeTab === "Cancelled") {
-      return [];
-    }
+    const tripsData = transformOrdersToTrips(orders, activeTab);
 
+    // Since we're fetching filtered data from API, we mainly return what we get
+    // However, we can still do client-side filtering as a fallback based on dates
     if (activeTab === "All") {
       return tripsData;
     }
 
+    // For other tabs, API should return filtered data, but we'll also filter by date as fallback
     if (activeTab === "Upcoming") {
       return tripsData.filter((trip) => trip.type === "upcoming");
     }
 
     if (activeTab === "Past") {
       return tripsData.filter((trip) => trip.type === "past");
+    }
+
+    if (activeTab === "Cancelled") {
+      // Return cancelled orders from API
+      return tripsData;
     }
 
     return tripsData;

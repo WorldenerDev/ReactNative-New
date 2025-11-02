@@ -5,9 +5,17 @@ import fonts from "@assets/fonts";
 import { getWidth, getHeight, getFontSize, getRadius } from "@utils/responsive";
 
 const TripSection = ({ booking, onViewDetails }) => {
+  // Debug: Log cancelled status
+  // console.log("Booking cancelled status:", booking.isCancelled, booking.activityTitle);
+
   return (
     <View style={styles.bookingContainer}>
       <View style={styles.bookingCard}>
+        {booking.isCancelled === true && (
+          <View style={styles.cancelledIcon}>
+            <Text style={styles.cancelledIconText}>✕</Text>
+          </View>
+        )}
         <View style={styles.mainContent}>
           <Image source={booking.image} style={styles.thumbnail} />
           <View style={styles.textContent}>
@@ -17,7 +25,7 @@ const TripSection = ({ booking, onViewDetails }) => {
             <Text style={styles.bookingId}>
               Booking ID: {booking.bookingId}
             </Text>
-            <Text style={styles.price}>${booking.price}</Text>
+            <Text style={styles.price}>{booking.price}</Text>
           </View>
         </View>
         <View style={styles.dateRow}>
@@ -50,6 +58,25 @@ const styles = StyleSheet.create({
     elevation: 4,
     paddingHorizontal: getWidth(16),
     paddingVertical: getHeight(16),
+    position: "relative",
+  },
+  cancelledIcon: {
+    position: "absolute",
+    top: getHeight(16),
+    right: getWidth(16),
+    width: getWidth(24),
+    height: getWidth(24),
+    borderRadius: getWidth(12),
+    backgroundColor: colors.red,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  cancelledIconText: {
+    color: colors.white,
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoBold,
+    lineHeight: getFontSize(14),
   },
   mainContent: {
     flexDirection: "row",
