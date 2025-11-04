@@ -27,24 +27,63 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchEventForYouCityID,
   fetchPopularEvent,
+  fetchTripByCity,
 } from "@redux/slices/cityTripSlice";
 import CategoryCard from "@components/appComponent/CategoryCard";
 import ForYouCard from "@components/appComponent/ForYouCard";
 import ScreenWapper from "@components/container/ScreenWapper";
+import CustomDropdown from "@components/CustomDropdown";
+
+// Helper function to get city name only
+const getCityName = (trip) => {
+  return trip?.city_id?.name || "Trip";
+};
+
+// Helper function to format trip label with date (for dropdown options)
+const formatTripLabel = (trip) => {
+  const cityName = trip?.city_id?.name || "Trip";
+  const startDate = trip?.start_at
+    ? new Date(trip.start_at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+    : "";
+  return cityName + (startDate ? ` - ${startDate}` : "");
+};
 
 /** --- screen --- */
 const CityDetail = ({ route, navigation }) => {
   const { cityData } = route.params || {};
   const dispatch = useDispatch();
   const { categories } = useSelector((state) => state.auth);
+  const { tripsByCity } = useSelector((state) => state.cityTrip);
   const [popularThing, setPopularThings] = useState([]);
   const [eventByCity, setEventByCity] = useState([]);
+  const [selectedTrip, setSelectedTrip] = useState(null);
+
+  // Get trips for current city from Redux map
+  const currentCityTrips = tripsByCity[cityData?.city_id] || [];
   // console.log("City Data on city detail screen ", cityData);
 
   useEffect(() => {
+    // Reset selected trip when city changes
+    setSelectedTrip(null);
     PopularEvents();
     getEvent_by_city();
+    getTripsByCity();
   }, [route]);
+
+  // Removed auto-selection - dropdown will show "Trip Name" placeholder by default
+
+  const getTripsByCity = async () => {
+    try {
+      const result = await dispatch(
+        fetchTripByCity(cityData?.city_id)
+      );
+    } catch (error) {
+      console.warn("fetchTripByCity error:", error);
+    }
+  };
 
   const PopularEvents = async () => {
     try {
@@ -86,6 +125,7 @@ const CityDetail = ({ route, navigation }) => {
       onPress={() =>
         navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
           eventData: item,
+          selectedTrip: selectedTrip,
         })
       }
     />
@@ -98,6 +138,7 @@ const CityDetail = ({ route, navigation }) => {
       onPress={() =>
         navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
           eventData: item,
+          selectedTrip: selectedTrip,
         })
       }
     />
@@ -144,6 +185,33 @@ const CityDetail = ({ route, navigation }) => {
               >
                 <Text style={styles.cityName}>{cityData?.name} ⌄</Text>
               </TouchableOpacity>
+
+              {/* Trip Name Dropdown */}
+              <View style={styles.tripDropdownContainer}>
+                <CustomDropdown
+                  placeholder="Trip Name"
+                  options={currentCityTrips.map((trip) => ({
+                    label: formatTripLabel(trip), // Show city name + date in options list
+                    value: trip._id, // Use trip's _id (e.g., "6906edd4f2b47a7ea572648c")
+                    ...trip, // Keep full trip object with _id at root level
+                  }))}
+                  selectedValue={selectedTrip}
+                  onValueChange={(item) => {
+                    // When selected, show only city name but keep full trip object with _id
+                    const selectedTripObj = {
+                      label: getCityName(item), // Display only city name
+                      value: item._id, // Ensure _id is at root level for easy access
+                    };
+                    console.log("Selected Trip Object:", selectedTripObj);
+                    setSelectedTrip(selectedTripObj);
+                  }}
+                  containerStyle={styles.tripDropdownWrapper}
+                  dropdownWrapperStyle={styles.tripDropdown}
+                  textStyle={styles.tripDropdownText}
+                  arrowIconStyle={styles.tripArrowIcon}
+                  showIcon={true}
+                />
+              </View>
 
               {/* Search */}
               <TouchableOpacity
@@ -310,6 +378,31 @@ const styles = StyleSheet.create({
   },
   hListPad: {
     paddingHorizontal: getHoriPadding(16),
+  },
+  tripDropdownContainer: {
+    position: "absolute",
+    top: getVertiPadding(25),
+    right: getHoriPadding(16),
+    maxWidth: getWidth(150),
+  },
+  tripDropdownWrapper: {
+    backgroundColor: "transparent",
+  },
+  tripDropdown: {
+    backgroundColor: "transparent",
+    paddingHorizontal: getHoriPadding(10),
+    paddingVertical: getVertiPadding(6),
+    borderRadius: getRadius(20),
+    height: "auto",
+    minHeight: getHeight(32),
+  },
+  tripDropdownText: {
+    color: colors.black,
+    fontSize: getFontSize(15),
+    fontFamily: fonts.RobotoBold,
+  },
+  tripArrowIcon: {
+    tintColor: colors.black,
   },
 });
 

@@ -38,6 +38,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [ticketQuantities, setTicketQuantities] = useState({});
 
+  console.log("Event Data:", eventData);
   // API call to get event dates
   const fetchEventDates = async () => {
     try {
@@ -65,7 +66,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const fetchEventDatesDetails = async (selectedDate) => {
     try {
       setIsLoading(true);
-      
+
       // Format date to YYYY-MM-DD when coming from cart
       let formattedDate = selectedDate;
       if (from === "cart" && selectedDate) {
@@ -73,7 +74,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         const date = new Date(selectedDate);
         formattedDate = date.toISOString().split('T')[0];
       }
-      
+
       const requestData = {
         activityUuid: eventData?.activityUuid,
         date: formattedDate,
@@ -282,13 +283,13 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
             retail_price: ticket.price,
             total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
           };
-          
+
           // Only add id field (cart_id) when coming from cart (for updateCart API)
           // The id should be the cart item ID (item?._id from Cart.jsx)
           if (from === "cart" && eventData?.cart_id) {
             baseProduct.id = eventData.cart_id;
           }
-          
+
           return baseProduct;
         });
 
@@ -309,7 +310,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       // Format date to YYYY-MM-DD for API
       // Use selectedDate state (from eventData.selectedDate = item?.activities?.[0]?.date in Cart.jsx)
       const dateToFormat = selectedDate || eventData?.selectedDate;
-      
+
       if (!dateToFormat) {
         showToast("error", "Date is required");
         setIsLoading(false);
@@ -338,7 +339,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           start_date: formattedDate,
           products: selectedProducts,
         };
-        
+
         // Ensure start_date is always included
         if (!updateCartData.start_date) {
           console.error("❌ start_date is missing!");
@@ -346,7 +347,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           setIsLoading(false);
           return;
         }
-        
+
         console.log("updateCart requestData", JSON.stringify(updateCartData, null, 2));
         const response = await updateCart(updateCartData);
         showToast("success", response?.message || "Cart updated successfully");
@@ -364,8 +365,9 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           instant_confirmation: eventData?.instant_confirmation,
           free_cancellation: eventData?.free_cancellation ? true : false,
           duration: eventData?.duration,
+          trip_id: eventData?.tripId,
         };
-        
+
         console.log("addEventInTrip requestData", requestData);
         const response = await addEventInTrip(requestData);
         showToast("success", response?.message);
@@ -376,8 +378,8 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error("❌ Error:", error);
-      const errorMessage = from === "cart" 
-        ? "Failed to update cart" 
+      const errorMessage = from === "cart"
+        ? "Failed to update cart"
         : "Failed to add event to trip";
       showToast("error", error?.message || errorMessage);
     } finally {
@@ -455,7 +457,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                     style={[
                       styles.radioButton,
                       selectedOption === option?.name &&
-                        styles.selectedRadioButton,
+                      styles.selectedRadioButton,
                     ]}
                   >
                     {selectedOption === option?.name && (
@@ -503,7 +505,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                           style={[
                             styles.quantityButton,
                             (ticketQuantities[ticket.id] || 0) === 0 &&
-                              styles.disabledButton,
+                            styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, -1)}
                           disabled={(ticketQuantities[ticket.id] || 0) === 0}
@@ -512,7 +514,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                             style={[
                               styles.quantityButtonText,
                               (ticketQuantities[ticket.id] || 0) === 0 &&
-                                styles.disabledButtonText,
+                              styles.disabledButtonText,
                             ]}
                           >
                             -
@@ -525,7 +527,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                           style={[
                             styles.quantityButton,
                             (ticketQuantities[ticket.id] || 0) === ticket.max &&
-                              styles.disabledButton,
+                            styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, 1)}
                           disabled={
@@ -536,7 +538,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                             style={[
                               styles.quantityButtonText,
                               (ticketQuantities[ticket.id] || 0) ===
-                                ticket.max && styles.disabledButtonText,
+                              ticket.max && styles.disabledButtonText,
                             ]}
                           >
                             +
@@ -595,7 +597,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       <View style={styles.bottomContainer}>
         <ButtonComp
           title={
-            isLoading 
+            isLoading
               ? (from === "cart" ? "Updating Cart..." : "Adding to Trip...")
               : (from === "cart" ? "Update Cart" : "Add to Trip")
           }

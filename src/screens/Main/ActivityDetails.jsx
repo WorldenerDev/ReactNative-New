@@ -12,7 +12,7 @@ import OptimizedImage from "@components/OptimizedImage";
 import ImagePlaceholder from "@components/ImagePlaceholder";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
-import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
+import { getHeight, getRadius, getFontSize, getWidth, getVertiPadding, getHoriPadding } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import Accordion from "@components/Accordion";
 import navigationStrings from "@navigation/navigationStrings";
@@ -23,14 +23,41 @@ import {
 import { showToast } from "@components/AppToast";
 import RadioCheckbox from "@components/RadioCheckbox";
 import { isoDurationToHours } from "@utils/uiUtils";
+import CustomDropdown from "@components/CustomDropdown";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchTripByCity } from "@redux/slices/cityTripSlice";
+
+// Helper function to get city name only
+const getCityName = (trip) => {
+  return trip?.city_id?.name || "Trip";
+};
+
+// Helper function to format trip label with date (for dropdown options)
+const formatTripLabel = (trip) => {
+  const cityName = trip?.city_id?.name || "Trip";
+  const startDate = trip?.start_at
+    ? new Date(trip.start_at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+    : "";
+  return cityName + (startDate ? ` - ${startDate}` : "");
+};
 
 const ActivityDetails = ({ navigation, route }) => {
-  const { eventData } = route?.params || {};
+  const { eventData, selectedTrip: selectedTripFromRoute } = route?.params || {};
+  const dispatch = useDispatch();
+  const { tripsByCity } = useSelector((state) => state.cityTrip);
 
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [eventDetail, setEventDetail] = useState([]);
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const [selectedTrip, setSelectedTrip] = useState(null);
+
+  // Get trips for current city from Redux map
+  const cityId = eventData?.city_data?.id;
+  const currentCityTrips = tripsByCity[cityId] || [];
 
   // Initialize like state from event data
   useEffect(() => {
@@ -39,12 +66,34 @@ const ActivityDetails = ({ navigation, route }) => {
     }
   }, [eventData]);
 
+  // Initialize selectedTrip from route params if available
+  useEffect(() => {
+    if (selectedTripFromRoute) {
+      setSelectedTrip(selectedTripFromRoute);
+    }
+  }, [selectedTripFromRoute]);
+
+  // Fetch trips for the city when component mounts
+  useEffect(() => {
+    if (cityId) {
+      getTripsByCity();
+    }
+  }, [cityId]);
+
   // Fetch event details (locations) when component mounts
   useEffect(() => {
     if (eventData?.id) {
       fetchEventDetails();
     }
   }, [eventData]);
+
+  const getTripsByCity = async () => {
+    try {
+      const result = await dispatch(fetchTripByCity(cityId));
+    } catch (error) {
+      console.warn("fetchTripByCity error:", error);
+    }
+  };
 
   const fetchEventDetails = async () => {
     try {
@@ -59,6 +108,7 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleCheckAvailability = () => {
+    console.log("Selected Trip:", selectedTrip);
     // Check if pickup points exist and user needs to select one
     if (
       eventDetail?.pickupPointsIsExist &&
@@ -81,6 +131,7 @@ const ActivityDetails = ({ navigation, route }) => {
       instant_confirmation: eventDetail?.bookingPolicies?.maxConfirmationTime,
       free_cancellation: eventDetail?.bookingPolicies?.freeCancellation,
       duration: eventDetail?.tourDetails?.duration?.[0],
+      tripId: selectedTrip?.value,
     };
     navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
       eventData: data,
@@ -148,6 +199,34 @@ const ActivityDetails = ({ navigation, route }) => {
             </View>
           )}
         </TouchableOpacity>
+        {/* Trip Name Dropdown */}
+        {cityId && (
+          <View style={styles.tripDropdownContainer}>
+            <CustomDropdown
+              placeholder="Trip Name"
+              options={currentCityTrips.map((trip) => ({
+                label: formatTripLabel(trip), // Show city name + date in options list
+                value: trip._id, // Use trip's _id
+                ...trip, // Keep full trip object with _id at root level
+              }))}
+              selectedValue={selectedTrip}
+              onValueChange={(item) => {
+                // When selected, show only city name but keep full trip object with _id
+                const selectedTripObj = {
+                  label: getCityName(item), // Display only city name
+                  value: item._id, // Ensure _id is at root level for easy access
+                };
+                console.log("Selected Trip Object:", selectedTripObj);
+                setSelectedTrip(selectedTripObj);
+              }}
+              containerStyle={styles.tripDropdownWrapper}
+              dropdownWrapperStyle={styles.tripDropdown}
+              textStyle={styles.tripDropdownText}
+              arrowIconStyle={styles.tripArrowIcon}
+              showIcon={true}
+            />
+          </View>
+        )}
         {/* Black strip with title & rating */}
         <View style={styles.blackStrip}>
           <Text numberOfLines={2} style={styles.title}>
@@ -177,10 +256,10 @@ const ActivityDetails = ({ navigation, route }) => {
             <Image source={imagePath.LANGUAGE_ICON} style={styles.likeIcon} />
             <Text style={styles.text}>
               {eventDetail?.tourDetails?.languagesAvailable &&
-              eventDetail.tourDetails.languagesAvailable.length > 0
+                eventDetail.tourDetails.languagesAvailable.length > 0
                 ? eventDetail.tourDetails.languagesAvailable
-                    .map((lang) => lang.name)
-                    .join(", ")
+                  .map((lang) => lang.name)
+                  .join(", ")
                 : "Language not available"}
             </Text>
           </View>
@@ -210,7 +289,7 @@ const ActivityDetails = ({ navigation, route }) => {
           defaultOpen={false}
         >
           {eventDetail?.generalInfo?.highlights &&
-          eventDetail.generalInfo.highlights.length > 0 ? (
+            eventDetail.generalInfo.highlights.length > 0 ? (
             eventDetail.generalInfo.highlights.map((item, index) => (
               <Text key={index} style={styles.content}>
                 {"\u2022 "} {item}
@@ -232,7 +311,7 @@ const ActivityDetails = ({ navigation, route }) => {
 
         <Accordion title={"Included"} key={"Included"} defaultOpen={false}>
           {eventDetail?.inclusions?.included &&
-          eventDetail.inclusions.included.length > 0 ? (
+            eventDetail.inclusions.included.length > 0 ? (
             eventDetail.inclusions.included.map((item, index) => (
               <Text key={index} style={styles.content}>
                 {"\u2022 "} {item}
@@ -250,7 +329,7 @@ const ActivityDetails = ({ navigation, route }) => {
               defaultOpen={false}
             >
               {eventDetail?.inclusions?.notIncluded &&
-              eventDetail.inclusions.notIncluded.length > 0 ? (
+                eventDetail.inclusions.notIncluded.length > 0 ? (
                 eventDetail.inclusions.notIncluded.map((item, index) => (
                   <Text key={index} style={styles.content}>
                     {"\u2022 "} {item}
@@ -426,5 +505,31 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flexDirection: "column", // ensures vertical stacking
+  },
+  tripDropdownContainer: {
+    position: "absolute",
+    top: getVertiPadding(35),
+    right: getHoriPadding(10),
+    maxWidth: getWidth(150),
+    zIndex: 2,
+  },
+  tripDropdownWrapper: {
+    backgroundColor: "transparent",
+  },
+  tripDropdown: {
+    backgroundColor: "transparent",
+    paddingHorizontal: getHoriPadding(10),
+    paddingVertical: getVertiPadding(6),
+    borderRadius: getRadius(20),
+    height: "auto",
+    minHeight: getHeight(32),
+  },
+  tripDropdownText: {
+    color: colors.white,
+    fontSize: getFontSize(15),
+    fontFamily: fonts.RobotoBold,
+  },
+  tripArrowIcon: {
+    tintColor: colors.black,
   },
 });
