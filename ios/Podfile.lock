@@ -1885,6 +1885,34 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-contacts (8.0.7):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-image-picker (8.2.1):
     - boost
     - DoubleConversion
@@ -3003,6 +3031,7 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-blurhash (from `../node_modules/react-native-blurhash`)
+  - react-native-contacts (from `../node_modules/react-native-contacts`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-keyboard-controller (from `../node_modules/react-native-keyboard-controller`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -3156,6 +3185,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-blurhash:
     :path: "../node_modules/react-native-blurhash"
+  react-native-contacts:
+    :path: "../node_modules/react-native-contacts"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
   react-native-keyboard-controller:
@@ -3306,6 +3337,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: bd9e0b326013ba621165bad90b83979fcdaebe6f
   React-microtasksnativemodule: b0aca6ebaea96c8c5ecdf3050ef6d04eda73ff18
   react-native-blurhash: a90651e6df7e214078eb62883376adb9199bd919
+  react-native-contacts: 3fafb928e33ce5f31d3141dc4d55af12d6b09175
   react-native-image-picker: 6051cfd030121b880a58f1cc0e5e33e9887804e4
   react-native-keyboard-controller: 265435e3129116deda558cdd649c53b50c42c0cd
   react-native-safe-area-context: ee1e8e2a7abf737a8d4d9d1a5686a7f2e7466236
@@ -3345,7 +3377,7 @@ SPEC CHECKSUMS:
   RNFBApp: 4d2d631b593081c39565f67403f90b188c0f22f7
   RNFBMessaging: 50ae400edc5874bde8720104cdfc4b898be07479
   RNGoogleSignin: 39750df541b62de6de41396e63b3ec0b546927e9
-  RNPermissions: fac73ac32a3d0a8d7a4a38d0b3313e0777aabfb9
+  RNPermissions: c3337bd997e50b08dfbbb3f7d2974d37c2b8e38d
   RNReanimated: e1690cdd7f215cfb96a3b7986b81889867dfdb4f
   RNScreens: 98771ad898d1c0528fc8139606bbacf5a2e9d237
   RNSVG: 65335d69b8e372837ccad79307b1190d5cc1d0a9
@@ -3353,6 +3385,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: f95f7e60346fa6828def95fbe5017346ccc8940e
 
-PODFILE CHECKSUM: 0b6f9f2ee0d64abf19696e4f3538066672870ab0
+PODFILE CHECKSUM: 26403377fbfff739af276ec6f6dcfad9d2fbc58d
 
 COCOAPODS: 1.16.2

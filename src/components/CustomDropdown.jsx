@@ -33,8 +33,16 @@ const CustomDropdown = React.memo(
     iconStyle = {},
     textStyle = {},
     arrowIconStyle = {},
+    onOpen = null,
   }) => {
     const [modalVisible, setModalVisible] = useState(false);
+
+    const handleOpen = () => {
+      if (onOpen) {
+        onOpen();
+      }
+      setModalVisible(true);
+    };
 
     const onSelect = (item) => {
       onValueChange(item);
@@ -48,7 +56,7 @@ const CustomDropdown = React.memo(
         <TouchableOpacity
           style={[styles.dropdownWrapper, dropdownWrapperStyle]}
           activeOpacity={0.7}
-          onPress={() => setModalVisible(true)}
+          onPress={handleOpen}
         >
           {customIcon && (
             <Image

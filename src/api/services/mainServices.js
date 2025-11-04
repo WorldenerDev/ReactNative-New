@@ -53,3 +53,7 @@ export const updateParticipants = (data) =>
 export const updateCart = (data) =>
   apiPost(endpoints?.main?.updateCart, data);
 export const getOrders = (params) => apiGet(endpoints?.main?.getOrders, params);
+export const getTripBuddies = (data) =>
+  apiPost(endpoints?.main?.getTripBuddies, data);
+export const getTripBycity = (cityId) =>
+  apiGet(`${endpoints?.main?.getTripBycity}/${cityId}`);

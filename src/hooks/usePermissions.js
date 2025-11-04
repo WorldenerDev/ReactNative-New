@@ -25,6 +25,9 @@ const usePermissions = () => {
                 : androidVersion < 33
                     ? PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE
                     : PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
+            contacts: isIOS
+                ? PERMISSIONS.IOS.CONTACTS
+                : PERMISSIONS.ANDROID.READ_CONTACTS,
         };
     };
 
@@ -70,6 +73,11 @@ const usePermissions = () => {
     const requestMediaPermission = async () => {
         const { media } = getPermissionTypes();
         return media ? checkAndRequest(media, 'Media') : true;
+    };
+
+    const requestContactsPermission = async () => {
+        const { contacts } = getPermissionTypes();
+        return contacts ? checkAndRequest(contacts, 'Contacts') : true;
     };
 
     /** Notifications (special handling) */
@@ -163,6 +171,7 @@ const usePermissions = () => {
         requestCameraPermission,
         requestLocationPermission,
         requestMediaPermission,
+        requestContactsPermission,
         requestNotificationPermission,
         requestCameraLocationPermissions,
         requestAllPermissions,

@@ -38,8 +38,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    zIndex: 1000, // iOS overlay
-    elevation: 1000, // Android overlay
+    // zIndex: 1000, // iOS overlay
+    // elevation: 1000, // Android overlay
   },
   loaderContainer: {
     height: getHeight(130),
@@ -51,9 +51,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     // shadowColor: colors.black,
-    shadowOpacity: 0.4,
-    shadowRadius: 5,
-    elevation: 5,
+    // ßshadowOpacity: 0.4,
+    // shadowRadius: 5,
+    // elevation: 5,
   },
   animation: {
     width: getWidth(100),

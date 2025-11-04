@@ -64,6 +64,8 @@
 	<string>This app requires permission to save photos to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app requires access to your photo library so you can select and upload images.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This app needs access to your contacts to help you connect with friends and family.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>This app would like to send you notifications about important updates and alerts.</string>
 	<key>RCTNewArchEnabled</key>

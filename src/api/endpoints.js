@@ -36,5 +36,7 @@ export const endpoints = {
     updateParticipants: "/update-participants",
     updateCart: "/updateCart",
     getOrders: "/getOrders",
+    getTripBuddies: "/getTripBuddies",
+    getTripBycity: "/getTripBycity",
   },
 };

@@ -24,7 +24,9 @@ import {
   validateToDate,
   validateTripMembers,
 } from "@utils/validators";
-import { createTrip } from "@api/services/mainServices";
+import { createTrip, getTripBuddies } from "@api/services/mainServices";
+import usePermissions from "@hooks/usePermissions";
+import Contacts from "react-native-contacts";
 
 const CreateTrip = ({ navigation, route }) => {
   const [fromDate, setFromDate] = useState("");
@@ -32,6 +34,7 @@ const CreateTrip = ({ navigation, route }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { requestContactsPermission } = usePermissions();
 
   // Get city name directly from route params
   const city = route?.params?.cityData || "";
@@ -86,11 +89,48 @@ const CreateTrip = ({ navigation, route }) => {
     }
   };
 
-  const handleAddParticipants = () => {
-    navigation.navigate(navigationStrings.ADD_TO_TRIP, {
-      cityData: city,
-      selectedBuddyPhones: selectedBuddyPhones,
-    });
+  const handleAddParticipants = async () => {
+    try {
+      const permissionGranted = await requestContactsPermission();
+      if (permissionGranted) {
+        // Fetch contacts after permission is granted
+        try {
+          const contacts = await Contacts.getAll();
+          const phoneNumbers = contacts
+            .flatMap(contact => contact.phoneNumbers || [])
+            .map(phone => phone.number)
+            .filter(phone => phone && phone.trim() !== ""); // Filter out empty phone numbers
+
+          console.log("📱 Phone Numbers Array:", phoneNumbers);
+          if (phoneNumbers.length > 0) {
+            try {
+              setIsLoading(true);
+              const response = await getTripBuddies({
+                contacts: phoneNumbers
+              });
+              navigation.navigate(navigationStrings.ADD_TO_TRIP, {
+                cityData: city,
+                selectedBuddyPhones: selectedBuddyPhones,
+              });
+            } catch (apiError) {
+              console.error("Error calling getTripBuddies:", apiError);
+              showToast("error", apiError?.message || "Failed to fetch trip buddies");
+            } finally {
+              setIsLoading(false);
+            }
+          }
+        } catch (contactsError) {
+          console.error("Error fetching contacts:", contactsError);
+        }
+
+
+      } else {
+        showToast("error", "Contacts permission is required to add participants");
+      }
+    } catch (error) {
+      console.error("Error requesting contacts permission:", error);
+      showToast("error", "Failed to request contacts permission");
+    }
   };
 
   const handleCityPress = () => {
@@ -222,8 +262,8 @@ const CreateTrip = ({ navigation, route }) => {
                 activeField === "from"
                   ? new Date().toISOString().split("T")[0]
                   : activeField === "to" && fromDate
-                  ? fromDate
-                  : undefined
+                    ? fromDate
+                    : undefined
               }
               markedDates={{
                 [fromDate]: { selected: true, selectedColor: "#2E86DE" },
