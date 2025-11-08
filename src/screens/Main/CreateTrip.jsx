@@ -63,7 +63,9 @@ const CreateTrip = ({ navigation, route }) => {
         city_id: String(city?.city_id),
         start_at: fromDate,
         end_at: toDate,
-        // groups: selectedBuddyPhones,
+        groups: selectedBuddyPhones,
+        isGroupTrip: true
+
       };
 
       console.log("Creating trip with data:", tripData);
@@ -110,7 +112,7 @@ const CreateTrip = ({ navigation, route }) => {
               });
               navigation.navigate(navigationStrings.ADD_TO_TRIP, {
                 cityData: city,
-                selectedBuddyPhones: selectedBuddyPhones,
+                selectedBuddyPhones: response?.data,
               });
             } catch (apiError) {
               console.error("Error calling getTripBuddies:", apiError);

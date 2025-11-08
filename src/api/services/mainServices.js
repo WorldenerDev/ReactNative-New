@@ -57,3 +57,4 @@ export const getTripBuddies = (data) =>
   apiPost(endpoints?.main?.getTripBuddies, data);
 export const getTripBycity = (cityId) =>
   apiGet(`${endpoints?.main?.getTripBycity}/${cityId}`);
+export const getGroups = () => apiGet(endpoints?.main?.getGroups);

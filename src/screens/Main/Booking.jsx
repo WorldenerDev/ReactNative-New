@@ -66,7 +66,26 @@ const Booking = () => {
         `${new Date(order.trip.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(order.trip.end_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` :
         new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-      const orderType = new Date(order.trip?.end_at || order.createdAt) > new Date() ? "upcoming" : "past";
+      // Determine if order is past or upcoming based on booking_date or earliest activity date
+      let bookingDate = null;
+      if (order.booking_date) {
+        bookingDate = new Date(order.booking_date);
+      } else if (order.musement_data?.items?.length > 0) {
+        // Find the earliest activity date from items
+        const activityDates = order.musement_data.items
+          .map(item => item.product?.date ? new Date(item.product.date) : null)
+          .filter(date => date !== null);
+        if (activityDates.length > 0) {
+          bookingDate = new Date(Math.min(...activityDates));
+        }
+      }
+
+      // If no booking date found, fall back to trip end date or createdAt
+      if (!bookingDate) {
+        bookingDate = order.trip?.end_at ? new Date(order.trip.end_at) : new Date(order.createdAt);
+      }
+
+      const orderType = bookingDate > new Date() ? "upcoming" : "past";
 
       // Create a separate trip for each order
       const trip = {

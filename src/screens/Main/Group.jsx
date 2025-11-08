@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "@components/Header";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
@@ -14,33 +14,72 @@ import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import MainContainer from "@components/container/MainContainer";
 import navigationStrings from "@navigation/navigationStrings";
+import { getGroups } from "@api/services/mainServices";
 
-const Group = ({navigation}) => {
-  // Sample data - replace with your actual data
-  const [trips, setTrips] = useState([
-    {
-      id: "1",
-      title: "Tokyo Trip",
-      location: "Tokyo, Japan",
-      status: "Planning",
-      startDate: "Dec 15, 2024",
-      endDate: "Jan 20, 2025",
-      people: "2 people",
-      image:
-        "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
-    },
-    {
-      id: "2",
-      title: "Tokyo Trip",
-      location: "Tokyo, Japan",
-      status: "Planning",
-      startDate: "Dec 15, 2024",
-      endDate: "Jan 20, 2025",
-      people: "2 people",
-      image:
-        "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
-    },
-  ]);
+const Group = ({ navigation }) => {
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Format date from ISO string to "MMM DD, YYYY" format
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Transform API data to match UI structure
+  const transformGroupData = (groupsData) => {
+    return groupsData.map((group) => {
+      const peopleCount = group.addedUsers?.length || 0;
+      const totalPeople = peopleCount + 1; // +1 for creator
+
+      // Capitalize first letter of status
+      const status = group.status
+        ? group.status.charAt(0).toUpperCase() + group.status.slice(1)
+        : "Active";
+
+      return {
+        id: group._id,
+        title: group.groupName || group.cityId?.name || "Trip",
+        location: group.cityId?.name || "",
+        status: status,
+        startDate: formatDate(group.startDate),
+        endDate: formatDate(group.endDate),
+        people: `${totalPeople} ${totalPeople === 1 ? "person" : "people"}`,
+        image: group.groupImage || group.cityId?.image || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
+      };
+    });
+  };
+
+  // Fetch groups from API
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        setLoading(true);
+        const response = await getGroups();
+
+        if (response?.success && response?.data) {
+          const transformedData = transformGroupData(
+            Array.isArray(response.data) ? response.data : []
+          );
+          setTrips(transformedData);
+        } else {
+          setTrips([]);
+        }
+      } catch (error) {
+        console.error("Error fetching groups:", error);
+        setTrips([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
 
   const renderTripItem = ({ item }) => (
     <View style={styles.tripCard}>
@@ -94,7 +133,7 @@ const Group = ({navigation}) => {
   );
 
   return (
-    <MainContainer>
+    <MainContainer loader={loading}>
       <Header title="My Groups" showBack={false} />
 
       <FlatList

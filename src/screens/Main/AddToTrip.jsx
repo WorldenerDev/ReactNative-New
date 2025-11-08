@@ -7,7 +7,7 @@ import {
   Image,
   FlatList,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
@@ -17,57 +17,153 @@ import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
+import Contacts from "react-native-contacts";
 
 const AddToTrip = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [allData, setAllData] = useState([
-    {
-      id: "1",
-      name: "John Doe",
-      phone: "+41-132-12312",
-      isAdded: false,
-      type: "buddy",
-    },
-    {
-      id: "2",
-      name: "John Doe",
-      phone: "+41-132-12312",
-      isAdded: false,
-      type: "buddy",
-    },
-    {
-      id: "3",
-      name: "John Doe",
-      phone: "+41-132-12312",
-      isAdded: false,
-      type: "buddy",
-    },
-    {
-      id: "4",
-      name: "John Doe",
-      phone: "+41-132-12312",
-      isInvited: false,
-      type: "contact",
-    },
-    {
-      id: "5",
-      name: "John Doe",
-      phone: "+41-132-12312",
-      isInvited: false,
-      type: "contact",
-    },
-    {
-      id: "6",
-      name: "John Doe",
-      phone: "+41-132-12312",
-      isInvited: false,
-      type: "contact",
-    },
-  ]);
+  const [allData, setAllData] = useState([]);
+  const [contactsMap, setContactsMap] = useState({});
 
-  const handleSearch = () => {
-    console.log("Searching for:", searchQuery);
-  };
+  // Get API response data from route params
+  const apiResponse = route?.params?.selectedBuddyPhones || {};
+
+  // Initialize data from API response
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        // Step 1: Get all device contacts to create a phone number -> name mapping
+        // This allows us to display contact names instead of just phone numbers
+        const contacts = await Contacts.getAll();
+        const phoneToNameMap = {};
+
+        // Helper function to normalize phone numbers for matching
+        const normalizePhone = (phone) => {
+          if (!phone) return "";
+          // Remove all non-digit characters except keep digits only
+          let normalized = phone.replace(/\D/g, "");
+          // Remove leading country codes for better matching (US: 1, others vary)
+          // Keep last 10 digits for US numbers, or full number if less than 10 digits
+          if (normalized.length > 10 && normalized.startsWith("1")) {
+            normalized = normalized.substring(1); // Remove US country code
+          }
+          return normalized;
+        };
+
+        // Build phone-to-name mapping from device contacts
+        contacts.forEach((contact) => {
+          if (contact.phoneNumbers && contact.phoneNumbers.length > 0) {
+            const contactName = contact.displayName ||
+              `${contact.givenName || ""} ${contact.familyName || ""}`.trim() ||
+              contact.givenName ||
+              contact.familyName ||
+              "Unknown";
+
+            contact.phoneNumbers.forEach((phoneObj) => {
+              const normalizedPhone = normalizePhone(phoneObj.number);
+              if (normalizedPhone) {
+                // Store normalized phone -> name mapping
+                phoneToNameMap[normalizedPhone] = contactName;
+
+                // Also store with country code if it's a US number (10 digits)
+                if (normalizedPhone.length === 10) {
+                  phoneToNameMap[`1${normalizedPhone}`] = contactName; // With US country code
+                }
+
+                // Store original format variations for better matching
+                const originalPhone = phoneObj.number.replace(/\s/g, "");
+                phoneToNameMap[normalizePhone(originalPhone)] = contactName;
+              }
+            });
+          }
+        });
+
+        setContactsMap(phoneToNameMap);
+
+        // Step 2: Process API response data
+        // The API returns phone numbers, we match them with device contacts to get names
+        // Process yourBuddies - filter out nulls
+        const yourBuddies = (apiResponse?.yourBuddies || [])
+          .filter((buddy) => buddy !== null && buddy !== undefined)
+          .map((buddy, index) => {
+            const phone = typeof buddy === "string" ? buddy : buddy?.phone || "";
+            const normalizedPhone = normalizePhone(phone);
+            // Try to find name from contact map, fallback to API name, then phone number
+            const name = phoneToNameMap[normalizedPhone] ||
+              phoneToNameMap[`1${normalizedPhone}`] || // Try with country code
+              buddy?.name ||
+              phone ||
+              "Unknown";
+            return {
+              id: `buddy-${index}`,
+              name: name,
+              phone: phone,
+              isAdded: false,
+              type: "buddy",
+            };
+          });
+
+        // Process fromYourContacts - array of phone numbers
+        const fromYourContacts = (apiResponse?.fromYourContacts || []).map(
+          (phone, index) => {
+            const normalizedPhone = normalizePhone(phone);
+            // Try to find name from contact map, fallback to phone number
+            const name = phoneToNameMap[normalizedPhone] ||
+              phoneToNameMap[`1${normalizedPhone}`] || // Try with country code
+              phone;
+            return {
+              id: `contact-${index}`,
+              name: name,
+              phone: phone,
+              isInvited: false,
+              type: "contact",
+            };
+          }
+        );
+
+        setAllData([...yourBuddies, ...fromYourContacts]);
+      } catch (error) {
+        console.error("Error initializing data:", error);
+        // Fallback: use API data directly without contact names
+        const yourBuddies = (apiResponse?.yourBuddies || [])
+          .filter((buddy) => buddy !== null && buddy !== undefined)
+          .map((buddy, index) => ({
+            id: `buddy-${index}`,
+            name: typeof buddy === "string" ? buddy : buddy?.name || "Unknown",
+            phone: typeof buddy === "string" ? buddy : buddy?.phone || "",
+            isAdded: false,
+            type: "buddy",
+          }));
+
+        const fromYourContacts = (apiResponse?.fromYourContacts || []).map(
+          (phone, index) => ({
+            id: `contact-${index}`,
+            name: phone,
+            phone: phone,
+            isInvited: false,
+            type: "contact",
+          })
+        );
+
+        setAllData([...yourBuddies, ...fromYourContacts]);
+      }
+    };
+
+    initializeData();
+  }, [apiResponse]);
+
+  // Filter data based on search query
+  const filteredData = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return allData;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return allData.filter(
+      (item) =>
+        item.name.toLowerCase().includes(query) ||
+        item.phone.toLowerCase().includes(query)
+    );
+  }, [allData, searchQuery]);
 
   const handleToggleItem = (id) => {
     setAllData((prev) =>
@@ -84,31 +180,34 @@ const AddToTrip = ({ navigation, route }) => {
     );
   };
 
-  // Check if any buddies are selected
+  // Get selected buddies and invited contacts
   const selectedBuddies = allData.filter(
     (item) => item.type === "buddy" && item.isAdded
   );
-  const hasSelectedBuddies = selectedBuddies.length > 0;
+  const invitedContacts = allData.filter(
+    (item) => item.type === "contact" && item.isInvited
+  );
+
+  const hasSelections = selectedBuddies.length > 0 || invitedContacts.length > 0;
 
   const handleDone = () => {
-    // Get phone numbers of selected buddies only
+    // Get phone numbers of selected buddies and invited contacts
     const selectedBuddyPhones = selectedBuddies.map((item) => item.phone);
+    const invitedContactPhones = invitedContacts.map((item) => item.phone);
 
-    // Pass data back to CreateTrip screen, preserving existing cityData
     navigation.navigate(navigationStrings.CREATE_TRIP, {
-      selectedBuddyPhones,
-      cityData: route?.params?.cityData,
+      selectedBuddyPhones: [...selectedBuddyPhones, ...invitedContactPhones],
     });
   };
 
   const renderListItem = ({ item, index }) => {
-    const isFirstBuddy =
-      item.type === "buddy" &&
-      allData.findIndex((i) => i.type === "buddy") === index;
-    const isFirstContact =
-      item.type === "contact" &&
-      allData.findIndex((i) => i.type === "contact") === index;
-    const isLastItem = index === allData.length - 1;
+    // Check if this is the first buddy in filtered data
+    const buddyIndex = filteredData.findIndex((i) => i.type === "buddy");
+    const isFirstBuddy = item.type === "buddy" && buddyIndex === index;
+
+    // Check if this is the first contact in filtered data
+    const contactIndex = filteredData.findIndex((i) => i.type === "contact");
+    const isFirstContact = item.type === "contact" && contactIndex === index;
 
     return (
       <View>
@@ -118,7 +217,7 @@ const AddToTrip = ({ navigation, route }) => {
             From Your Contacts
           </Text>
         )}
-        <View style={[styles.listItem, isLastItem && styles.lastItem]}>
+        <View style={styles.listItem}>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{item.name}</Text>
             <Text style={styles.userPhone}>{item.phone}</Text>
@@ -161,33 +260,41 @@ const AddToTrip = ({ navigation, route }) => {
         title="Add Buddies"
         subtitle="Add your trip buddies to the group to chat, compare itineraries and plan the trips together"
       />
-      <FlatList
-        data={allData}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.flatListContent}
-        ListHeaderComponent={() => (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.searchContainer}
-            onPress={handleSearch}
-          >
-            <Text style={styles.searchText}>Where are you going?</Text>
-            <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
-          </TouchableOpacity>
-        )}
-        ListFooterComponent={() => (
-          <View style={styles.footerContainer}>
-            <ButtonComp
-              title="Done"
-              disabled={!hasSelectedBuddies}
-              onPress={handleDone}
-              containerStyle={styles.doneButton}
-            />
-          </View>
-        )}
-        renderItem={renderListItem}
-      />
+      <View style={styles.container}>
+        <FlatList
+          data={filteredData}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.flatListContent}
+          ListHeaderComponent={() => (
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Where are you going?"
+                placeholderTextColor={colors.gray}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
+            </View>
+          )}
+          renderItem={renderListItem}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No contacts found</Text>
+            </View>
+          )}
+        />
+        {/* Floating Done Button */}
+        <View style={styles.floatingButtonContainer}>
+          <ButtonComp
+            title="Done"
+            disabled={!hasSelections}
+            onPress={handleDone}
+            containerStyle={styles.doneButton}
+          />
+        </View>
+      </View>
     </MainContainer>
   );
 };
@@ -195,6 +302,9 @@ const AddToTrip = ({ navigation, route }) => {
 export default AddToTrip;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -204,11 +314,12 @@ const styles = StyleSheet.create({
     paddingVertical: getHeight(12),
     marginBottom: getHeight(24),
   },
-  searchText: {
+  searchInput: {
     flex: 1,
     fontSize: getHeight(16),
-    color: colors.gray,
+    color: colors.black,
     fontFamily: fonts.RobotoRegular,
+    padding: 0,
   },
   searchIcon: {
     width: getWidth(20),
@@ -281,16 +392,32 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontFamily: fonts.RobotoMedium,
   },
-  lastItem: {
-    marginBottom: getHeight(32),
-  },
   contactSectionTitle: {
     marginTop: getHeight(24),
   },
   flatListContent: {
-    paddingBottom: getHeight(20),
+    paddingBottom: getHeight(100), // Space for floating button
   },
-  footerContainer: {
-    marginBottom: getHeight(20),
+  floatingButtonContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: getWidth(16),
+    paddingTop: getHeight(12),
+    paddingBottom: getHeight(20),
+
+  },
+  doneButton: {
+    width: "100%",
+  },
+  emptyContainer: {
+    paddingVertical: getHeight(40),
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: getHeight(16),
+    color: colors.gray,
+    fontFamily: fonts.RobotoRegular,
   },
 });

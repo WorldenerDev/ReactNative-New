@@ -89,7 +89,7 @@ const ActivityDetails = ({ navigation, route }) => {
 
   const getTripsByCity = async () => {
     try {
-      const result = await dispatch(fetchTripByCity(cityId));
+      await dispatch(fetchTripByCity(cityId));
     } catch (error) {
       console.warn("fetchTripByCity error:", error);
     }
@@ -100,7 +100,6 @@ const ActivityDetails = ({ navigation, route }) => {
       const response = await getEventDetails({
         activityUuid: eventData?.id,
       });
-      console.log("Event details response:", response?.data);
       setEventDetail(response?.data);
     } catch (error) {
       console.error("Error fetching event details:", error);
@@ -108,7 +107,6 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleCheckAvailability = () => {
-    console.log("Selected Trip:", selectedTrip);
     // Check if pickup points exist and user needs to select one
     if (
       eventDetail?.pickupPointsIsExist &&
@@ -205,18 +203,15 @@ const ActivityDetails = ({ navigation, route }) => {
             <CustomDropdown
               placeholder="Trip Name"
               options={currentCityTrips.map((trip) => ({
-                label: formatTripLabel(trip), // Show city name + date in options list
-                value: trip._id, // Use trip's _id
-                ...trip, // Keep full trip object with _id at root level
+                label: formatTripLabel(trip),
+                value: trip._id,
               }))}
               selectedValue={selectedTrip}
               onValueChange={(item) => {
-                // When selected, show only city name but keep full trip object with _id
                 const selectedTripObj = {
-                  label: getCityName(item), // Display only city name
-                  value: item._id, // Ensure _id is at root level for easy access
+                  label: getCityName(item),
+                  value: item._id,
                 };
-                console.log("Selected Trip Object:", selectedTripObj);
                 setSelectedTrip(selectedTripObj);
               }}
               containerStyle={styles.tripDropdownWrapper}
@@ -245,7 +240,6 @@ const ActivityDetails = ({ navigation, route }) => {
           <View style={styles.featureRow}>
             <Image source={imagePath.CHECK_ICON} style={styles.likeIcon} />
             <Text style={styles.text}>
-              {" "}
               {eventDetail?.bookingPolicies?.freeCancellation
                 ? "Free Cancellation"
                 : "Need confirmation"}
@@ -328,16 +322,11 @@ const ActivityDetails = ({ navigation, route }) => {
               key={"Not Included"}
               defaultOpen={false}
             >
-              {eventDetail?.inclusions?.notIncluded &&
-                eventDetail.inclusions.notIncluded.length > 0 ? (
-                eventDetail.inclusions.notIncluded.map((item, index) => (
-                  <Text key={index} style={styles.content}>
-                    {"\u2022 "} {item}
-                  </Text>
-                ))
-              ) : (
-                <Text style={styles.content}>No exclusions listed.</Text>
-              )}
+              {eventDetail.inclusions.notIncluded.map((item, index) => (
+                <Text key={index} style={styles.content}>
+                  {"\u2022 "} {item}
+                </Text>
+              ))}
             </Accordion>
           )}
 
@@ -349,7 +338,7 @@ const ActivityDetails = ({ navigation, route }) => {
                   <RadioCheckbox
                     key={index}
                     label={point.name || point.address || "Unnamed Point"}
-                    selected={selectedPoint === point.uuid} // using uuid instead of id
+                    selected={selectedPoint === point.uuid}
                     onPress={() => setSelectedPoint(point.uuid)}
                   />
                 ))
@@ -461,7 +450,7 @@ const styles = StyleSheet.create({
   featureRow: {
     flexDirection: "row",
     alignItems: "center",
-    width: "48%", // two per row
+    width: "48%",
     marginBottom: 18,
   },
   text: {
@@ -504,7 +493,7 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   listContainer: {
-    flexDirection: "column", // ensures vertical stacking
+    flexDirection: "column",
   },
   tripDropdownContainer: {
     position: "absolute",
