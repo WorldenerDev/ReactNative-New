@@ -91,6 +91,8 @@ const SearchCity = ({ navigation, route }) => {
                 navigation.navigate(navigationStrings.CREATE_TRIP, {
                   cityData: item,
                   selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
+                  fromDate: route?.params?.fromDate,
+                  toDate: route?.params?.toDate,
                 });
               } else if (fromScreen === "CityDetail") {
                 navigation.navigate(navigationStrings.CITY_DETAIL, {
@@ -101,6 +103,8 @@ const SearchCity = ({ navigation, route }) => {
                 navigation.navigate(navigationStrings.CREATE_TRIP, {
                   cityData: item,
                   selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
+                  fromDate: route?.params?.fromDate,
+                  toDate: route?.params?.toDate,
                 });
               }
             } else {

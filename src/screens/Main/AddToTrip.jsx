@@ -195,8 +195,16 @@ const AddToTrip = ({ navigation, route }) => {
     const selectedBuddyPhones = selectedBuddies.map((item) => item.phone);
     const invitedContactPhones = invitedContacts.map((item) => item.phone);
 
+    // Get existing data from route params to pass back
+    const cityData = route?.params?.cityData;
+    const fromDate = route?.params?.fromDate;
+    const toDate = route?.params?.toDate;
+
     navigation.navigate(navigationStrings.CREATE_TRIP, {
       selectedBuddyPhones: [...selectedBuddyPhones, ...invitedContactPhones],
+      cityData: cityData,
+      fromDate: fromDate,
+      toDate: toDate,
     });
   };
 

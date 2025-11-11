@@ -6,7 +6,7 @@ import {
   Image,
   Modal,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar } from "react-native-calendars";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
@@ -39,6 +39,16 @@ const CreateTrip = ({ navigation, route }) => {
   // Get city name directly from route params
   const city = route?.params?.cityData || "";
   const selectedBuddyPhones = route?.params?.selectedBuddyPhones || [];
+
+  // Restore fromDate and toDate from route params when component mounts or route params change
+  useEffect(() => {
+    if (route?.params?.fromDate) {
+      setFromDate(route.params.fromDate);
+    }
+    if (route?.params?.toDate) {
+      setToDate(route.params.toDate);
+    }
+  }, [route?.params?.fromDate, route?.params?.toDate]);
 
   console.log("selectedBuddyPhones", selectedBuddyPhones);
 
@@ -113,6 +123,8 @@ const CreateTrip = ({ navigation, route }) => {
               navigation.navigate(navigationStrings.ADD_TO_TRIP, {
                 cityData: city,
                 selectedBuddyPhones: response?.data,
+                fromDate: fromDate,
+                toDate: toDate,
               });
             } catch (apiError) {
               console.error("Error calling getTripBuddies:", apiError);
@@ -141,6 +153,8 @@ const CreateTrip = ({ navigation, route }) => {
       fromScreen: "CreateTrip",
       cityData: city,
       selectedBuddyPhones: selectedBuddyPhones,
+      fromDate: fromDate,
+      toDate: toDate,
     });
   };
 
@@ -243,6 +257,11 @@ const CreateTrip = ({ navigation, route }) => {
           onPress={handleAddParticipants}
         >
           <Text style={styles.addParticipantsText}>Start Adding →</Text>
+          {selectedBuddyPhones && selectedBuddyPhones.length > 0 && (
+            <View style={styles.checkIconContainer}>
+              <Text style={styles.checkMark}>✓</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -348,11 +367,27 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     paddingVertical: getHeight(16),
     marginTop: getHeight(8),
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   addParticipantsText: {
     fontSize: getHeight(16),
     color: colors.black,
     fontWeight: "500",
+  },
+  checkIconContainer: {
+    width: getWidth(20),
+    height: getHeight(20),
+    borderRadius: getWidth(10),
+    backgroundColor: colors.secondary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkMark: {
+    color: colors.white,
+    fontSize: getHeight(12),
+    fontWeight: "bold",
   },
   continueButton: {
     marginTop: getHeight(40),
