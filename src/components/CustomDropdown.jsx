@@ -34,10 +34,15 @@ const CustomDropdown = React.memo(
     textStyle = {},
     arrowIconStyle = {},
     onOpen = null,
+    disabled = false,
   }) => {
     const [modalVisible, setModalVisible] = useState(false);
 
     const handleOpen = () => {
+      // Prevent opening if disabled or no options available
+      if (disabled || options.length === 0) {
+        return;
+      }
       if (onOpen) {
         onOpen();
       }
@@ -54,9 +59,14 @@ const CustomDropdown = React.memo(
         {!!label && <Text style={styles.label}>{label}</Text>}
 
         <TouchableOpacity
-          style={[styles.dropdownWrapper, dropdownWrapperStyle]}
+          style={[
+            styles.dropdownWrapper,
+            dropdownWrapperStyle,
+            (disabled || options.length === 0) && styles.disabledWrapper,
+          ]}
           activeOpacity={0.7}
           onPress={handleOpen}
+          disabled={disabled || options.length === 0}
         >
           {customIcon && (
             <Image
@@ -175,5 +185,8 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(14),
     fontFamily: fonts.RobotoRegular,
     color: colors.darkText,
+  },
+  disabledWrapper: {
+    opacity: 0.5,
   },
 });

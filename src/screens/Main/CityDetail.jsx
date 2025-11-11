@@ -210,6 +210,7 @@ const CityDetail = ({ route, navigation }) => {
                   textStyle={styles.tripDropdownText}
                   arrowIconStyle={styles.tripArrowIcon}
                   showIcon={true}
+                  disabled={currentCityTrips.length === 0}
                 />
               </View>
 
