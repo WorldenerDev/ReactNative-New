@@ -102,7 +102,16 @@ const Trips = ({ navigation }) => {
                 tripId: item?._id,
               })
             }
-            onGroupPress={() => { }}
+            onGroupPress={() => {
+              navigation.navigate(navigationStrings.CREATE_TRIP, {
+                cityData: {
+                  name: item?.city?.name,
+                  city_id: item?.city?.city_id || item?.city?._id,
+                },
+                fromDate: item?.start_at?.slice(0, 10),
+                toDate: item?.end_at?.slice(0, 10),
+              });
+            }}
             onDeletePress={() => handleDelete(item._id)}
             onPressCard={() =>
               navigation.navigate(navigationStrings.TRIP_DETAILS, {
