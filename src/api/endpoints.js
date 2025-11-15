@@ -41,5 +41,6 @@ export const endpoints = {
     getGroups: "/getGroups",
     getGroupDetails: "/getGroupDetails",
     sendInvitation: "/sendInvitation",
+    getInvitations: "/getInvitations",
   },
 };

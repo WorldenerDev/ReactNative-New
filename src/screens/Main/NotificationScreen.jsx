@@ -7,7 +7,7 @@ import {
   Image,
   StatusBar,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TopTab from "@components/TopTab";
@@ -23,6 +23,8 @@ import {
   getHoriPadding,
   getRadius,
 } from "@utils/responsive";
+import { getInvitations } from "@api/services/mainServices";
+import { showToast } from "@components/AppToast";
 
 const NotificationScreen = () => {
   const [activeTab, setActiveTab] = useState("Notifications");
@@ -40,39 +42,17 @@ const NotificationScreen = () => {
       isRead: false,
     },
   ]);
-  const [invitations, setInvitations] = useState([
-    {
-      id: "1",
-      inviterName: "Nadal",
-      groupName: "Paris group",
-      time: "2 hours ago",
-      isRead: false,
-    },
-    {
-      id: "2",
-      inviterName: "Serena",
-      groupName: "London trip",
-      time: "1 day ago",
-      isRead: false,
-    },
-  ]);
+  const [invitations, setInvitations] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const markAsRead = (id) => {
-    if (activeTab === "Notifications") {
-      setNotifications((prev) =>
-        prev.map((notification) =>
-          notification.id === id
-            ? { ...notification, isRead: true }
-            : notification
-        )
-      );
-    } else {
-      setInvitations((prev) =>
-        prev.map((invitation) =>
-          invitation.id === id ? { ...invitation, isRead: true } : invitation
-        )
-      );
-    }
+    setNotifications((prev) =>
+      prev.map((notification) =>
+        notification.id === id
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
   };
 
   const handleAcceptInvitation = (id) => {
@@ -87,13 +67,40 @@ const NotificationScreen = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
+    // Fetch invitations when switching to Invitations tab
+    if (tab === "Invitations") {
+      fetchInvitations();
+    }
   };
+
+
+  const fetchInvitations = async () => {
+    try {
+      setLoading(true);
+      const response = await getInvitations();
+      setInvitations(response?.data);
+
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      showToast("error", error?.message || "Failed to fetch invitations");
+      setInvitations([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch invitations when component mounts if Invitations tab is active
+    if (activeTab === "Invitations") {
+      fetchInvitations();
+    }
+  }, []);
 
   const getCurrentData = () => {
     return activeTab === "Notifications" ? notifications : invitations;
   };
 
-  const renderInvitationItem = ({ item, index }) => {
+  const renderInvitationItem = ({ item }) => {
     return (
       <View style={styles.invitationCard}>
         <View style={styles.invitationContent}>
@@ -106,8 +113,8 @@ const NotificationScreen = () => {
           </View>
           <View style={styles.invitationTextContainer}>
             <Text style={styles.invitationText}>
-              <Text style={styles.highlightedText}>{item.inviterName}</Text>
-              {" has invited you to join the "}
+              <Text style={styles.highlightedText}>{item?.invitedBy?.name}</Text>
+              {" has invited you to join the Group "}
               <Text style={styles.highlightedText}>{item.groupName}!</Text>
             </Text>
           </View>
@@ -116,14 +123,12 @@ const NotificationScreen = () => {
           <ButtonComp
             title="Accept"
             onPress={() => handleAcceptInvitation(item.id)}
-            disabled={false}
             containerStyle={styles.acceptButton}
             textStyle={styles.acceptButtonText}
           />
           <ButtonComp
             title="Reject"
             onPress={() => handleRejectInvitation(item.id)}
-            disabled={false}
             containerStyle={styles.rejectButton}
             textStyle={styles.rejectButtonText}
           />
@@ -180,15 +185,11 @@ const NotificationScreen = () => {
   );
 
   return (
-    <MainContainer>
+    <MainContainer loader={loading}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
       <Header title="Notifications" />
 
       <View style={styles.container}>
-        {/* <Text style={styles.headerMessage}>
-          Stay updated with real time alerts!
-        </Text> */}
-
         <TopTab
           tabs={["Notifications", "Invitations"]}
           activeTab={activeTab}
@@ -217,12 +218,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
-  },
-  headerMessage: {
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
-    paddingVertical: getVertiPadding(16),
   },
   tabContainer: {
     marginVertical: getVertiPadding(8),

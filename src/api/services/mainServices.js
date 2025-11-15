@@ -61,3 +61,4 @@ export const getGroups = () => apiGet(endpoints?.main?.getGroups);
 export const getGroupDetails = (groupId) =>
   apiGet(`${endpoints?.main?.getGroupDetails}/${groupId}`);
 export const sendInvitation = (data) => apiPost(endpoints?.main?.sendInvitation, data);
+export const getInvitations = () => apiGet(endpoints?.main?.getInvitations);
