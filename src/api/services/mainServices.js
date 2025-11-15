@@ -58,3 +58,6 @@ export const getTripBuddies = (data) =>
 export const getTripBycity = (cityId) =>
   apiGet(`${endpoints?.main?.getTripBycity}/${cityId}`);
 export const getGroups = () => apiGet(endpoints?.main?.getGroups);
+export const getGroupDetails = (groupId) =>
+  apiGet(`${endpoints?.main?.getGroupDetails}/${groupId}`);
+export const sendInvitation = (data) => apiPost(endpoints?.main?.sendInvitation, data);

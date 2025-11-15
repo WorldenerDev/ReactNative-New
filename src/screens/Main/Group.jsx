@@ -113,14 +113,14 @@ const Group = ({ navigation }) => {
       </View>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.GROUP_DETAILS)}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.GROUP_DETAILS, { groupId: item?.id })}>
           <Text style={styles.actionButtonText}>View</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.CHAT)}>
           <Text style={styles.actionButtonText}>Chat</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </View >
   );
 
   const renderEmptyComponent = () => (

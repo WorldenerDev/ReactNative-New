@@ -18,14 +18,20 @@ import imagePath from "@assets/icons";
 import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
 import Contacts from "react-native-contacts";
+import { sendInvitation } from "@api/services/mainServices";
+import { showToast } from "@components/AppToast";
+import { useSelector } from "react-redux";
 
 const AddToTrip = ({ navigation, route }) => {
+  const { user } = useSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState("");
   const [allData, setAllData] = useState([]);
   const [contactsMap, setContactsMap] = useState({});
+  const [loadingItems, setLoadingItems] = useState({}); // Track loading state for each item
 
-  // Get API response data from route params
+  // Get API response data and groupId from route params
   const apiResponse = route?.params?.selectedBuddyPhones || {};
+  const groupId = route?.params?.groupId;
 
   // Initialize data from API response
   useEffect(() => {
@@ -165,19 +171,72 @@ const AddToTrip = ({ navigation, route }) => {
     );
   }, [allData, searchQuery]);
 
-  const handleToggleItem = (id) => {
-    setAllData((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          if (item.type === "buddy") {
-            return { ...item, isAdded: !item.isAdded };
-          } else {
-            return { ...item, isInvited: !item.isInvited };
+  const handleToggleItem = async (id) => {
+    const item = allData.find((i) => i.id === id);
+    if (!item) return;
+
+    // For buddies, just toggle the state
+    if (item.type === "buddy") {
+      setAllData((prev) =>
+        prev.map((item) => {
+          if (item.id === id) {
+            if (item.type === "buddy") {
+              return { ...item, isAdded: !item.isAdded };
+            } else {
+              return { ...item, isInvited: !item.isInvited };
+            }
           }
+          return item;
+        })
+      );
+    } else if (item.type === "contact") {
+      // If coming from GroupDetails (groupId exists) and user is inviting (not already invited)
+      if (groupId && !item.isInvited) {
+        try {
+          // Set loading state for this item
+          setLoadingItems((prev) => ({ ...prev, [id]: true }));
+
+          // Call sendInvitation API with the correct payload structure
+          const response = await sendInvitation({
+            name: item.name,
+            phoneNumber: item.phone,
+            groupId: groupId,
+            message: "Hello", // Optional message, can be customized
+          });
+
+          if (response?.success) {
+            // Update the item to show as invited
+            setAllData((prev) =>
+              prev.map((item) => {
+                if (item.id === id) {
+                  return { ...item, isInvited: true };
+                }
+                return item;
+              })
+            );
+            showToast("success", "Invitation sent successfully");
+          } else {
+            showToast("error", response?.message || "Failed to send invitation");
+          }
+        } catch (error) {
+          console.error("Error sending invitation:", error);
+          showToast("error", error?.message || "Failed to send invitation");
+        } finally {
+          // Clear loading state
+          setLoadingItems((prev) => ({ ...prev, [id]: false }));
         }
-        return item;
-      })
-    );
+      } else {
+        // For contacts when not from GroupDetails, just toggle the invited state
+        setAllData((prev) =>
+          prev.map((item) => {
+            if (item.id === id) {
+              return { ...item, isInvited: !item.isInvited };
+            }
+            return item;
+          })
+        );
+      }
+    }
   };
 
   // Get selected buddies and invited contacts
@@ -191,6 +250,13 @@ const AddToTrip = ({ navigation, route }) => {
   const hasSelections = selectedBuddies.length > 0 || invitedContacts.length > 0;
 
   const handleDone = () => {
+    // If coming from GroupDetails (groupId exists), navigate back to home
+    if (groupId) {
+      navigation.navigate(navigationStrings.BOTTOM_TAB);
+      return;
+    }
+
+    // Otherwise, navigate to CreateTrip (existing behavior)
     // Get phone numbers of selected buddies and invited contacts
     const selectedBuddyPhones = selectedBuddies.map((item) => item.phone);
     const invitedContactPhones = invitedContacts.map((item) => item.phone);
@@ -233,8 +299,11 @@ const AddToTrip = ({ navigation, route }) => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleToggleItem(item.id)}
+            disabled={loadingItems[item.id]}
           >
-            {item.type === "buddy" ? (
+            {loadingItems[item.id] ? (
+              <Text style={styles.buttonText}>Sending...</Text>
+            ) : item.type === "buddy" ? (
               item.isAdded ? (
                 <View style={styles.statusContainer}>
                   <View style={styles.checkIcon}>

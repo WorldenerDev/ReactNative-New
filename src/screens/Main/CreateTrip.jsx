@@ -29,8 +29,9 @@ import usePermissions from "@hooks/usePermissions";
 import Contacts from "react-native-contacts";
 
 const CreateTrip = ({ navigation, route }) => {
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  // Initialize state from route params if available
+  const [fromDate, setFromDate] = useState(route?.params?.fromDate || "");
+  const [toDate, setToDate] = useState(route?.params?.toDate || "");
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,12 +41,12 @@ const CreateTrip = ({ navigation, route }) => {
   const city = route?.params?.cityData || "";
   const selectedBuddyPhones = route?.params?.selectedBuddyPhones || [];
 
-  // Restore fromDate and toDate from route params when component mounts or route params change
+  // Sync state with route params when navigating back from AddToTrip
   useEffect(() => {
-    if (route?.params?.fromDate) {
+    if (route?.params?.fromDate !== undefined) {
       setFromDate(route.params.fromDate);
     }
-    if (route?.params?.toDate) {
+    if (route?.params?.toDate !== undefined) {
       setToDate(route.params.toDate);
     }
   }, [route?.params?.fromDate, route?.params?.toDate]);

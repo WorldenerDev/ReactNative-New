@@ -39,5 +39,7 @@ export const endpoints = {
     getTripBuddies: "/getTripBuddies",
     getTripBycity: "/getTripBycity",
     getGroups: "/getGroups",
+    getGroupDetails: "/getGroupDetails",
+    sendInvitation: "/sendInvitation",
   },
 };
