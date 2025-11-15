@@ -37,6 +37,7 @@ const imagePath = {
   NO_NOTIFICATION_ICON: require("./source/noNotification.png"),
   SUCCESS_ICON: require("./source/success.png"),
   CARD_ICON: require("./source/pay.png"),
+  INVITATION_ICON: require("./source/invite.png"),
 };
 
 export default imagePath;

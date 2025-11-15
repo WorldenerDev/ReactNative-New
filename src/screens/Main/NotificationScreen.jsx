@@ -11,6 +11,7 @@ import React, { useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TopTab from "@components/TopTab";
+import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
@@ -20,6 +21,7 @@ import {
   getFontSize,
   getVertiPadding,
   getHoriPadding,
+  getRadius,
 } from "@utils/responsive";
 
 const NotificationScreen = () => {
@@ -38,7 +40,22 @@ const NotificationScreen = () => {
       isRead: false,
     },
   ]);
-  const [invitations, setInvitations] = useState([]);
+  const [invitations, setInvitations] = useState([
+    {
+      id: "1",
+      inviterName: "Nadal",
+      groupName: "Paris group",
+      time: "2 hours ago",
+      isRead: false,
+    },
+    {
+      id: "2",
+      inviterName: "Serena",
+      groupName: "London trip",
+      time: "1 day ago",
+      isRead: false,
+    },
+  ]);
 
   const markAsRead = (id) => {
     if (activeTab === "Notifications") {
@@ -58,12 +75,61 @@ const NotificationScreen = () => {
     }
   };
 
+  const handleAcceptInvitation = (id) => {
+    setInvitations((prev) => prev.filter((invitation) => invitation.id !== id));
+    // Add your API call here to accept the invitation
+  };
+
+  const handleRejectInvitation = (id) => {
+    setInvitations((prev) => prev.filter((invitation) => invitation.id !== id));
+    // Add your API call here to reject the invitation
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
   };
 
   const getCurrentData = () => {
     return activeTab === "Notifications" ? notifications : invitations;
+  };
+
+  const renderInvitationItem = ({ item, index }) => {
+    return (
+      <View style={styles.invitationCard}>
+        <View style={styles.invitationContent}>
+          <View style={styles.invitationIconContainer}>
+            <Image
+              source={imagePath.INVITATION_ICON}
+              style={styles.invitationIcon}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.invitationTextContainer}>
+            <Text style={styles.invitationText}>
+              <Text style={styles.highlightedText}>{item.inviterName}</Text>
+              {" has invited you to join the "}
+              <Text style={styles.highlightedText}>{item.groupName}!</Text>
+            </Text>
+          </View>
+        </View>
+        <View style={styles.buttonContainer}>
+          <ButtonComp
+            title="Accept"
+            onPress={() => handleAcceptInvitation(item.id)}
+            disabled={false}
+            containerStyle={styles.acceptButton}
+            textStyle={styles.acceptButtonText}
+          />
+          <ButtonComp
+            title="Reject"
+            onPress={() => handleRejectInvitation(item.id)}
+            disabled={false}
+            containerStyle={styles.rejectButton}
+            textStyle={styles.rejectButtonText}
+          />
+        </View>
+      </View>
+    );
   };
 
   const renderNotificationItem = ({ item, index }) => {
@@ -132,7 +198,9 @@ const NotificationScreen = () => {
 
         <FlatList
           data={getCurrentData()}
-          renderItem={renderNotificationItem}
+          renderItem={
+            activeTab === "Invitations" ? renderInvitationItem : renderNotificationItem
+          }
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
@@ -157,10 +225,12 @@ const styles = StyleSheet.create({
     paddingVertical: getVertiPadding(16),
   },
   tabContainer: {
-    marginVertical: getVertiPadding(10),
+    marginVertical: getVertiPadding(8),
+    marginHorizontal: getHoriPadding(12),
   },
   listContainer: {
-    paddingBottom: getVertiPadding(20),
+    paddingBottom: getVertiPadding(12),
+    paddingTop: getVertiPadding(4),
   },
   notificationItem: {
     backgroundColor: colors.white,
@@ -227,5 +297,102 @@ const styles = StyleSheet.create({
     color: colors.lightText,
     textAlign: "center",
     lineHeight: getFontSize(20),
+  },
+  // Invitation Card Styles
+  invitationCard: {
+    backgroundColor: colors.white,
+    paddingHorizontal: getHoriPadding(12),
+    paddingVertical: getVertiPadding(10),
+    marginHorizontal: getHoriPadding(8),
+    marginVertical: getVertiPadding(5),
+    borderRadius: getRadius(10),
+    shadowColor: colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  invitationContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: getVertiPadding(8),
+  },
+  invitationIconContainer: {
+    width: getWidth(36),
+    height: getHeight(36),
+    marginRight: getHoriPadding(8),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  invitationIcon: {
+    width: getWidth(36),
+    height: getHeight(36),
+  },
+  invitationTextContainer: {
+    flex: 1,
+    paddingTop: getVertiPadding(1),
+  },
+  invitationText: {
+    fontSize: getFontSize(13.5),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.primary,
+    lineHeight: getFontSize(19),
+  },
+  highlightedText: {
+    fontFamily: fonts.RobotoMedium,
+    color: "#1E3A8A",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    marginTop: getVertiPadding(1),
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: colors.secondary,
+    paddingVertical: getVertiPadding(8),
+    paddingHorizontal: getHoriPadding(14),
+    borderRadius: getRadius(8),
+    marginRight: getHoriPadding(4),
+    shadowColor: colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 1.5,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  acceptButtonText: {
+    fontSize: getFontSize(13.5),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.primary,
+    fontWeight: "normal",
+  },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: colors.white,
+    paddingVertical: getVertiPadding(8),
+    paddingHorizontal: getHoriPadding(14),
+    borderRadius: getRadius(8),
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginLeft: getHoriPadding(4),
+    shadowColor: colors.black,
+    shadowOffset: {
+      width: 0,
+      height: 1.5,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  rejectButtonText: {
+    fontSize: getFontSize(13.5),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.primary,
+    fontWeight: "normal",
   },
 });
