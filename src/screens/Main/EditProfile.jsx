@@ -6,7 +6,8 @@ import {
   Image,
   StatusBar,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import CustomInput from "@components/CustomInput";
 import ButtonComp from "@components/ButtonComp";
@@ -23,8 +24,10 @@ import {
 } from "@utils/responsive";
 
 const EditProfile = ({ navigation }) => {
-  const [name, setName] = useState("");
-  const [mobileNumber, setMobileNumber] = useState("");
+  const { user } = useSelector((state) => state.auth);
+  const [name, setName] = useState(user?.name);
+  const [mobileNumber, setMobileNumber] = useState(user?.phone_number);
+
 
   const handleSaveChanges = () => {
     // Handle save changes logic here
