@@ -42,5 +42,7 @@ export const endpoints = {
     getGroupDetails: "/getGroupDetails",
     sendInvitation: "/sendInvitation",
     getInvitations: "/getInvitations",
+    acceptInvite: "/accept-invite",
+    rejectInvite: "/reject-invite",
   },
 };

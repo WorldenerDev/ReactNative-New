@@ -23,7 +23,7 @@ import {
   getHoriPadding,
   getRadius,
 } from "@utils/responsive";
-import { getInvitations } from "@api/services/mainServices";
+import { getInvitations, acceptInvite, rejectInvite } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 
 const NotificationScreen = () => {
@@ -55,14 +55,47 @@ const NotificationScreen = () => {
     );
   };
 
-  const handleAcceptInvitation = (id) => {
-    setInvitations((prev) => prev.filter((invitation) => invitation.id !== id));
-    // Add your API call here to accept the invitation
+  const handleAcceptInvitation = async (item) => {
+    try {
+      setLoading(true);
+      console.log("item", item);
+      const response = await acceptInvite({
+        groupId: item?.groupId,
+        invitedId: item?._id,
+      });
+      console.log("response", response);
+      if (response?.data) {
+        // Remove the invitation from the list on success
+        setInvitations((prev) => prev.filter((invitation) => invitation._id !== item._id));
+        showToast("success", "Invitation accepted successfully");
+      }
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      showToast("error", error?.message || "Failed to accept invitation");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRejectInvitation = (id) => {
-    setInvitations((prev) => prev.filter((invitation) => invitation.id !== id));
-    // Add your API call here to reject the invitation
+  const handleRejectInvitation = async (item) => {
+    try {
+      setLoading(true);
+      const response = await rejectInvite({
+        groupId: item?.groupId,
+        invitedId: item?._id,
+      });
+
+      if (response?.data) {
+        // Remove the invitation from the list on success
+        setInvitations((prev) => prev.filter((invitation) => invitation._id !== item._id));
+        showToast("success", "Invitation rejected successfully");
+      }
+    } catch (error) {
+      console.error("Error rejecting invitation:", error);
+      showToast("error", error?.message || "Failed to reject invitation");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTabChange = (tab) => {
@@ -114,21 +147,21 @@ const NotificationScreen = () => {
           <View style={styles.invitationTextContainer}>
             <Text style={styles.invitationText}>
               <Text style={styles.highlightedText}>{item?.invitedBy?.name}</Text>
-              {" has invited you to join the Group "}
-              <Text style={styles.highlightedText}>{item.groupName}!</Text>
+              {" has invited you to join the group!"}
             </Text>
           </View>
         </View>
         <View style={styles.buttonContainer}>
           <ButtonComp
             title="Accept"
-            onPress={() => handleAcceptInvitation(item.id)}
+            onPress={() => handleAcceptInvitation(item)}
             containerStyle={styles.acceptButton}
             textStyle={styles.acceptButtonText}
+            disabled={false}
           />
           <ButtonComp
             title="Reject"
-            onPress={() => handleRejectInvitation(item.id)}
+            onPress={() => handleRejectInvitation(item)}
             containerStyle={styles.rejectButton}
             textStyle={styles.rejectButtonText}
           />
@@ -202,7 +235,7 @@ const NotificationScreen = () => {
           renderItem={
             activeTab === "Invitations" ? renderInvitationItem : renderNotificationItem
           }
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id || item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={renderEmptyState}
