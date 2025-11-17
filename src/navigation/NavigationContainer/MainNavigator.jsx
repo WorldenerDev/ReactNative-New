@@ -22,6 +22,7 @@ import {
   PaymentSuccess,
   Chat,
   GroupDetails,
+  BookingDetails,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -34,7 +35,7 @@ const MainNavigator = () => {
           headerShown: false,
         }}
       >
-         <MainStack.Screen
+        <MainStack.Screen
           name={navigationStrings.PAYMENT_SUCCESS}
           component={PaymentSuccess}
         />
@@ -110,6 +111,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.GROUP_DETAILS}
           component={GroupDetails}
+        />
+        <MainStack.Screen
+          name={navigationStrings.BOOKING_DETAILS}
+          component={BookingDetails}
         />
       </MainStack.Navigator>
     </>

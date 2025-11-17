@@ -14,6 +14,7 @@ export default {
   GROUP: "Group",
   TRIPS: "Trips",
   BOOKING: "Booking",
+  BOOKING_DETAILS: "BookingDetails",
   ACCOUNT: "Account",
   SEARCH_CITY: "SearchCity",
   CITY_DETAIL: "CityDetail",

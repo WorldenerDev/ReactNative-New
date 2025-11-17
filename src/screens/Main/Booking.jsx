@@ -9,8 +9,9 @@ import Loader from "@components/Loader";
 import colors from "@assets/colors";
 import { getHeight } from "@utils/responsive";
 import { getOrders } from "@api/services/mainServices";
+import navigationStrings from "@navigation/navigationStrings";
 
-const Booking = () => {
+const Booking = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState("All");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +38,6 @@ const Booking = () => {
         // If params object has keys, pass it; otherwise pass empty object (no query params)
         const apiParams = Object.keys(params).length > 0 ? params : {};
         const response = await getOrders(apiParams);
-
         if (response?.success && response?.data) {
           setOrders(Array.isArray(response.data) ? response.data : []);
         } else {
@@ -108,6 +108,7 @@ const Booking = () => {
       order.musement_data?.items?.forEach((item) => {
         const booking = {
           id: item.uuid,
+          orderId: order?._id, // Add order _id to booking object
           activityTitle: item.product?.title || "Activity",
           bookingId: order.order_identifier || order.order_id,
           price: item.total_retail_price_in_order_currency?.formatted_value || "$0.00",
@@ -169,8 +170,8 @@ const Booking = () => {
   }, [activeTab, orders]);
 
   const handleViewDetails = (item) => {
-    console.log("View details for:", item.bookingId);
-    // Navigate to booking details screen
+    console.log("item", item);
+    navigation.navigate(navigationStrings.BOOKING_DETAILS, { orderId: item.orderId, bookingId: item?.bookingId });
   };
 
   const renderTripItem = ({ item }) => (
