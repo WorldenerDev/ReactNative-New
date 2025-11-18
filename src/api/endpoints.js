@@ -36,6 +36,7 @@ export const endpoints = {
     updateParticipants: "/update-participants",
     updateCart: "/updateCart",
     getOrders: "/getOrders",
+    getOrderDetails: "/getOrderDetails",
     getTripBuddies: "/getTripBuddies",
     getTripBycity: "/getTripBycity",
     getGroups: "/getGroups",

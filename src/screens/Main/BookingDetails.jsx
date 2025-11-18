@@ -4,8 +4,9 @@ import {
     View,
     ScrollView,
     TouchableOpacity,
+    Alert,
 } from 'react-native';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import MainContainer from '@components/container/MainContainer';
 import Header from '@components/Header';
 import ButtonComp from '@components/ButtonComp';
@@ -18,25 +19,119 @@ import {
     getHoriPadding,
     getVertiPadding,
 } from '@utils/responsive';
+import { getOrderDetails } from '@api/services/mainServices';
+import { showToast } from '@components/AppToast';
 
 const BookingDetails = ({ navigation, route }) => {
     const { orderId, bookingId } = route?.params || {};
-    console.log("orderId", orderId);
-    console.log("bookingId", bookingId);
+    const [loading, setLoading] = useState(false);
+    const [bookingData, setBookingData] = useState(null);
+    const [orderData, setOrderData] = useState(null); // Store full order data for cancellation
+    const [cancelling, setCancelling] = useState(false);
 
-    // Dummy booking data matching the design
-    const bookingData = {
-        title: 'Tokyo Tower Visit and a dinner with live music',
-        date: '28 April, 2026',
-        options: 'Semi-private Tour - 10:30 AM',
-        tickets: [
-            { type: 'Adult', ageRange: '19-99', quantity: 1 },
-            { type: 'Child', ageRange: '7-18', quantity: 1 },
-            { type: 'Infant', ageRange: '0-6', quantity: 5 },
-        ],
-        transactionId: 'txn #12381',
-        purchasedOn: '28 April, 2026',
-    };
+    // Fetch order details on mount
+    useEffect(() => {
+        const fetchOrderDetails = async () => {
+            if (!orderId) {
+                console.log('BookingDetails: No orderId provided');
+                showToast('error', 'Order ID is required');
+                return;
+            }
+
+            try {
+                console.log('BookingDetails: Fetching order details for orderId:', orderId);
+                setLoading(true);
+                const response = await getOrderDetails(orderId);
+                console.log('BookingDetails: API response:', response);
+
+                if (response?.success && response?.data) {
+                    // Transform API response to match component structure
+                    const orderData = response.data;
+                    setOrderData(orderData); // Store full order data for cancellation
+                    const musementData = orderData?.musement_data;
+                    const items = musementData?.items || [];
+
+                    // Get title from first item's product
+                    const firstItem = items[0];
+                    const title = firstItem?.product?.title || 'N/A';
+
+                    // Format date from first item's product date (format: "2025-11-19 09:00")
+                    const productDate = firstItem?.product?.date;
+                    let formattedDate = 'N/A';
+                    if (productDate) {
+                        try {
+                            const dateObj = new Date(productDate);
+                            formattedDate = dateObj.toLocaleDateString('en-US', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                            });
+                        } catch (e) {
+                            formattedDate = productDate;
+                        }
+                    }
+
+                    // Build options string from price feature and meeting point
+                    const priceFeature = firstItem?.product?.price_tag?.price_feature || '';
+                    const meetingPoint = firstItem?.product?.meeting_point || '';
+                    const timeMatch = productDate?.match(/\d{2}:\d{2}/);
+                    const time = timeMatch ? timeMatch[0] : '';
+                    const options = [priceFeature, time, meetingPoint].filter(Boolean).join(' - ') || 'N/A';
+
+                    // Transform items to tickets array
+                    const tickets = items.map(item => {
+                        const ticketHolder = item?.product?.price_tag?.ticket_holder || 'Ticket';
+                        // ticket_holder already contains age range like "Child (3-10)", so use it as-is
+                        // Extract just the type name (without age range) for cleaner display
+                        const typeMatch = ticketHolder.match(/^([^(]+)/);
+                        const type = typeMatch ? typeMatch[1].trim() : ticketHolder;
+                        // Extract age range from ticket_holder if available (format: "Child (3-10)" -> "3-10")
+                        const ageRangeMatch = ticketHolder.match(/\(([^)]+)\)/);
+                        const ageRange = ageRangeMatch ? ageRangeMatch[1] : '';
+
+                        return {
+                            type: type,
+                            quantity: item?.quantity || 1,
+                            ageRange: ageRange,
+                        };
+                    });
+
+                    // Format purchased date
+                    let formattedPurchasedOn = 'N/A';
+                    if (orderData?.createdAt) {
+                        try {
+                            const dateObj = new Date(orderData.createdAt);
+                            formattedPurchasedOn = dateObj.toLocaleDateString('en-US', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                            });
+                        } catch (e) {
+                            formattedPurchasedOn = orderData.createdAt;
+                        }
+                    }
+
+                    setBookingData({
+                        title: title,
+                        date: formattedDate,
+                        options: options,
+                        tickets: tickets,
+                        transactionId: orderData?.order_identifier || orderData?.order_id || orderId,
+                        purchasedOn: formattedPurchasedOn,
+                    });
+                } else {
+                    showToast('error', response?.message || 'Failed to fetch order details');
+                }
+            } catch (error) {
+                console.error('Error fetching order details:', error);
+                showToast('error', error?.message || 'Something went wrong');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrderDetails();
+    }, [orderId]);
 
     const handleViewTicket = () => {
         // Handle view ticket action
@@ -44,17 +139,61 @@ const BookingDetails = ({ navigation, route }) => {
     };
 
     const handleCancel = () => {
-        // Handle cancel action
-        console.log('Cancel pressed');
+        if (!orderData) {
+            showToast('error', 'Order data not available');
+            return;
+        }
+
+        const musementData = orderData?.musement_data;
+        const orderUuid = musementData?.uuid;
+        const items = musementData?.items || [];
+
+        if (!orderUuid || items.length === 0) {
+            showToast('error', 'Unable to cancel: Order information incomplete');
+            return;
+        }
+
+        // Show confirmation dialog
+        Alert.alert(
+            'Cancel Booking',
+            'Are you sure you want to cancel this booking? This action cannot be undone.',
+            [
+                {
+                    text: 'No',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Yes, Cancel',
+                    style: 'destructive',
+                    // onPress: async () => {
+                    //     await cancelAllOrderItems(orderUuid, items);
+                    // },
+                },
+            ]
+        );
     };
+
+
 
     const handleContactSupport = () => {
         // Handle contact support action
         console.log('Contact support pressed');
     };
 
+
+    if (!bookingData) {
+        return (
+            <MainContainer>
+                <Header showBack={true} title={bookingId || 'Booking Details'} />
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.errorText}>No booking details found</Text>
+                </View>
+            </MainContainer>
+        );
+    }
+
     return (
-        <MainContainer>
+        <MainContainer loader={loading}>
             <Header showBack={true} title={bookingId || 'Booking Details'} />
             <ScrollView
                 style={styles.scrollView}
@@ -83,17 +222,20 @@ const BookingDetails = ({ navigation, route }) => {
                     </View>
 
                     {/* Tickets Section */}
-                    <View style={styles.ticketsSection}>
-                        <Text style={styles.ticketsLabel}>Tickets:</Text>
-                        {bookingData.tickets.map((ticket, index) => (
-                            <View key={index} style={styles.ticketRow}>
-                                <Text style={styles.ticketBullet}>•</Text>
-                                <Text style={styles.ticketItem}>
-                                    {ticket.quantity}x {ticket.type} ({ticket.ageRange})
-                                </Text>
-                            </View>
-                        ))}
-                    </View>
+                    {bookingData.tickets && bookingData.tickets.length > 0 && (
+                        <View style={styles.ticketsSection}>
+                            <Text style={styles.ticketsLabel}>Tickets:</Text>
+                            {bookingData.tickets.map((ticket, index) => (
+                                <View key={index} style={styles.ticketRow}>
+                                    <Text style={styles.ticketBullet}>•</Text>
+                                    <Text style={styles.ticketItem}>
+                                        {ticket.quantity || 1}x {ticket.type || ticket.name || 'Ticket'}
+                                        {ticket.ageRange && ` (${ticket.ageRange})`}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
 
                     {/* View Ticket Button */}
                     <ButtonComp
@@ -115,13 +257,17 @@ const BookingDetails = ({ navigation, route }) => {
                         <Text style={styles.paymentLabel}>Purchased on:</Text>
                         <Text style={styles.paymentValue}>{bookingData.purchasedOn}</Text>
                     </View>
+                    <View style={styles.paymentRow}>
+                        <Text style={styles.paymentLabel}>Cancellable by:</Text>
+                        <Text style={styles.paymentValue}>{bookingData.purchasedOn}</Text>
+                    </View>
                 </View>
 
                 {/* Cancel Button */}
                 <ButtonComp
-                    title="Cancel"
+                    title={cancelling ? "Cancelling..." : "Cancel"}
                     onPress={handleCancel}
-                    disabled={false}
+                    disabled={cancelling || !orderData}
                     containerStyle={styles.cancelButton}
                     textStyle={styles.cancelButtonText}
                 />
@@ -296,5 +442,21 @@ const styles = StyleSheet.create({
         color: colors.red,
         textDecorationLine: 'underline',
         fontWeight: '500',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: getHeight(40),
+    },
+    loadingText: {
+        marginTop: getHeight(16),
+        fontSize: getFontSize(14),
+        color: colors.lightText,
+    },
+    errorText: {
+        fontSize: getFontSize(16),
+        color: colors.red,
+        textAlign: 'center',
     },
 });
