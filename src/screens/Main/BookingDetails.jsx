@@ -19,7 +19,7 @@ import {
     getHoriPadding,
     getVertiPadding,
 } from '@utils/responsive';
-import { getOrderDetails } from '@api/services/mainServices';
+import { getOrderDetails, getRefundPolicies, cancelOrderItem } from '@api/services/mainServices';
 import { showToast } from '@components/AppToast';
 
 const BookingDetails = ({ navigation, route }) => {
@@ -28,21 +28,19 @@ const BookingDetails = ({ navigation, route }) => {
     const [bookingData, setBookingData] = useState(null);
     const [orderData, setOrderData] = useState(null); // Store full order data for cancellation
     const [cancelling, setCancelling] = useState(false);
+    const [cancellableByDate, setCancellableByDate] = useState(null); // Store raw date for comparison
 
     // Fetch order details on mount
     useEffect(() => {
         const fetchOrderDetails = async () => {
             if (!orderId) {
-                console.log('BookingDetails: No orderId provided');
                 showToast('error', 'Order ID is required');
                 return;
             }
 
             try {
-                console.log('BookingDetails: Fetching order details for orderId:', orderId);
                 setLoading(true);
                 const response = await getOrderDetails(orderId);
-                console.log('BookingDetails: API response:', response);
 
                 if (response?.success && response?.data) {
                     // Transform API response to match component structure
@@ -111,6 +109,7 @@ const BookingDetails = ({ navigation, route }) => {
                         }
                     }
 
+                    // Initialize booking data
                     setBookingData({
                         title: title,
                         date: formattedDate,
@@ -118,7 +117,54 @@ const BookingDetails = ({ navigation, route }) => {
                         tickets: tickets,
                         transactionId: orderData?.order_identifier || orderData?.order_id || orderId,
                         purchasedOn: formattedPurchasedOn,
+                        cancellableBy: 'N/A', // Will be updated after refund policies API call
                     });
+
+                    // Fetch refund policies after order details are loaded
+                    const orderUuid = musementData?.uuid;
+                    const orderItemUuid = firstItem?.uuid;
+
+                    if (orderUuid && orderItemUuid) {
+                        try {
+                            const refundResponse = await getRefundPolicies({
+                                orderUuid: orderUuid,
+                                orderItemUuid: orderItemUuid,
+                            });
+
+                            if (refundResponse?.success && refundResponse?.data?.length > 0) {
+                                // Get the first refund policy's applicable_until date
+                                const applicableUntil = refundResponse.data[0]?.applicable_until;
+                                let formattedCancellableBy = 'N/A';
+
+                                if (applicableUntil) {
+                                    try {
+                                        // Format: "2025-11-18 09:00"
+                                        const dateObj = new Date(applicableUntil);
+                                        formattedCancellableBy = dateObj.toLocaleString('en-US', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        });
+                                        // Store raw date for comparison
+                                        setCancellableByDate(dateObj);
+                                    } catch (e) {
+                                        formattedCancellableBy = applicableUntil;
+                                    }
+                                }
+
+                                // Update booking data with cancellable by date
+                                setBookingData(prev => ({
+                                    ...prev,
+                                    cancellableBy: formattedCancellableBy,
+                                }));
+                            }
+                        } catch (refundError) {
+                            console.error('Error fetching refund policies:', refundError);
+                            // Don't show error toast for refund policies, just log it
+                        }
+                    }
                 } else {
                     showToast('error', response?.message || 'Failed to fetch order details');
                 }
@@ -135,7 +181,6 @@ const BookingDetails = ({ navigation, route }) => {
 
     const handleViewTicket = () => {
         // Handle view ticket action
-        console.log('View ticket pressed');
     };
 
     const handleCancel = () => {
@@ -144,12 +189,34 @@ const BookingDetails = ({ navigation, route }) => {
             return;
         }
 
+        // Check if cancellation is allowed by comparing current date with cancellableBy date
+        if (cancellableByDate) {
+            const now = new Date();
+            if (now > cancellableByDate) {
+                Alert.alert(
+                    'Cancellation Not Allowed',
+                    'The cancellation deadline has passed. Cancellation is not allowed at this time.',
+                    [{ text: 'OK' }]
+                );
+                return;
+            }
+        }
+
         const musementData = orderData?.musement_data;
         const orderUuid = musementData?.uuid;
         const items = musementData?.items || [];
 
         if (!orderUuid || items.length === 0) {
             showToast('error', 'Unable to cancel: Order information incomplete');
+            return;
+        }
+
+        // Get the first item's UUID for cancellation
+        const firstItem = items[0];
+        const orderItemUuid = firstItem?.uuid;
+
+        if (!orderItemUuid) {
+            showToast('error', 'Unable to cancel: Order item information incomplete');
             return;
         }
 
@@ -165,21 +232,38 @@ const BookingDetails = ({ navigation, route }) => {
                 {
                     text: 'Yes, Cancel',
                     style: 'destructive',
-                    // onPress: async () => {
-                    //     await cancelAllOrderItems(orderUuid, items);
-                    // },
+                    onPress: async () => {
+                        try {
+                            setCancelling(true);
+                            const response = await cancelOrderItem({
+                                orderUuid: orderUuid,
+                                orderItemUuid: orderItemUuid,
+                                cancellation_reason: 'CANCELLED-BY-CUSTOMER',
+                                cancellation_additional_info: 'Customer requested cancellation and refund started.',
+                            });
+
+                            if (response?.success) {
+                                showToast('success', 'Booking cancelled successfully');
+                                // Optionally navigate back or refresh data
+                                navigation.goBack();
+                            } else {
+                                showToast('error', response?.message || 'Failed to cancel booking');
+                            }
+                        } catch (error) {
+                            console.error('Error cancelling booking:', error);
+                            showToast('error', error?.message || 'Something went wrong while cancelling');
+                        } finally {
+                            setCancelling(false);
+                        }
+                    },
                 },
             ]
         );
     };
 
-
-
     const handleContactSupport = () => {
         // Handle contact support action
-        console.log('Contact support pressed');
     };
-
 
     if (!bookingData) {
         return (
@@ -259,7 +343,7 @@ const BookingDetails = ({ navigation, route }) => {
                     </View>
                     <View style={styles.paymentRow}>
                         <Text style={styles.paymentLabel}>Cancellable by:</Text>
-                        <Text style={styles.paymentValue}>{bookingData.purchasedOn}</Text>
+                        <Text style={styles.paymentValue}>{bookingData.cancellableBy}</Text>
                     </View>
                 </View>
 
@@ -448,11 +532,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingVertical: getHeight(40),
-    },
-    loadingText: {
-        marginTop: getHeight(16),
-        fontSize: getFontSize(14),
-        color: colors.lightText,
     },
     errorText: {
         fontSize: getFontSize(16),

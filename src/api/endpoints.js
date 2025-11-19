@@ -45,5 +45,7 @@ export const endpoints = {
     getInvitations: "/getInvitations",
     acceptInvite: "/accept-invite",
     rejectInvite: "/reject-invite",
+    getRefundPolicies: "/get-refund-policies",
+    cancelOrderItem: "/cancel-order-item",
   },
 };
