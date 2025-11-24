@@ -20,13 +20,10 @@ import navigationStrings from "@navigation/navigationStrings";
 import Contacts from "react-native-contacts";
 import { sendInvitation } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
-import { useSelector } from "react-redux";
 
 const AddToTrip = ({ navigation, route }) => {
-  const { user } = useSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState("");
   const [allData, setAllData] = useState([]);
-  const [contactsMap, setContactsMap] = useState({});
   const [loadingItems, setLoadingItems] = useState({}); // Track loading state for each item
 
   // Get API response data and groupId from route params
@@ -83,22 +80,33 @@ const AddToTrip = ({ navigation, route }) => {
           }
         });
 
-        setContactsMap(phoneToNameMap);
-
         // Step 2: Process API response data
         // The API returns phone numbers, we match them with device contacts to get names
-        // Process yourBuddies - filter out nulls
+        // Helper function to extract phone number from buddy object
+        const extractPhone = (buddy) => {
+          if (typeof buddy === "string") return buddy;
+          return buddy?.phone_number || buddy?.phone || buddy?.phoneNumber || buddy?.mobile || buddy?.contact || "";
+        };
+
+        // Process yourBuddies - filter out nulls and invalid entries
         const yourBuddies = (apiResponse?.yourBuddies || [])
           .filter((buddy) => buddy !== null && buddy !== undefined)
           .map((buddy, index) => {
-            const phone = typeof buddy === "string" ? buddy : buddy?.phone || "";
+            const phone = extractPhone(buddy);
+            if (!phone) {
+              console.warn(`Buddy at index ${index} has no phone number:`, buddy);
+            }
+
             const normalizedPhone = normalizePhone(phone);
             // Try to find name from contact map, fallback to API name, then phone number
             const name = phoneToNameMap[normalizedPhone] ||
               phoneToNameMap[`1${normalizedPhone}`] || // Try with country code
               buddy?.name ||
+              buddy?.userName ||
+              buddy?.username ||
               phone ||
               "Unknown";
+
             return {
               id: `buddy-${index}`,
               name: name,
@@ -106,11 +114,13 @@ const AddToTrip = ({ navigation, route }) => {
               isAdded: false,
               type: "buddy",
             };
-          });
+          })
+          .filter((buddy) => buddy.phone); // Filter out buddies without phone numbers
 
         // Process fromYourContacts - array of phone numbers
-        const fromYourContacts = (apiResponse?.fromYourContacts || []).map(
-          (phone, index) => {
+        const fromYourContacts = (apiResponse?.fromYourContacts || [])
+          .filter((phone) => phone && typeof phone === "string" && phone.trim() !== "")
+          .map((phone, index) => {
             const normalizedPhone = normalizePhone(phone);
             // Try to find name from contact map, fallback to phone number
             const name = phoneToNameMap[normalizedPhone] ||
@@ -123,32 +133,40 @@ const AddToTrip = ({ navigation, route }) => {
               isInvited: false,
               type: "contact",
             };
-          }
-        );
+          });
 
         setAllData([...yourBuddies, ...fromYourContacts]);
       } catch (error) {
         console.error("Error initializing data:", error);
         // Fallback: use API data directly without contact names
+        const extractPhone = (buddy) => {
+          if (typeof buddy === "string") return buddy;
+          return buddy?.phone_number || buddy?.phone || buddy?.phoneNumber || buddy?.mobile || buddy?.contact || "";
+        };
+
         const yourBuddies = (apiResponse?.yourBuddies || [])
           .filter((buddy) => buddy !== null && buddy !== undefined)
-          .map((buddy, index) => ({
-            id: `buddy-${index}`,
-            name: typeof buddy === "string" ? buddy : buddy?.name || "Unknown",
-            phone: typeof buddy === "string" ? buddy : buddy?.phone || "",
-            isAdded: false,
-            type: "buddy",
-          }));
+          .map((buddy, index) => {
+            const phone = extractPhone(buddy);
+            return {
+              id: `buddy-${index}`,
+              name: buddy?.name || buddy?.userName || buddy?.username || phone || "Unknown",
+              phone: phone,
+              isAdded: false,
+              type: "buddy",
+            };
+          })
+          .filter((buddy) => buddy.phone); // Filter out buddies without phone numbers
 
-        const fromYourContacts = (apiResponse?.fromYourContacts || []).map(
-          (phone, index) => ({
+        const fromYourContacts = (apiResponse?.fromYourContacts || [])
+          .filter((phone) => phone && typeof phone === "string" && phone.trim() !== "")
+          .map((phone, index) => ({
             id: `contact-${index}`,
             name: phone,
             phone: phone,
             isInvited: false,
             type: "contact",
-          })
-        );
+          }));
 
         setAllData([...yourBuddies, ...fromYourContacts]);
       }
@@ -180,11 +198,7 @@ const AddToTrip = ({ navigation, route }) => {
       setAllData((prev) =>
         prev.map((item) => {
           if (item.id === id) {
-            if (item.type === "buddy") {
-              return { ...item, isAdded: !item.isAdded };
-            } else {
-              return { ...item, isInvited: !item.isInvited };
-            }
+            return { ...item, isAdded: !item.isAdded };
           }
           return item;
         })
@@ -256,10 +270,17 @@ const AddToTrip = ({ navigation, route }) => {
       return;
     }
 
-    // Otherwise, navigate to CreateTrip (existing behavior)
     // Get phone numbers of selected buddies and invited contacts
-    const selectedBuddyPhones = selectedBuddies.map((item) => item.phone);
-    const invitedContactPhones = invitedContacts.map((item) => item.phone);
+    // Filter out any empty phone numbers for robustness
+    const selectedBuddyPhones = selectedBuddies
+      .map((item) => item.phone)
+      .filter((phone) => phone && phone.trim() !== "");
+    const invitedContactPhones = invitedContacts
+      .map((item) => item.phone)
+      .filter((phone) => phone && phone.trim() !== "");
+
+    // Combine both arrays
+    const allSelectedPhones = [...selectedBuddyPhones, ...invitedContactPhones];
 
     // Get existing data from route params to pass back
     const cityData = route?.params?.cityData;
@@ -267,7 +288,7 @@ const AddToTrip = ({ navigation, route }) => {
     const toDate = route?.params?.toDate;
 
     navigation.navigate(navigationStrings.CREATE_TRIP, {
-      selectedBuddyPhones: [...selectedBuddyPhones, ...invitedContactPhones],
+      selectedBuddyPhones: allSelectedPhones,
       cityData: cityData,
       fromDate: fromDate,
       toDate: toDate,

@@ -190,7 +190,8 @@ const GroupDetails = () => {
           const phoneNumbers = contacts
             .flatMap(contact => contact.phoneNumbers || [])
             .map(phone => phone.number)
-            .filter(phone => phone && phone.trim() !== ""); // Filter out empty phone numbers
+            .filter(phone => phone && phone.trim() !== "") // Filter out empty phone numbers
+            .map(phone => phone.replace(/[()\s-]/g, '')); // Remove parentheses, spaces, and dashes (preserves + sign)
 
           console.log("📱 Phone Numbers Array:", phoneNumbers);
           if (phoneNumbers.length > 0) {
