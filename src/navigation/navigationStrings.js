@@ -35,4 +35,5 @@ export default {
   PAYMENT_SUCCESS: "PaymentSuccess",
   CHAT: "Chat",
   GROUP_DETAILS: "GroupDetails",
+  SAVED_CARDS: "SavedCards",
 };

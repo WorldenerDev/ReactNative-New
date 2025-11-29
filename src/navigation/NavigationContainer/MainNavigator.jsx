@@ -23,6 +23,7 @@ import {
   Chat,
   GroupDetails,
   BookingDetails,
+  SavedCards,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -115,6 +116,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.BOOKING_DETAILS}
           component={BookingDetails}
+        />
+        <MainStack.Screen
+          name={navigationStrings.SAVED_CARDS}
+          component={SavedCards}
         />
       </MainStack.Navigator>
     </>

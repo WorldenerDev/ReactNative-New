@@ -33,3 +33,4 @@ export { default as Payment } from "./Main/Payment";
 export { default as PaymentSuccess } from "./Main/PaymentSuccess";
 export { default as Chat } from "./Main/Chat";
 export { default as GroupDetails } from "./Main/GroupDetails";
+export { default as SavedCards } from "./Main/SavedCards";

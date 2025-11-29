@@ -46,7 +46,7 @@ const Account = ({ navigation }) => {
     ]);
   };
   const handleSavedCards = () => {
-    // navigation.navigate(navigationStrings.SAVED_CARDS);
+    navigation.navigate(navigationStrings.SAVED_CARDS);
   };
 
   const handleEditProfile = () => {
