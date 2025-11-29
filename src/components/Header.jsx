@@ -44,10 +44,10 @@ const Header = ({
           onPress={onRightIconPress}
           style={[, { backgroundColor: colors.white }]}
         >
-          <Image source={rightIconImage} style={styles.iconStyle} />
+          <Image source={rightIconImage} style={styles.rightIconStyle} />
         </TouchableOpacity>
       ) : (
-        <View style={[, { backgroundColor: colors.white }]} />
+        <View style={[styles.iconStyle, { backgroundColor: colors.white }]} />
       )}
     </View>
   );
@@ -87,6 +87,11 @@ const styles = StyleSheet.create({
     width: getWidth(20),
     resizeMode: "contain",
     // tintColor: colors.black, // make back icon black
+  },
+  rightIconStyle: {
+    height: getHeight(25),
+    width: getWidth(25),
+    resizeMode: "contain",
   },
   title: {
     fontSize: getHeight(18),

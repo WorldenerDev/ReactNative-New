@@ -34,6 +34,7 @@ export default {
   PAYMENT: "Payment",
   PAYMENT_SUCCESS: "PaymentSuccess",
   CHAT: "Chat",
+  AI_CHAT: "AiChat",
   GROUP_DETAILS: "GroupDetails",
   SAVED_CARDS: "SavedCards",
 };

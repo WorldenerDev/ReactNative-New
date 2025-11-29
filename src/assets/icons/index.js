@@ -38,6 +38,7 @@ const imagePath = {
   SUCCESS_ICON: require("./source/success.png"),
   CARD_ICON: require("./source/pay.png"),
   INVITATION_ICON: require("./source/invite.png"),
+  AI_ICON: require("./source/aiIcon.png"),
 };
 
 export default imagePath;

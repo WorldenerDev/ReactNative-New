@@ -32,5 +32,6 @@ export { default as EditProfile } from "./Main/EditProfile";
 export { default as Payment } from "./Main/Payment";
 export { default as PaymentSuccess } from "./Main/PaymentSuccess";
 export { default as Chat } from "./Main/Chat";
+export { default as AiChat } from "./Main/AiChat";
 export { default as GroupDetails } from "./Main/GroupDetails";
 export { default as SavedCards } from "./Main/SavedCards";

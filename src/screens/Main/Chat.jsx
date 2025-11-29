@@ -1,5 +1,7 @@
+import imagePath from '@assets/icons';
 import MainContainer from '@components/container/MainContainer';
 import Header from '@components/Header';
+import navigationStrings from '@navigation/navigationStrings';
 import { getHeight } from '@utils/responsive';
 import React, { useState, useCallback, useEffect } from 'react';
 import {
@@ -23,7 +25,7 @@ const MOCK_USERS = [
 const CURRENT_USER = MOCK_USERS[0];
 const EMOJI_REACTIONS = ['👍', '❤️', '😂', '😮', '😢'];
 
-const Chat = () => {
+const Chat = ({ navigation }) => {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -288,9 +290,13 @@ const Chat = () => {
   );
 
   return (
-   <MainContainer loader={false}>
-    <Header title="Group Chat" />
-   
+    <MainContainer loader={false}>
+      <Header
+        title="Group Chat"
+        rightIconImage={imagePath.AI_ICON}
+        onRightIconPress={() => navigation.navigate(navigationStrings.AI_CHAT)}
+      />
+
       <GiftedChat
         messages={isSearchMode ? filteredMessages : messages}
         onSend={onSend}

@@ -24,6 +24,7 @@ import {
   GroupDetails,
   BookingDetails,
   SavedCards,
+  AiChat,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -108,6 +109,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.CHAT}
           component={Chat}
+        />
+        <MainStack.Screen
+          name={navigationStrings.AI_CHAT}
+          component={AiChat}
         />
         <MainStack.Screen
           name={navigationStrings.GROUP_DETAILS}
