@@ -24,7 +24,7 @@ import { showToast } from "@components/AppToast";
 const AddToTrip = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [allData, setAllData] = useState([]);
-  const [loadingItems, setLoadingItems] = useState({}); // Track loading state for each item
+  const [isSendingInvitations, setIsSendingInvitations] = useState(false); // Track loading state for Done button
 
   // Get API response data and groupId from route params
   const apiResponse = route?.params?.selectedBuddyPhones || {};
@@ -189,7 +189,7 @@ const AddToTrip = ({ navigation, route }) => {
     );
   }, [allData, searchQuery]);
 
-  const handleToggleItem = async (id) => {
+  const handleToggleItem = (id) => {
     const item = allData.find((i) => i.id === id);
     if (!item) return;
 
@@ -204,52 +204,15 @@ const AddToTrip = ({ navigation, route }) => {
         })
       );
     } else if (item.type === "contact") {
-      // If coming from GroupDetails (groupId exists) and user is inviting (not already invited)
-      if (groupId && !item.isInvited) {
-        try {
-          // Set loading state for this item
-          setLoadingItems((prev) => ({ ...prev, [id]: true }));
-
-          // Call sendInvitation API with the correct payload structure
-          const response = await sendInvitation({
-            name: item.name,
-            phoneNumber: item.phone,
-            groupId: groupId,
-            message: "Hello", // Optional message, can be customized
-          });
-
-          if (response?.success) {
-            // Update the item to show as invited
-            setAllData((prev) =>
-              prev.map((item) => {
-                if (item.id === id) {
-                  return { ...item, isInvited: true };
-                }
-                return item;
-              })
-            );
-            showToast("success", "Invitation sent successfully");
-          } else {
-            showToast("error", response?.message || "Failed to send invitation");
+      // Just toggle the invited state - we'll send invitations in batch when Done is pressed
+      setAllData((prev) =>
+        prev.map((item) => {
+          if (item.id === id) {
+            return { ...item, isInvited: !item.isInvited };
           }
-        } catch (error) {
-          console.error("Error sending invitation:", error);
-          showToast("error", error?.message || "Failed to send invitation");
-        } finally {
-          // Clear loading state
-          setLoadingItems((prev) => ({ ...prev, [id]: false }));
-        }
-      } else {
-        // For contacts when not from GroupDetails, just toggle the invited state
-        setAllData((prev) =>
-          prev.map((item) => {
-            if (item.id === id) {
-              return { ...item, isInvited: !item.isInvited };
-            }
-            return item;
-          })
-        );
-      }
+          return item;
+        })
+      );
     }
   };
 
@@ -263,13 +226,58 @@ const AddToTrip = ({ navigation, route }) => {
 
   const hasSelections = selectedBuddies.length > 0 || invitedContacts.length > 0;
 
-  const handleDone = () => {
-    // If coming from GroupDetails (groupId exists), navigate back to home
+  const handleDone = async () => {
+    // If coming from GroupDetails (groupId exists), send invitations in batch
     if (groupId) {
-      navigation.navigate(navigationStrings.BOTTOM_TAB);
+      // Get phone numbers of selected buddies and invited contacts
+      // Filter out any empty phone numbers for robustness
+      const selectedBuddyPhones = selectedBuddies
+        .map((item) => item.phone)
+        .filter((phone) => phone && phone.trim() !== "");
+      const invitedContactPhones = invitedContacts
+        .map((item) => item.phone)
+        .filter((phone) => phone && phone.trim() !== "");
+
+      // Combine both arrays
+      const allSelectedPhones = [...selectedBuddyPhones, ...invitedContactPhones];
+
+      if (allSelectedPhones.length === 0) {
+        showToast("error", "Please select at least one contact to invite");
+        return;
+      }
+
+      try {
+        setIsSendingInvitations(true);
+
+        // Get name from first selected item, or use default
+        const firstSelectedItem = selectedBuddies[0] || invitedContacts[0];
+        const name = firstSelectedItem?.name || "User";
+
+        // Call sendInvitation API with batch phone numbers
+        const response = await sendInvitation({
+          name: name,
+          phoneNumbers: allSelectedPhones,
+          groupId: groupId,
+          message: "Hello",
+        });
+
+        if (response?.success || response?.data) {
+          showToast("success", "Invitations sent successfully");
+          // Navigate back to home after successful invitation
+          navigation.navigate(navigationStrings.BOTTOM_TAB);
+        } else {
+          showToast("error", response?.message || "Failed to send invitations");
+        }
+      } catch (error) {
+        console.error("Error sending invitations:", error);
+        showToast("error", error?.message || "Failed to send invitations");
+      } finally {
+        setIsSendingInvitations(false);
+      }
       return;
     }
 
+    // Original flow for CreateTrip
     // Get phone numbers of selected buddies and invited contacts
     // Filter out any empty phone numbers for robustness
     const selectedBuddyPhones = selectedBuddies
@@ -320,11 +328,9 @@ const AddToTrip = ({ navigation, route }) => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleToggleItem(item.id)}
-            disabled={loadingItems[item.id]}
+            disabled={isSendingInvitations}
           >
-            {loadingItems[item.id] ? (
-              <Text style={styles.buttonText}>Sending...</Text>
-            ) : item.type === "buddy" ? (
+            {item.type === "buddy" ? (
               item.isAdded ? (
                 <View style={styles.statusContainer}>
                   <View style={styles.checkIcon}>
@@ -386,8 +392,8 @@ const AddToTrip = ({ navigation, route }) => {
         {/* Floating Done Button */}
         <View style={styles.floatingButtonContainer}>
           <ButtonComp
-            title="Done"
-            disabled={!hasSelections}
+            title={isSendingInvitations ? "Sending..." : "Done"}
+            disabled={!hasSelections || isSendingInvitations}
             onPress={handleDone}
             containerStyle={styles.doneButton}
           />

@@ -122,13 +122,13 @@ const BookingDetails = ({ navigation, route }) => {
 
                     // Fetch refund policies after order details are loaded
                     const orderUuid = musementData?.uuid;
-                    const orderItemUuid = firstItem?.uuid;
+                    const orderItemUuids = items.map(item => item?.uuid).filter(Boolean);
 
-                    if (orderUuid && orderItemUuid) {
+                    if (orderUuid && orderItemUuids.length > 0) {
                         try {
                             const refundResponse = await getRefundPolicies({
                                 orderUuid: orderUuid,
-                                orderItemUuid: orderItemUuid,
+                                orderItemUuids: orderItemUuids,
                             });
 
                             if (refundResponse?.success && refundResponse?.data?.length > 0) {
@@ -211,11 +211,10 @@ const BookingDetails = ({ navigation, route }) => {
             return;
         }
 
-        // Get the first item's UUID for cancellation
-        const firstItem = items[0];
-        const orderItemUuid = firstItem?.uuid;
+        // Get all items' UUIDs for cancellation
+        const orderItemUuids = items.map(item => item?.uuid).filter(Boolean);
 
-        if (!orderItemUuid) {
+        if (orderItemUuids.length === 0) {
             showToast('error', 'Unable to cancel: Order item information incomplete');
             return;
         }
@@ -237,7 +236,7 @@ const BookingDetails = ({ navigation, route }) => {
                             setCancelling(true);
                             const response = await cancelOrderItem({
                                 orderUuid: orderUuid,
-                                orderItemUuid: orderItemUuid,
+                                orderItemUuids: orderItemUuids,
                                 cancellation_reason: 'CANCELLED-BY-CUSTOMER',
                                 cancellation_additional_info: 'Customer requested cancellation and refund started.',
                             });

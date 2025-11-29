@@ -45,6 +45,9 @@ const Account = ({ navigation }) => {
       },
     ]);
   };
+  const handleSavedCards = () => {
+    // navigation.navigate(navigationStrings.SAVED_CARDS);
+  };
 
   const handleEditProfile = () => {
     navigation.navigate(navigationStrings.EDIT_PROFILE);
@@ -117,11 +120,11 @@ const Account = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* My Profile Section */}
+      {/* Essentials Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Profile</Text>
+        <Text style={styles.sectionTitle}>Essentials</Text>
         <ProfileButton title="Edit Profile" onPress={handleEditProfile} />
-        <ProfileButton title="Sign Out" onPress={handleLogout} />
+        <ProfileButton title="Saved Cards" onPress={handleSavedCards} />
       </View>
 
       {/* My Bookings Section */}
@@ -161,6 +164,7 @@ const Account = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <ProfileButton title="Delete Account" onPress={handleDeleteAccount} />
+        <ProfileButton title="Sign Out" onPress={handleLogout} />
       </View>
     </ResponsiveContainer>
   );
@@ -196,7 +200,7 @@ const styles = StyleSheet.create({
     height: getHeight(50),
   },
   section: {
-    marginBottom: getVertiPadding(32),
+    marginBottom: getVertiPadding(12),
   },
   sectionTitle: {
     fontSize: getFontSize(18),
