@@ -291,7 +291,11 @@ const CityDetail = ({ route, navigation }) => {
       {/* Floating AI Chat Icon */}
       <TouchableOpacity
         style={styles.floatingIcon}
-        onPress={() => console.log("Magic Icon Pressed")}
+        onPress={() =>
+          navigation.navigate(navigationStrings.SURPRISES, {
+            cityData: cityData,
+          })
+        }
         activeOpacity={0.8}
       >
         <Image source={imagePath.MAGIC_ICON} style={styles.magicIcon} />
