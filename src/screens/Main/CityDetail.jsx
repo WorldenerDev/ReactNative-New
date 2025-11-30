@@ -288,6 +288,14 @@ const CityDetail = ({ route, navigation }) => {
           </View>
         }
       />
+      {/* Floating AI Chat Icon */}
+      <TouchableOpacity
+        style={styles.floatingIcon}
+        onPress={() => console.log("Magic Icon Pressed")}
+        activeOpacity={0.8}
+      >
+        <Image source={imagePath.MAGIC_ICON} style={styles.magicIcon} />
+      </TouchableOpacity>
     </ScreenWapper>
   );
 };
@@ -404,6 +412,30 @@ const styles = StyleSheet.create({
   },
   tripArrowIcon: {
     tintColor: colors.black,
+  },
+  floatingIcon: {
+    position: "absolute",
+    bottom: getVertiPadding(80),
+    right: getHoriPadding(16),
+    width: getWidth(56),
+    height: getHeight(56),
+    borderRadius: getRadius(12),
+    backgroundColor: colors.yellow,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+  },
+  magicIcon: {
+    width: getWidth(32),
+    height: getHeight(32),
+    resizeMode: "contain",
   },
 });
 
