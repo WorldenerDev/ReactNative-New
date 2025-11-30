@@ -35,3 +35,4 @@ export { default as Chat } from "./Main/Chat";
 export { default as AiChat } from "./Main/AiChat";
 export { default as GroupDetails } from "./Main/GroupDetails";
 export { default as SavedCards } from "./Main/SavedCards";
+export { default as ViewAiChat } from "./Main/ViewAiChat";

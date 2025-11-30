@@ -13,7 +13,6 @@ import {
     Text,
     TouchableOpacity,
     TextInput,
-    FlatList,
     Modal,
 } from 'react-native';
 import { GiftedChat, Message, MessageText } from 'react-native-gifted-chat';
@@ -28,16 +27,12 @@ const MOCK_USERS = [
 const CURRENT_USER = MOCK_USERS[0];
 const EMOJI_REACTIONS = ['👍', '❤️', '😂', '😮', '😢'];
 
-const AiChat = () => {
-    const navigation = useNavigation();
+const AiChat = ({ navigation }) => {
+    // const navigation = useNavigation();
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState('');
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
-    const [mentionSuggestions, setMentionSuggestions] = useState([]);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [cursorPosition, setCursorPosition] = useState(0);
 
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -78,35 +73,10 @@ const AiChat = () => {
         }
     }, [text]);
 
-    // Mention
+    // Handle text input change
     const handleTextChange = useCallback((newText) => {
         setText(newText);
-        const cursor = newText.length;
-        setCursorPosition(cursor);
-
-        const lastAt = newText.lastIndexOf('@', cursor - 1);
-        if (lastAt >= 0) {
-            const query = newText.slice(lastAt + 1, cursor);
-            const suggestions = MOCK_USERS.filter(u =>
-                u.name.toLowerCase().startsWith(query.toLowerCase())
-            );
-            setMentionSuggestions(suggestions);
-            setShowSuggestions(suggestions.length > 0);
-        } else {
-            setShowSuggestions(false);
-            setMentionSuggestions([]);
-        }
     }, []);
-
-    const insertMention = user => {
-        const before = text.slice(0, cursorPosition);
-        const after = text.slice(cursorPosition);
-        const lastAt = before.lastIndexOf('@');
-        const newText = before.slice(0, lastAt) + '@' + user.name + ' ' + after;
-        setText(newText);
-        setShowSuggestions(false);
-        setMentionSuggestions([]);
-    };
 
     // Emoji
     const handleEmojiReaction = useCallback(
@@ -240,18 +210,7 @@ const AiChat = () => {
                     onLongPress={() => setSelectedMessage(currentMessage) || setShowEmojiPicker(true)}
                     onPressAvatar={() => onUserAvatarPress(currentMessage.user)}
                     renderMessageText={msgProps => (
-                        <MessageText
-                            {...msgProps}
-                            parsePatterns={linkStyle => [
-                                {
-                                    pattern: /@[\w\s]+/g,
-                                    style: {
-                                        color: isCurrentUser ? '#fff' : '#0b93f6',
-                                        fontWeight: 'bold',
-                                    },
-                                },
-                            ]}
-                        />
+                        <MessageText {...msgProps} />
                     )}
                 />
                 {renderReactions(currentMessage, position)}
@@ -294,9 +253,8 @@ const AiChat = () => {
     );
 
     const handleViewAiChats = useCallback(() => {
-        // Already on AI Chat screen, no action needed
-        // Or could scroll to top, refresh, etc.
-    }, []);
+        navigation.navigate(navigationStrings.VIEW_AI_CHAT);
+    }, [navigation]);
 
     const handleViewTrip = useCallback(() => {
         // TODO: Navigate to trip details with tripId
@@ -349,22 +307,6 @@ const AiChat = () => {
                 showUserAvatar
             />
 
-            {showSuggestions && (
-                <View style={styles.mentionPopup}>
-                    <FlatList
-                        data={mentionSuggestions}
-                        keyExtractor={item => item._id.toString()}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                style={styles.mentionItem}
-                                onPress={() => insertMention(item)}
-                            >
-                                <Text>{item.name}</Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
-            )}
             <View style={{ height: getHeight(20) }} />
 
             <Modal visible={showUserActions} transparent animationType="fade">
@@ -459,8 +401,6 @@ const styles = StyleSheet.create({
     emojiGrid: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 },
     emojiButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f0f0f0', alignItems: 'center', justifyContent: 'center', marginHorizontal: 4 },
     emojiText: { fontSize: 20 },
-    mentionPopup: { position: 'absolute', bottom: 60, left: 16, right: 16, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ccc', maxHeight: 150 },
-    mentionItem: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     userActionsModal: { width: 250, backgroundColor: '#fff', borderRadius: 8, padding: 16 },
     userInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
