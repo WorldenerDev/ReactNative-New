@@ -28,6 +28,7 @@ const App = () => {
         }
       } catch (e) {
         // Swallow to avoid blocking app startup
+        console.warn("Firebase messaging initialization failed:", e.message);
       }
     };
 

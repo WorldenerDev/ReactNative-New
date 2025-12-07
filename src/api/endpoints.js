@@ -47,5 +47,6 @@ export const endpoints = {
     rejectInvite: "/reject-invite",
     getRefundPolicies: "/get-refund-policies",
     cancelOrderItem: "/cancel-order-item",
+    getGroupMessages: "/getGroupMessages",
   },
 };

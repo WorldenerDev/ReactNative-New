@@ -50,7 +50,10 @@ const Group = ({ navigation }) => {
         startDate: formatDate(group.startDate),
         endDate: formatDate(group.endDate),
         people: `${totalPeople} ${totalPeople === 1 ? "person" : "people"}`,
-        image: group.groupImage || group.cityId?.image || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
+        image:
+          group.groupImage ||
+          group.cityId?.image ||
+          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
       };
     });
   };
@@ -113,14 +116,26 @@ const Group = ({ navigation }) => {
       </View>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.GROUP_DETAILS, { groupId: item?.id })}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() =>
+            navigation.navigate(navigationStrings.GROUP_DETAILS, {
+              groupId: item?.id,
+            })
+          }
+        >
           <Text style={styles.actionButtonText}>View</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate(navigationStrings.CHAT)}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() =>
+            navigation.navigate(navigationStrings.CHAT, { groupId: item?.id })
+          }
+        >
           <Text style={styles.actionButtonText}>Chat</Text>
         </TouchableOpacity>
       </View>
-    </View >
+    </View>
   );
 
   const renderEmptyComponent = () => (

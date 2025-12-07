@@ -68,3 +68,5 @@ export const acceptInvite = (data) => apiPost(endpoints?.main?.acceptInvite, dat
 export const rejectInvite = (data) => apiPost(endpoints?.main?.rejectInvite, data);
 export const getRefundPolicies = (data) => apiPost(endpoints?.main?.getRefundPolicies, data);
 export const cancelOrderItem = (data) => apiPost(endpoints?.main?.cancelOrderItem, data);
+export const getGroupMessages = (groupId) =>
+  apiGet(`${endpoints?.main?.getGroupMessages}/${groupId}`);
