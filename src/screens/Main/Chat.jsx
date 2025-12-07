@@ -50,7 +50,9 @@ const Chat = ({ navigation, route }) => {
   const { messages: reduxMessages, loading: messagesLoading } = useSelector(
     (state) => state.chat
   );
+  // Normalize userId to string for consistent comparison
   const userId = user?._id || user?.id;
+  const normalizedUserId = userId ? String(userId) : null;
   const socketRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
@@ -62,8 +64,8 @@ const Chat = ({ navigation, route }) => {
     if (!Array.isArray(groupMessages) || groupMessages.length === 0) {
       return [];
     }
-    return transformServerMessages(groupMessages, userId);
-  }, [groupMessages, userId]);
+    return transformServerMessages(groupMessages, normalizedUserId);
+  }, [groupMessages, normalizedUserId]);
 
   const [text, setText] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -73,19 +75,16 @@ const Chat = ({ navigation, route }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
 
-  const [isSearchMode, setIsSearchMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredMessages, setFilteredMessages] = useState([]);
   const [showUserActions, setShowUserActions] = useState(false);
 
   // Get current user for GiftedChat
   const CURRENT_USER = useMemo(
     () => ({
-      _id: userId || 1,
+      _id: normalizedUserId || "1",
       name: user?.name || "User",
       avatar: user?.avatar || user?.profileImage || undefined,
     }),
-    [userId, user?.name, user?.avatar, user?.profileImage]
+    [normalizedUserId, user?.name, user?.avatar, user?.profileImage]
   );
 
   // Step 1: Fetch messages from API first
@@ -96,12 +95,12 @@ const Chat = ({ navigation, route }) => {
 
   // Step 2: Connect socket and join group after messages are loaded
   useEffect(() => {
-    if (!userId || !groupId || !socketReady) return;
+    if (!normalizedUserId || !groupId || !socketReady) return;
 
     const socket = io(BASEURL, {
       transports: ["websocket", "polling"],
       autoConnect: true,
-      query: { userId: String(userId) },
+      query: { userId: normalizedUserId },
     });
     socketRef.current = socket;
 
@@ -109,15 +108,23 @@ const Chat = ({ navigation, route }) => {
       console.log("Socket connected");
       setConnected(true);
       // Join group after socket is connected
-      socket.emit("join_group", { groupId, userId }, (response) => {
-        console.log("Joined group response:", response);
-      });
+      socket.emit(
+        "join_group",
+        { groupId, userId: normalizedUserId },
+        (response) => {
+          console.log("Joined group response:", response);
+        }
+      );
     });
 
     // Receive group message
     socket.on("receive_group_message", (payload) => {
       console.log("receive_group_message payload ===>", payload);
-      const serverMessage = processSocketPayload(payload, userId, user);
+      const serverMessage = processSocketPayload(
+        payload,
+        normalizedUserId,
+        user
+      );
 
       if (serverMessage) {
         console.log(
@@ -147,7 +154,7 @@ const Chat = ({ navigation, route }) => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [userId, groupId, socketReady, dispatch]);
+  }, [normalizedUserId, groupId, socketReady, dispatch, user]);
 
   // Set socket ready after messages are loaded (or loading is complete)
   useEffect(() => {
@@ -168,7 +175,7 @@ const Chat = ({ navigation, route }) => {
       if (text.trim()) {
         const messageToSend = {
           groupId: groupId,
-          senderId: userId,
+          senderId: normalizedUserId,
           message: text.trim(),
           messageType: "text",
           mediaUrl: null,
@@ -193,7 +200,7 @@ const Chat = ({ navigation, route }) => {
         const message = newMessages[0];
         const messageToSend = {
           groupId: groupId,
-          senderId: userId,
+          senderId: normalizedUserId,
           message: message.text || "",
           messageType: message.image ? "image" : "text",
           mediaUrl: message.image || null,
@@ -214,7 +221,7 @@ const Chat = ({ navigation, route }) => {
         });
       }
     },
-    [text, groupId, userId, connected]
+    [text, groupId, normalizedUserId, connected]
   );
 
   // Mention
@@ -254,7 +261,7 @@ const Chat = ({ navigation, route }) => {
 
       // Find the original message in Redux state to get reactions
       const originalMessage = groupMessages.find((msg) => {
-        const transformed = transformServerMessage(msg, userId);
+        const transformed = transformServerMessage(msg, normalizedUserId);
         return transformed._id === message._id;
       });
 
@@ -292,7 +299,14 @@ const Chat = ({ navigation, route }) => {
       setShowEmojiPicker(false);
       setSelectedMessage(null);
     },
-    [selectedMessage, groupId, groupMessages, userId, CURRENT_USER, dispatch]
+    [
+      selectedMessage,
+      groupId,
+      groupMessages,
+      normalizedUserId,
+      CURRENT_USER,
+      dispatch,
+    ]
   );
 
   const renderReactions = (currentMessage, position) => {
@@ -355,46 +369,12 @@ const Chat = ({ navigation, route }) => {
     setShowUserActions(false);
   }, []);
 
-  // Search
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredMessages([]);
-      setIsSearchMode(false);
-    } else {
-      const filtered = messages.filter((msg) =>
-        (msg.text || "").toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredMessages(filtered);
-      setIsSearchMode(true);
-    }
-  };
-
-  const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search messages..."
-        value={searchQuery}
-        onChangeText={handleSearch}
-      />
-      <TouchableOpacity
-        style={styles.searchCloseButton}
-        onPress={() => {
-          setSearchQuery("");
-          setIsSearchMode(false);
-          setFilteredMessages([]);
-        }}
-      >
-        <Text style={styles.searchCloseText}>✕</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   // Render message
   const renderMessage = (props) => {
     const { currentMessage, position } = props;
-    const isCurrentUser = currentMessage.user._id === CURRENT_USER._id;
+    // Use String() comparison to handle type mismatches (number vs string)
+    const isCurrentUser =
+      String(currentMessage.user._id) === String(CURRENT_USER._id);
 
     return (
       <View style={{ marginVertical: 2 }}>
@@ -467,7 +447,7 @@ const Chat = ({ navigation, route }) => {
       />
 
       <GiftedChat
-        messages={isSearchMode ? filteredMessages : messages}
+        messages={messages}
         onSend={onSend}
         user={CURRENT_USER}
         renderMessage={renderMessage}
@@ -546,27 +526,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e0e0e0",
   },
   headerTitle: { fontSize: 18, fontWeight: "bold" },
-  searchButton: { padding: 8 },
-  searchButtonText: { fontSize: 20 },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    backgroundColor: "#f9f9f9",
-  },
-  searchInput: {
-    flex: 1,
-    height: 36,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    backgroundColor: "#fff",
-  },
-  searchCloseButton: { marginLeft: 8, padding: 8 },
-  searchCloseText: { fontSize: 18 },
   inputToolbar: {
     backgroundColor: "#fff",
     paddingHorizontal: 10,

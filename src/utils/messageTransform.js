@@ -31,14 +31,33 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
     createdAt = new Date();
   }
 
-  // Get sender info
-  const senderId =
+  // Get sender info - handle both direct ID and nested object structure
+  let senderId =
     serverMessage.senderId ||
     serverMessage.from ||
     serverMessage.userId ||
     currentUserId;
-  const senderName = serverMessage.senderName || "User";
-  const senderAvatar = serverMessage.senderAvatar || undefined;
+
+  // Handle case where senderId is an object (e.g., {_id: "123"})
+  if (senderId && typeof senderId === 'object' && senderId._id) {
+    senderId = senderId._id;
+  }
+
+  // Normalize to string for consistent comparison
+  const normalizedSenderId = senderId ? String(senderId) : String(currentUserId || "");
+
+  // Extract sender name - handle nested structure
+  let senderName = serverMessage.senderName;
+  if (!senderName && serverMessage.senderId && typeof serverMessage.senderId === 'object') {
+    senderName = serverMessage.senderId.name || serverMessage.senderId.userName;
+  }
+  senderName = senderName || "User";
+
+  // Extract sender avatar - handle nested structure
+  let senderAvatar = serverMessage.senderAvatar;
+  if (!senderAvatar && serverMessage.senderId && typeof serverMessage.senderId === 'object') {
+    senderAvatar = serverMessage.senderId.avatar || serverMessage.senderId.profileImage || serverMessage.senderId.image;
+  }
 
   // Build message object
   const giftedMessage = {
@@ -46,7 +65,7 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
     text: serverMessage.message || serverMessage.text || "",
     createdAt: createdAt,
     user: {
-      _id: senderId,
+      _id: normalizedSenderId,
       name: senderName,
       avatar: senderAvatar,
     },
@@ -84,40 +103,61 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
   // Handle different payload structures
   const messageData = payload?.message || payload?.data || payload;
 
-  // Extract sender ID
-  const extractedSenderId =
+  // Extract sender ID - handle both direct ID and nested object structure
+  let extractedSenderId =
     messageData?.senderId ||
     messageData?.from ||
     messageData?.userId ||
     payload?.from ||
     userId;
 
-  // Determine sender name - use current user's name if sender is current user
+  // Handle case where senderId is an object (e.g., {_id: "123"})
+  if (extractedSenderId && typeof extractedSenderId === 'object') {
+    extractedSenderId = extractedSenderId._id || extractedSenderId.id;
+  }
+
+  // Normalize to string for consistent comparison
+  const normalizedSenderId = extractedSenderId ? String(extractedSenderId) : String(userId || "");
+  const normalizedUserId = userId ? String(userId) : "";
+
+  // Determine sender name - handle nested structures
   let senderName =
     messageData?.senderName ||
     messageData?.sender?.name ||
     messageData?.user?.name ||
     payload?.sender?.name;
 
+  // Check if senderId is an object with name property
+  if (!senderName) {
+    const senderIdObj = messageData?.senderId || payload?.senderId;
+    if (senderIdObj && typeof senderIdObj === 'object') {
+      senderName = senderIdObj.name || senderIdObj.userName;
+    }
+  }
+
   // If sender is current user and no name found in payload, use current user's name
-  if (!senderName && currentUser && String(extractedSenderId) === String(userId)) {
+  if (!senderName && currentUser && normalizedSenderId === normalizedUserId) {
     senderName = currentUser?.name || "User";
   }
+  senderName = senderName || "User";
 
-  // Fallback to "User" if still no name
-  if (!senderName) {
-    senderName = "User";
-  }
-
-  // Determine sender avatar - use current user's image if sender is current user
+  // Determine sender avatar - handle nested structures
   let senderAvatar =
     messageData?.senderAvatar ||
     messageData?.sender?.avatar ||
     messageData?.user?.avatar ||
     payload?.sender?.avatar;
 
+  // Check if senderId is an object with avatar property
+  if (!senderAvatar) {
+    const senderIdObj = messageData?.senderId || payload?.senderId;
+    if (senderIdObj && typeof senderIdObj === 'object') {
+      senderAvatar = senderIdObj.avatar || senderIdObj.profileImage || senderIdObj.image;
+    }
+  }
+
   // If sender is current user and no avatar found in payload, use current user's image
-  if (!senderAvatar && currentUser && String(extractedSenderId) === String(userId)) {
+  if (!senderAvatar && currentUser && normalizedSenderId === normalizedUserId) {
     senderAvatar = currentUser?.image || currentUser?.avatar || currentUser?.profileImage;
   }
 
@@ -133,7 +173,7 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
       messageData?.createdAt ||
       messageData?.timestamp ||
       new Date().toISOString(),
-    senderId: extractedSenderId,
+    senderId: normalizedSenderId,
     senderName: senderName,
     senderAvatar: senderAvatar,
     messageType: messageData?.messageType || payload?.messageType || "text",
