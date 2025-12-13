@@ -44,7 +44,7 @@ const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
 const BASEURL = "https://api.worldener.com";
 
 const Chat = ({ navigation, route }) => {
-  const { groupId } = route.params;
+  const { groupId } = route?.params || {};
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { messages: reduxMessages, loading: messagesLoading } = useSelector(
@@ -89,7 +89,10 @@ const Chat = ({ navigation, route }) => {
 
   // Step 1: Fetch messages from API first
   useEffect(() => {
-    if (!groupId) return;
+    if (!groupId) {
+      console.warn("Chat: groupId is missing from route params");
+      return;
+    }
     dispatch(fetchGroupMessages(groupId));
   }, [groupId, dispatch]);
 

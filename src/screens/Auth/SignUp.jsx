@@ -191,8 +191,29 @@ const SignUp = ({ navigation }) => {
             {data.agree && <Text style={styles.checkmark}>✓</Text>}
           </TouchableOpacity>
           <Text style={styles.termsText}>
-            I accept the <Text style={styles.link}>Terms and Conditions</Text> &{" "}
-            <Text style={styles.link}>Privacy Policy</Text>.
+            I accept the{" "}
+            <Text
+              onPress={() =>
+                navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                  type: "term-condition",
+                })
+              }
+              style={styles.link}
+            >
+              Terms and Conditions
+            </Text>{" "}
+            &{" "}
+            <Text
+              onPress={() =>
+                navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                  type: "privacy-policy",
+                })
+              }
+              style={styles.link}
+            >
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </View>
 

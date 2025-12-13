@@ -5,6 +5,7 @@ export { default as OtpScreen } from "./Auth/OtpScreen";
 export { default as SignUp } from "./Auth/SignUp";
 export { default as Notification } from "./Auth/Notification";
 export { default as Interests } from "./Auth/Interests";
+export { default as PrivacyTerms } from "./Auth/PrivacyTerms";
 
 //================MAin Screens ============
 

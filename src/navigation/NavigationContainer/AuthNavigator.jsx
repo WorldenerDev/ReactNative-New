@@ -6,6 +6,7 @@ import {
   Notification,
   OnboardingScreen,
   OtpScreen,
+  PrivacyTerms,
   SignInScreen,
   SignUp,
   SignUpScreen,
@@ -49,6 +50,10 @@ const AuthNavigator = () => {
         <Stack.Screen
           name={navigationStrings.INTERESTS}
           component={Interests}
+        />
+        <Stack.Screen
+          name={navigationStrings.PRIVACYTERMS}
+          component={PrivacyTerms}
         />
       </Stack.Navigator>
     </>
