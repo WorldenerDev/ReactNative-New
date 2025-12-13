@@ -70,3 +70,5 @@ export const getRefundPolicies = (data) => apiPost(endpoints?.main?.getRefundPol
 export const cancelOrderItem = (data) => apiPost(endpoints?.main?.cancelOrderItem, data);
 export const getGroupMessages = (groupId) =>
   apiGet(`${endpoints?.main?.getGroupMessages}/${groupId}`);
+export const reportUser = (data) => apiPost(endpoints?.main?.reportUser, data);
+export const blockUser = (data) => apiPost(endpoints?.main?.blockUser, data);

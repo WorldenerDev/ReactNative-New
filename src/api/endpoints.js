@@ -49,6 +49,8 @@ export const endpoints = {
     getRefundPolicies: "/get-refund-policies",
     cancelOrderItem: "/cancel-order-item",
     getGroupMessages: "/getGroupMessages",
+    reportUser: "/report-user",
+    blockUser: "/block-user",
   },
 
 };

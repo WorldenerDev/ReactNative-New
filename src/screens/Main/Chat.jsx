@@ -32,6 +32,8 @@ import {
   addMessage,
   updateMessage,
 } from "@redux/slices/chatSlice";
+import { reportUser, blockUser } from "@api/services/mainServices";
+import { showToast } from "@components/AppToast";
 
 const MOCK_USERS = [
   { _id: 1, name: "John Doe", avatar: "https://i.pravatar.cc/150?u=john" },
@@ -76,6 +78,11 @@ const Chat = ({ navigation, route }) => {
   const [cursorPosition, setCursorPosition] = useState(0);
 
   const [showUserActions, setShowUserActions] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
 
   // Get current user for GiftedChat
   const CURRENT_USER = useMemo(
@@ -86,6 +93,14 @@ const Chat = ({ navigation, route }) => {
     }),
     [normalizedUserId, user?.name, user?.avatar, user?.profileImage]
   );
+
+  // Check if selected user is the current user
+  const isSelectedUserCurrentUser = useMemo(() => {
+    if (!selectedMessage?.user) return false;
+    const selectedUserId = String(selectedMessage.user._id || "");
+    const currentUserId = String(CURRENT_USER._id || "");
+    return selectedUserId === currentUserId;
+  }, [selectedMessage, CURRENT_USER]);
 
   // Step 1: Fetch messages from API first
   useEffect(() => {
@@ -358,19 +373,104 @@ const Chat = ({ navigation, route }) => {
   };
 
   // User actions
-  const onUserAvatarPress = useCallback((user) => {
-    setSelectedMessage({ user });
-    setShowUserActions(true);
+  const onUserAvatarPress = useCallback(
+    (user) => {
+      // Check if the clicked user is the current user
+      const clickedUserId = String(user?._id || "");
+      const currentUserId = String(CURRENT_USER._id || "");
+
+      // Don't show modal if user clicks on their own profile
+      if (clickedUserId === currentUserId) {
+        return;
+      }
+
+      setSelectedMessage({ user });
+      setShowUserActions(true);
+    },
+    [CURRENT_USER]
+  );
+
+  const handleBlockUser = useCallback(async (user) => {
+    if (!user?._id) return;
+
+    setBlockLoading(true);
+
+    try {
+      const blockData = {
+        blockedUserId: String(user._id),
+      };
+
+      await blockUser(blockData);
+      showToast("success", `Blocked ${user.name || "user"} successfully`);
+      setShowUserActions(false);
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      showToast("error", error?.message || "Failed to block user");
+    } finally {
+      setBlockLoading(false);
+    }
   }, []);
 
-  const handleUserAction = useCallback((action, user) => {
-    if (action === "report") {
-      alert(`Reported ${user.name}`);
-    } else if (action === "block") {
-      alert(`Blocked ${user.name}`);
+  const handleUserAction = useCallback(
+    (action, user) => {
+      // Prevent users from reporting/blocking themselves (safety check)
+      const clickedUserId = String(user?._id || "");
+      const currentUserId = String(CURRENT_USER._id || "");
+
+      if (clickedUserId === currentUserId) {
+        setShowUserActions(false);
+        return;
+      }
+
+      if (action === "report") {
+        // Close user actions modal and open report modal
+        setShowUserActions(false);
+        setShowReportModal(true);
+        setReportReason("");
+        setReportDescription("");
+      } else if (action === "block") {
+        handleBlockUser(user);
+      }
+    },
+    [CURRENT_USER, handleBlockUser]
+  );
+
+  const submitReport = useCallback(async () => {
+    if (!selectedMessage?.user || !groupId) return;
+
+    // Validate inputs
+    if (!reportReason.trim()) {
+      showToast("error", "Please provide a reason for reporting");
+      return;
     }
-    setShowUserActions(false);
-  }, []);
+
+    if (!reportDescription.trim()) {
+      showToast("error", "Please provide a description");
+      return;
+    }
+
+    setReportLoading(true);
+
+    try {
+      const reportData = {
+        reportedUserId: String(selectedMessage.user._id),
+        groupId: groupId,
+        reason: reportReason.trim(),
+        description: reportDescription.trim(),
+      };
+
+      await reportUser(reportData);
+      showToast("success", "User reported successfully");
+      setShowReportModal(false);
+      setReportReason("");
+      setReportDescription("");
+    } catch (error) {
+      console.error("Error reporting user:", error);
+      showToast("error", error?.message || "Failed to report user");
+    } finally {
+      setReportLoading(false);
+    }
+  }, [selectedMessage, groupId, reportReason, reportDescription]);
 
   // Render message
   const renderMessage = (props) => {
@@ -476,7 +576,11 @@ const Chat = ({ navigation, route }) => {
       )}
       <View style={{ height: getHeight(20) }} />
 
-      <Modal visible={showUserActions} transparent animationType="fade">
+      <Modal
+        visible={showUserActions && !isSelectedUserCurrentUser}
+        transparent
+        animationType="fade"
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.userActionsModal}>
             <View style={styles.userInfo}>
@@ -502,16 +606,91 @@ const Chat = ({ navigation, route }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionButton, styles.blockButton]}
+              style={[
+                styles.actionButton,
+                styles.blockButton,
+                blockLoading && styles.actionButtonDisabled,
+              ]}
               onPress={() =>
                 selectedMessage?.user &&
                 handleUserAction("block", selectedMessage.user)
               }
+              disabled={blockLoading}
             >
               <Text style={[styles.actionButtonText, styles.blockButtonText]}>
-                🚫 Block User
+                {blockLoading ? "Blocking..." : "🚫 Block User"}
               </Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Report User Modal */}
+      <Modal visible={showReportModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.reportModal}>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>Report User</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  setShowReportModal(false);
+                  setReportReason("");
+                  setReportDescription("");
+                }}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.reportLabel}>Reason *</Text>
+            <TextInput
+              style={styles.reportInput}
+              placeholder="Enter reason for reporting"
+              placeholderTextColor="#999"
+              value={reportReason}
+              onChangeText={setReportReason}
+              multiline={false}
+            />
+
+            <Text style={styles.reportLabel}>Description *</Text>
+            <TextInput
+              style={[styles.reportInput, styles.reportTextArea]}
+              placeholder="Provide additional details"
+              placeholderTextColor="#999"
+              value={reportDescription}
+              onChangeText={setReportDescription}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.reportButtonContainer}>
+              <TouchableOpacity
+                style={[styles.reportCancelButton]}
+                onPress={() => {
+                  setShowReportModal(false);
+                  setReportReason("");
+                  setReportDescription("");
+                }}
+                disabled={reportLoading}
+              >
+                <Text style={styles.reportCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.reportSubmitButton,
+                  reportLoading && styles.reportSubmitButtonDisabled,
+                ]}
+                onPress={submitReport}
+                disabled={reportLoading}
+              >
+                <Text style={styles.reportSubmitButtonText}>
+                  {reportLoading ? "Submitting..." : "Submit Report"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -625,9 +804,75 @@ const styles = StyleSheet.create({
   closeButton: { padding: 4 },
   closeButtonText: { fontSize: 16 },
   actionButton: { paddingVertical: 8 },
+  actionButtonDisabled: { opacity: 0.5 },
   actionButtonText: { fontSize: 16 },
   blockButton: { marginTop: 4 },
   blockButtonText: { color: "red" },
+  reportModal: {
+    width: "85%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+  },
+  reportLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  reportInput: {
+    backgroundColor: "#F5F5F5",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#000",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    minHeight: 44,
+  },
+  reportTextArea: {
+    minHeight: 100,
+    maxHeight: 150,
+    paddingTop: 12,
+  },
+  reportButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+    gap: 12,
+  },
+  reportCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reportCancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  reportSubmitButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#87CEEB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reportSubmitButtonDisabled: {
+    opacity: 0.5,
+  },
+  reportSubmitButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+  },
 });
 
 export default Chat;
