@@ -7,6 +7,7 @@ export const endpoints = {
     socialLogin: "/socialLoginAndSignUp",
     getCategory: "/getCategories",
     selectCategory: "/selectCategory",
+    getCms: "getCms",
   },
   main: {
     getAllCity: "/getAllCities",
@@ -49,4 +50,5 @@ export const endpoints = {
     cancelOrderItem: "/cancel-order-item",
     getGroupMessages: "/getGroupMessages",
   },
+
 };

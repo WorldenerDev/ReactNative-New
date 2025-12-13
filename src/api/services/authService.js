@@ -13,3 +13,5 @@ export const SocialLogin = (data) =>
 export const getCategory = (data) => apiGet(endpoints?.auth?.getCategory);
 export const SelectCategory = (data) =>
   apiPost(endpoints?.auth?.selectCategory, data);
+export const getCms = (type) =>
+  apiGet(endpoints?.auth?.getCms, { type });
