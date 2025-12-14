@@ -303,44 +303,51 @@ const GroupDetails = () => {
     navigation.navigate(navigationStrings.CHAT, { groupId });
   };
 
-  const renderMemberItem = ({ item }) => (
-    <View style={styles.memberItem}>
-      <View style={styles.memberLeft}>
-        <View
-          style={[styles.avatarContainer, { backgroundColor: item.avatarBg }]}
-        >
-          <OptimizedImage
-            source={{ uri: item.avatar || DUMMY_USER_IMAGE }}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
+  const renderMemberItem = ({ item }) => {
+    const currentUserId = user?._id || user?.id;
+    const isCurrentUserAdmin = groupData?.createdBy?._id === currentUserId;
+
+    return (
+      <View style={styles.memberItem}>
+        <View style={styles.memberLeft}>
           <View
-            style={[
-              styles.statusIndicator,
-              { backgroundColor: item.isOnline ? colors.green : colors.red },
-            ]}
-          />
-        </View>
-        <Text style={styles.memberName}>
-          {item.name} {item.isYou && "(You)"}
-        </Text>
-      </View>
-      <View style={styles.memberRight}>
-        {item.isAdmin ? (
-          <TouchableOpacity style={styles.adminButton}>
-            <Text style={styles.adminButtonText}>Admin</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={() => handleRemoveMember(item.id)}
-            style={styles.removeButton}
+            style={[styles.avatarContainer, { backgroundColor: item.avatarBg }]}
           >
-            <Text style={styles.removeText}>Remove</Text>
-          </TouchableOpacity>
-        )}
+            <OptimizedImage
+              source={{ uri: item.avatar || DUMMY_USER_IMAGE }}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
+            <View
+              style={[
+                styles.statusIndicator,
+                { backgroundColor: item.isOnline ? colors.green : colors.red },
+              ]}
+            />
+          </View>
+          <Text style={styles.memberName}>
+            {item.name} {item.isYou && "(You)"}
+          </Text>
+        </View>
+        <View style={styles.memberRight}>
+          {item.isAdmin ? (
+            <TouchableOpacity style={styles.adminButton}>
+              <Text style={styles.adminButtonText}>Admin</Text>
+            </TouchableOpacity>
+          ) : (
+            isCurrentUserAdmin && (
+              <TouchableOpacity
+                onPress={() => handleRemoveMember(item.id)}
+                style={styles.removeButton}
+              >
+                <Text style={styles.removeText}>Remove</Text>
+              </TouchableOpacity>
+            )
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderMembersContent = () => (
     <View style={styles.membersContainer}>
