@@ -29,7 +29,11 @@ import { useSelector } from "react-redux";
 import navigationStrings from "@navigation/navigationStrings";
 import icons from "@assets/icons";
 import ForYouCard from "@components/appComponent/ForYouCard";
-import { getGroupDetails, getTripBuddies } from "@api/services/mainServices";
+import {
+  getGroupDetails,
+  getTripBuddies,
+  removeUserFromGroup,
+} from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import usePermissions from "@hooks/usePermissions";
 import Contacts from "react-native-contacts";
@@ -203,16 +207,42 @@ const GroupDetails = () => {
   // Transform members data from groupData
   const members = groupData ? transformMembersData(groupData) : [];
 
-  const handleRemoveMember = (memberId) => {
-    // TODO: Implement API call to remove member from group
-    // For now, update local state
-    if (groupData) {
-      const updatedGroupData = {
-        ...groupData,
-        addedUsers:
-          groupData.addedUsers?.filter((user) => user._id !== memberId) || [],
-      };
-      setGroupData(updatedGroupData);
+  const handleRemoveMember = async (memberId) => {
+    if (!groupId || !memberId) {
+      showToast("error", "Missing required information");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await removeUserFromGroup({
+        groupId: groupId,
+        userIdToRemove: memberId,
+      });
+
+      if (response?.success) {
+        // Update local state to reflect the removal
+        if (groupData) {
+          const updatedGroupData = {
+            ...groupData,
+            addedUsers:
+              groupData.addedUsers?.filter((user) => user._id !== memberId) ||
+              [],
+          };
+          setGroupData(updatedGroupData);
+        }
+        showToast(
+          "success",
+          response?.message || "Member removed successfully"
+        );
+      } else {
+        showToast("error", response?.message || "Failed to remove member");
+      }
+    } catch (error) {
+      console.error("Error removing member from group:", error);
+      showToast("error", error?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 

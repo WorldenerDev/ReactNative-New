@@ -52,6 +52,7 @@ export const endpoints = {
     reportUser: "/report-user",
     blockUser: "/block-user",
     addUpdateEmoji: "/add-update-emoji",
+    removeUserFromGroup: "/remove-user-from-group",
   },
 
 };

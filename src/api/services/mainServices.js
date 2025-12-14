@@ -73,3 +73,4 @@ export const getGroupMessages = (groupId) =>
 export const reportUser = (data) => apiPost(endpoints?.main?.reportUser, data);
 export const blockUser = (data) => apiPost(endpoints?.main?.blockUser, data);
 export const addUpdateEmoji = (data) => apiPost(endpoints?.main?.addUpdateEmoji, data);
+export const removeUserFromGroup = (data) => apiPost(endpoints?.main?.removeUserFromGroup, data);

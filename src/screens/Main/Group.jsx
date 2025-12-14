@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import Header from "@components/Header";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
@@ -59,30 +60,37 @@ const Group = ({ navigation }) => {
   };
 
   // Fetch groups from API
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        setLoading(true);
-        const response = await getGroups();
+  const fetchGroups = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getGroups();
 
-        if (response?.success && response?.data) {
-          const transformedData = transformGroupData(
-            Array.isArray(response.data) ? response.data : []
-          );
-          setTrips(transformedData);
-        } else {
-          setTrips([]);
-        }
-      } catch (error) {
-        console.error("Error fetching groups:", error);
+      if (response?.success && response?.data) {
+        const transformedData = transformGroupData(
+          Array.isArray(response.data) ? response.data : []
+        );
+        setTrips(transformedData);
+      } else {
         setTrips([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchGroups();
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      setTrips([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchGroups();
+    }, [fetchGroups])
+  );
 
   const renderTripItem = ({ item }) => (
     <View style={styles.tripCard}>
