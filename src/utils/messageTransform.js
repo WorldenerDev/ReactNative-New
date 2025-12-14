@@ -32,6 +32,8 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
   }
 
   // Get sender info - handle both direct ID and nested object structure
+  // Note: serverMessage should always have senderId from processSocketPayload
+  // But we keep fallback for messages loaded from API
   let senderId =
     serverMessage.senderId ||
     serverMessage.from ||
@@ -44,6 +46,7 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
   }
 
   // Normalize to string for consistent comparison
+  // Use currentUserId as fallback only for API-loaded messages (not socket messages)
   const normalizedSenderId = senderId ? String(senderId) : String(currentUserId || "");
 
   // Extract sender name - handle nested structure
@@ -104,12 +107,18 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
   const messageData = payload?.message || payload?.data || payload;
 
   // Extract sender ID - handle both direct ID and nested object structure
+  // IMPORTANT: Check payload level first, then messageData level
+  // Do NOT default to userId as that would make all messages appear from current user
   let extractedSenderId =
+    payload?.senderId ||
+    payload?.from ||
     messageData?.senderId ||
     messageData?.from ||
     messageData?.userId ||
-    payload?.from ||
-    userId;
+    messageData?.sender?._id ||
+    messageData?.sender?.id ||
+    messageData?.user?._id ||
+    messageData?.user?.id;
 
   // Handle case where senderId is an object (e.g., {_id: "123"})
   if (extractedSenderId && typeof extractedSenderId === 'object') {
@@ -117,8 +126,14 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
   }
 
   // Normalize to string for consistent comparison
-  const normalizedSenderId = extractedSenderId ? String(extractedSenderId) : String(userId || "");
+  // Only use userId as fallback if we truly can't find senderId (shouldn't happen for valid messages)
+  const normalizedSenderId = extractedSenderId ? String(extractedSenderId) : null;
   const normalizedUserId = userId ? String(userId) : "";
+
+  // Log warning if senderId is missing (this shouldn't happen for valid socket messages)
+  if (!normalizedSenderId) {
+    console.warn("processSocketPayload: Could not extract senderId from payload:", payload);
+  }
 
   // Determine sender name - handle nested structures
   let senderName =
@@ -136,10 +151,11 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
   }
 
   // If sender is current user and no name found in payload, use current user's name
-  if (!senderName && currentUser && normalizedSenderId === normalizedUserId) {
+  if (!senderName && currentUser && normalizedSenderId && normalizedSenderId === normalizedUserId) {
     senderName = currentUser?.name || "User";
   }
-  senderName = senderName || "User";
+  // Only use "User" as fallback if we have a senderId (don't create messages without valid sender)
+  senderName = senderName || (normalizedSenderId ? "User" : "Unknown");
 
   // Determine sender avatar - handle nested structures
   let senderAvatar =
@@ -157,8 +173,14 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
   }
 
   // If sender is current user and no avatar found in payload, use current user's image
-  if (!senderAvatar && currentUser && normalizedSenderId === normalizedUserId) {
+  if (!senderAvatar && currentUser && normalizedSenderId && normalizedSenderId === normalizedUserId) {
     senderAvatar = currentUser?.image || currentUser?.avatar || currentUser?.profileImage;
+  }
+
+  // Don't create message if we don't have a valid senderId
+  if (!normalizedSenderId) {
+    console.warn("processSocketPayload: Cannot create message without senderId. Payload:", payload);
+    return null;
   }
 
   const serverMessage = {
@@ -166,12 +188,13 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
       messageData?._id ||
       messageData?.messageId ||
       messageData?.id ||
-      Math.random().toString(),
+      `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     message:
       messageData?.message || messageData?.text || payload?.message || "",
     createdAt:
       messageData?.createdAt ||
       messageData?.timestamp ||
+      payload?.createdAt ||
       new Date().toISOString(),
     senderId: normalizedSenderId,
     senderName: senderName,
@@ -188,12 +211,12 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
       : {}),
   };
 
-  // Only return message if it has valid content
-  if (serverMessage.message || serverMessage.messageType === "image") {
+  // Only return message if it has valid content and senderId
+  if ((serverMessage.message || serverMessage.messageType === "image") && serverMessage.senderId) {
     return serverMessage;
   }
 
-  console.warn("processSocketPayload: Message has no valid content");
+  console.warn("processSocketPayload: Message has no valid content or senderId");
   return null;
 };
 

@@ -141,7 +141,12 @@ const Chat = ({ navigation, route }) => {
 
     // Receive group message
     socket.on("receive_group_message", (payload) => {
-      console.log("receive_group_message payload ===>", payload);
+      console.log(
+        "receive_group_message payload ===>",
+        JSON.stringify(payload, null, 2)
+      );
+      console.log("Current user ID:", normalizedUserId);
+
       const serverMessage = processSocketPayload(
         payload,
         normalizedUserId,
@@ -153,9 +158,16 @@ const Chat = ({ navigation, route }) => {
           "Transformed server message ===>",
           JSON.stringify(serverMessage, null, 2)
         );
+        console.log("Message senderId:", serverMessage.senderId);
+        console.log(
+          "Is from current user?",
+          serverMessage.senderId === normalizedUserId
+        );
 
         // Add message to Redux store (in server format)
         dispatch(addMessage({ groupId, message: serverMessage }));
+      } else {
+        console.warn("Failed to process socket payload - message not added");
       }
     });
 
