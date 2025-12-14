@@ -32,7 +32,11 @@ import {
   addMessage,
   updateMessage,
 } from "@redux/slices/chatSlice";
-import { reportUser, blockUser } from "@api/services/mainServices";
+import {
+  reportUser,
+  blockUser,
+  addUpdateEmoji,
+} from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 
 const MOCK_USERS = [
@@ -274,7 +278,7 @@ const Chat = ({ navigation, route }) => {
 
   // Emoji
   const handleEmojiReaction = useCallback(
-    (emoji, message = selectedMessage) => {
+    async (emoji, message = selectedMessage) => {
       if (!message || !groupId) return;
 
       // Find the original message in Redux state to get reactions
@@ -283,6 +287,11 @@ const Chat = ({ navigation, route }) => {
         return transformed._id === message._id;
       });
 
+      if (!originalMessage?._id) {
+        console.warn("Could not find original message for emoji reaction");
+        return;
+      }
+
       const currentReactions = originalMessage?.reactions || {};
       const reactions = { ...currentReactions };
       const emojiUsers = reactions[emoji] || [];
@@ -290,6 +299,7 @@ const Chat = ({ navigation, route }) => {
         (u) => u._id === CURRENT_USER._id || u === CURRENT_USER._id
       );
 
+      // Update reactions locally
       if (userAlreadyReacted) {
         reactions[emoji] = emojiUsers.filter(
           (u) => u._id !== CURRENT_USER._id && u !== CURRENT_USER._id
@@ -305,14 +315,31 @@ const Chat = ({ navigation, route }) => {
         }
       });
 
-      // Update message in Redux
-      dispatch(
-        updateMessage({
-          groupId,
-          messageId: originalMessage?._id || message._id,
-          updates: { reactions },
-        })
+      // Convert reactions object to emoji array (only emojis with non-empty arrays)
+      const emojiArray = Object.keys(reactions).filter(
+        (key) => reactions[key] && reactions[key].length > 0
       );
+
+      try {
+        // Call API to update emoji reactions
+        await addUpdateEmoji({
+          messageId: originalMessage._id,
+          emoji: emojiArray,
+        });
+
+        // Update message in Redux after successful API call
+        dispatch(
+          updateMessage({
+            groupId,
+            messageId: originalMessage._id,
+            updates: { reactions },
+          })
+        );
+      } catch (error) {
+        console.error("Error updating emoji reaction:", error);
+        showToast("error", error?.message || "Failed to update reaction");
+        // Optionally revert the local change on error
+      }
 
       setShowEmojiPicker(false);
       setSelectedMessage(null);

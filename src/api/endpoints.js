@@ -51,6 +51,7 @@ export const endpoints = {
     getGroupMessages: "/getGroupMessages",
     reportUser: "/report-user",
     blockUser: "/block-user",
+    addUpdateEmoji: "/add-update-emoji",
   },
 
 };
