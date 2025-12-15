@@ -53,6 +53,7 @@ export const endpoints = {
     blockUser: "/block-user",
     addUpdateEmoji: "/add-update-emoji",
     removeUserFromGroup: "/remove-user-from-group",
+    getCityActivities: "/getCityActivities",
   },
 
 };
