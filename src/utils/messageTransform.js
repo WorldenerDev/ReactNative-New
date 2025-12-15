@@ -81,9 +81,18 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
       : `${BASEURL}${serverMessage.mediaUrl}`;
   }
 
-  // Preserve reactions if they exist
+  // Handle reactions - convert emoji array to reactions object
   if (serverMessage.reactions) {
     giftedMessage.reactions = serverMessage.reactions;
+  } else if (serverMessage.emoji && Array.isArray(serverMessage.emoji) && serverMessage.emoji.length > 0) {
+    // Convert emoji array to reactions object format
+    // Since API doesn't provide user info per emoji, create a simple reactions object
+    const reactions = {};
+    serverMessage.emoji.forEach((emoji) => {
+      // Use a placeholder array with one user (could be enhanced later)
+      reactions[emoji] = ["user"];
+    });
+    giftedMessage.reactions = reactions;
   }
 
   return giftedMessage;
@@ -208,6 +217,14 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
             ? messageData?.mediaUrl || payload?.mediaUrl
             : `${BASEURL}${messageData?.mediaUrl || payload?.mediaUrl}`,
         }
+      : {}),
+    // Include emoji array if present
+    ...(messageData?.emoji || payload?.emoji
+      ? { emoji: messageData?.emoji || payload?.emoji }
+      : {}),
+    // Include reactions if present
+    ...(messageData?.reactions || payload?.reactions
+      ? { reactions: messageData?.reactions || payload?.reactions }
       : {}),
   };
 
