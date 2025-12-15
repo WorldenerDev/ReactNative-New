@@ -23,7 +23,10 @@ import {
   getHeight,
 } from "@utils/responsive";
 import imagePath from "@assets/icons";
-import { getCityActivities } from "@api/services/mainServices";
+import {
+  getCityActivities,
+  activityLikeUnlike,
+} from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import Loader from "@components/Loader";
 
@@ -229,6 +232,20 @@ const Surprises = ({ navigation, route }) => {
     const exitX =
       direction === "right" ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5;
 
+    const currentIdx = currentIndexRef.current;
+    const currentSurprises = surprisesRef.current;
+    const safeIdx = Math.min(currentIdx, currentSurprises.length - 1);
+    const currentCardData = currentSurprises[safeIdx];
+
+    if (currentCardData?.id) {
+      activityLikeUnlike({
+        activity_id: currentCardData.id,
+        is_liked: direction === "right",
+      }).catch(() => {
+        // Error handling is done in API interceptor
+      });
+    }
+
     Animated.timing(position, {
       toValue: { x: exitX, y: 0 },
       duration: 250,
@@ -279,6 +296,15 @@ const Surprises = ({ navigation, route }) => {
     position.setOffset({ x: 0, y: 0 });
     currentPosition.current = { x: 0, y: 0 };
 
+    if (currentCard?.id) {
+      activityLikeUnlike({
+        activity_id: currentCard.id,
+        is_liked: true,
+      }).catch(() => {
+        // Error handling is done in API interceptor
+      });
+    }
+
     Animated.timing(position, {
       toValue: { x: SCREEN_WIDTH * 1.5, y: 0 },
       duration: 250,
@@ -297,6 +323,15 @@ const Surprises = ({ navigation, route }) => {
     position.setValue({ x: 0, y: 0 });
     position.setOffset({ x: 0, y: 0 });
     currentPosition.current = { x: 0, y: 0 };
+
+    if (currentCard?.id) {
+      activityLikeUnlike({
+        activity_id: currentCard.id,
+        is_liked: false,
+      }).catch(() => {
+        // Error handling is done in API interceptor
+      });
+    }
 
     Animated.timing(position, {
       toValue: { x: -SCREEN_WIDTH * 1.5, y: 0 },
