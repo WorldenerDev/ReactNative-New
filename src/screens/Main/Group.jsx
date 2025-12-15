@@ -101,9 +101,9 @@ const Group = ({ navigation }) => {
 
         <View style={styles.locationRow}>
           <Image source={imagePath.LOCATION_PIN} style={styles.locationIcon} />
-          <Text style={styles.locationText}>{item.location}</Text>
+          <Text style={styles.locationText}>{item?.location}</Text>
           <Image source={imagePath.CHECK_ICON} style={styles.checkIcon} />
-          <Text style={styles.statusText}>{item.status}</Text>
+          <Text style={styles.statusText}>{item?.status}</Text>
         </View>
 
         <View style={styles.dateRow}>

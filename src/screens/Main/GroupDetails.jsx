@@ -141,7 +141,7 @@ const GroupDetails = () => {
         isYou: isCurrentUser,
         avatar:
           data.createdBy.image || data.createdBy.avatar || DUMMY_USER_IMAGE,
-        isOnline: false, // API doesn't provide online status, defaulting to false
+        isOnline: data.createdBy.isOnline ?? false,
         isAdmin: true,
         avatarBg: avatarBgColors[0],
       });
@@ -159,7 +159,7 @@ const GroupDetails = () => {
           name: addedUser.name || "Unknown",
           isYou: isCurrentUser,
           avatar: addedUser.image || addedUser.avatar || DUMMY_USER_IMAGE,
-          isOnline: false, // API doesn't provide online status, defaulting to false
+          isOnline: addedUser.isOnline ?? false,
           isAdmin: false,
           avatarBg: avatarBgColors[(index + 1) % avatarBgColors.length],
         });
