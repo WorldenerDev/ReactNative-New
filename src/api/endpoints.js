@@ -54,6 +54,8 @@ export const endpoints = {
     addUpdateEmoji: "/add-update-emoji",
     removeUserFromGroup: "/remove-user-from-group",
     getCityActivities: "/getCityActivities",
+    compareUsersInGroup: "/compare-users-in-group",
+    updateProfile: "/updateProfile",
   },
 
 };

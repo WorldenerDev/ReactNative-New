@@ -75,3 +75,10 @@ export const blockUser = (data) => apiPost(endpoints?.main?.blockUser, data);
 export const addUpdateEmoji = (data) => apiPost(endpoints?.main?.addUpdateEmoji, data);
 export const removeUserFromGroup = (data) => apiPost(endpoints?.main?.removeUserFromGroup, data);
 export const getCityActivities = (params) => apiGet(endpoints?.main?.getCityActivities, params);
+export const compareUsersInGroup = (data) => apiPost(endpoints?.main?.compareUsersInGroup, data);
+export const updateProfile = (formData) =>
+  apiPost(endpoints?.main?.updateProfile, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });

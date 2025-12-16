@@ -6,8 +6,8 @@ import {
   Image,
   StatusBar,
 } from "react-native";
-import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import React, { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import CustomInput from "@components/CustomInput";
 import ButtonComp from "@components/ButtonComp";
@@ -22,21 +22,119 @@ import {
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
+import useImagePicker from "@hooks/useImagePicker";
+import { updateProfile } from "@api/services/mainServices";
+import { setUser } from "@redux/slices/authSlice";
+import { showToast } from "@components/AppToast";
+import OptimizedImage from "@components/OptimizedImage";
+import { URL } from "@api/apiClient";
+import navigationStrings from "@navigation/navigationStrings";
 
 const EditProfile = ({ navigation }) => {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const [name, setName] = useState(user?.name);
-  const [mobileNumber, setMobileNumber] = useState(user?.phone_number);
+  const { pickImage } = useImagePicker();
 
+  const [name, setName] = useState(user?.name || "");
+  const [mobileNumber, setMobileNumber] = useState(user?.phone_number || "");
+  const [profileImage, setProfileImage] = useState(null);
 
-  const handleSaveChanges = () => {
-    // Handle save changes logic here
-    navigation.goBack();
+  // Construct image URI: if user has image, use URL + image path, otherwise null
+  const getUserImageUri = () => {
+    const userImage = user?.image || user?.profileImage;
+    if (userImage && userImage.trim() !== "") {
+      // If image already has http/https, use as is, otherwise prepend URL
+      if (userImage.startsWith("http://") || userImage.startsWith("https://")) {
+        return userImage;
+      }
+      return `${URL}${userImage}`;
+    }
+    return null;
   };
 
-  const handleChangePhoto = () => {
-    // Handle change photo logic here
-    console.log("Change photo pressed");
+  const [imageUri, setImageUri] = useState(getUserImageUri());
+  const [loading, setLoading] = useState(false);
+
+  const handleSaveChanges = async () => {
+    if (!name || !mobileNumber) {
+      showToast("error", "Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+
+      formData.append("name", name);
+      formData.append("phone_number", mobileNumber);
+
+      if (profileImage) {
+        formData.append("image", {
+          uri: profileImage.uri,
+          type: profileImage.type,
+          name: profileImage.name,
+        });
+      }
+
+      const response = await updateProfile(formData);
+
+      if (response?.success || response?.data) {
+        const responseImage =
+          response?.data?.image || response?.data?.user?.image;
+        let finalImageUri = imageUri;
+
+        if (responseImage) {
+          // If response image is a relative path, prepend URL
+          if (
+            responseImage.startsWith("http://") ||
+            responseImage.startsWith("https://")
+          ) {
+            finalImageUri = responseImage;
+          } else {
+            finalImageUri = `${URL}${responseImage}`;
+          }
+        }
+
+        const updatedUser = {
+          ...user,
+          name: name,
+          phone_number: mobileNumber,
+          image: responseImage || user?.image,
+        };
+
+        dispatch(setUser(updatedUser));
+        setImageUri(finalImageUri);
+        showToast(
+          "success",
+          response?.message || "Profile updated successfully"
+        );
+        navigation.goBack();
+      } else {
+        showToast("error", response?.message || "Failed to update profile");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      showToast("error", error?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePhoto = async () => {
+    try {
+      const result = await pickImage();
+
+      if (result && result.uri) {
+        setProfileImage(result);
+        setImageUri(result.uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      showToast("error", error?.message || "Failed to pick image");
+    }
+  };
+  const handleNotificationIcon = () => {
+    navigation.navigate(navigationStrings.NOTIFICATION_SCREEN);
   };
 
   return (
@@ -49,7 +147,7 @@ const EditProfile = ({ navigation }) => {
           <Text style={styles.subtitle}>Update your profile information.</Text>
           <TouchableOpacity
             style={styles.notificationContainer}
-            onPress={() => console.log("Notification pressed")}
+            onPress={handleNotificationIcon}
           >
             <Image
               source={imagePath.NOTIFICATION_ICON}
@@ -62,21 +160,32 @@ const EditProfile = ({ navigation }) => {
         {/* Profile Picture Section */}
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
-            <View style={styles.profileImagePlaceholder}>
-              <Image
-                source={imagePath.LOGO}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
-            </View>
+            {imageUri ? (
+              <View style={styles.profileImagePlaceholder}>
+                <OptimizedImage
+                  source={{ uri: imageUri }}
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              </View>
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Image
+                  source={imagePath.LOGO}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
           </View>
 
           <TouchableOpacity
             style={styles.changePhotoButton}
             onPress={handleChangePhoto}
+            disabled={loading}
           >
             <Image
-              source={imagePath.CAMERA_ICON} // Using calendar icon as camera placeholder
+              source={imagePath.CAMERA_ICON}
               style={styles.cameraIcon}
               resizeMode="contain"
             />
@@ -91,6 +200,7 @@ const EditProfile = ({ navigation }) => {
             placeholder="Enter name"
             value={name}
             onChangeText={setName}
+            editable={!loading}
           />
 
           <CustomInput
@@ -98,15 +208,17 @@ const EditProfile = ({ navigation }) => {
             placeholder="Enter mobile number"
             value={mobileNumber}
             onChangeText={setMobileNumber}
+            keyboardType="phone-pad"
+            editable={!loading}
           />
         </View>
 
         {/* Save Changes Button */}
         <View style={styles.buttonContainer}>
           <ButtonComp
-            title="Save Changes"
+            title={loading ? "Saving..." : "Save Changes"}
             onPress={handleSaveChanges}
-            disabled={false}
+            disabled={loading}
           />
         </View>
       </View>
@@ -164,16 +276,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: colors.border,
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
   },
   logoImage: {
     width: getWidth(40),
     height: getHeight(40),
     marginBottom: getVertiPadding(5),
-  },
-  logoText: {
-    fontSize: getFontSize(12),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
   },
   changePhotoButton: {
     flexDirection: "row",
@@ -195,9 +307,6 @@ const styles = StyleSheet.create({
   },
   inputsContainer: {
     marginBottom: getVertiPadding(40),
-  },
-  inputContainer: {
-    marginBottom: getVertiPadding(20),
   },
   buttonContainer: {
     position: "absolute",

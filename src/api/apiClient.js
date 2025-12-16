@@ -5,8 +5,9 @@ import { showToast } from "@components/AppToast";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { store } from "@redux/store";
 
+ export const URL = "https://api.worldener.com";
 const apiClient = axios.create({
-  baseURL: "https://api.worldener.com/api/v1/user",
+  baseURL: URL + "/api/v1/user",
   timeout: 15000,
 });
 
