@@ -32,12 +32,9 @@ import {
   addMessage,
   updateMessage,
 } from "@redux/slices/chatSlice";
-import {
-  reportUser,
-  blockUser,
-  addUpdateEmoji,
-} from "@api/services/mainServices";
+import { reportUser, blockUser } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
+import { getImageUrl, URL } from "@api/apiClient";
 
 const MOCK_USERS = [
   { _id: 1, name: "John Doe", avatar: "https://i.pravatar.cc/150?u=john" },
@@ -47,7 +44,6 @@ const MOCK_USERS = [
 ];
 
 const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
-const BASEURL = "https://api.worldener.com";
 
 const Chat = ({ navigation, route }) => {
   const { groupId } = route?.params || {};
@@ -89,14 +85,20 @@ const Chat = ({ navigation, route }) => {
   const [blockLoading, setBlockLoading] = useState(false);
 
   // Get current user for GiftedChat
-  const CURRENT_USER = useMemo(
-    () => ({
+  const CURRENT_USER = useMemo(() => {
+    const userImage = user?.image || user?.avatar || user?.profileImage;
+    return {
       _id: normalizedUserId || "1",
       name: user?.name || "User",
-      avatar: user?.avatar || user?.profileImage || undefined,
-    }),
-    [normalizedUserId, user?.name, user?.avatar, user?.profileImage]
-  );
+      avatar: getImageUrl(userImage),
+    };
+  }, [
+    normalizedUserId,
+    user?.name,
+    user?.image,
+    user?.avatar,
+    user?.profileImage,
+  ]);
 
   // Check if selected user is the current user
   const isSelectedUserCurrentUser = useMemo(() => {
@@ -119,7 +121,7 @@ const Chat = ({ navigation, route }) => {
   useEffect(() => {
     if (!normalizedUserId || !groupId || !socketReady) return;
 
-    const socket = io(BASEURL, {
+    const socket = io(URL, {
       transports: ["websocket", "polling"],
       autoConnect: true,
       query: { userId: normalizedUserId },
@@ -141,12 +143,7 @@ const Chat = ({ navigation, route }) => {
 
     // Receive group message
     socket.on("receive_group_message", (payload) => {
-      console.log(
-        "receive_group_message payload ===>",
-        JSON.stringify(payload, null, 2)
-      );
-      console.log("Current user ID:", normalizedUserId);
-
+      console.log("receive_group_message payload ===>", payload);
       const serverMessage = processSocketPayload(
         payload,
         normalizedUserId,
@@ -158,16 +155,9 @@ const Chat = ({ navigation, route }) => {
           "Transformed server message ===>",
           JSON.stringify(serverMessage, null, 2)
         );
-        console.log("Message senderId:", serverMessage.senderId);
-        console.log(
-          "Is from current user?",
-          serverMessage.senderId === normalizedUserId
-        );
 
         // Add message to Redux store (in server format)
         dispatch(addMessage({ groupId, message: serverMessage }));
-      } else {
-        console.warn("Failed to process socket payload - message not added");
       }
     });
 
@@ -290,7 +280,7 @@ const Chat = ({ navigation, route }) => {
 
   // Emoji
   const handleEmojiReaction = useCallback(
-    async (emoji, message = selectedMessage) => {
+    (emoji, message = selectedMessage) => {
       if (!message || !groupId) return;
 
       // Find the original message in Redux state to get reactions
@@ -299,11 +289,6 @@ const Chat = ({ navigation, route }) => {
         return transformed._id === message._id;
       });
 
-      if (!originalMessage?._id) {
-        console.warn("Could not find original message for emoji reaction");
-        return;
-      }
-
       const currentReactions = originalMessage?.reactions || {};
       const reactions = { ...currentReactions };
       const emojiUsers = reactions[emoji] || [];
@@ -311,7 +296,6 @@ const Chat = ({ navigation, route }) => {
         (u) => u._id === CURRENT_USER._id || u === CURRENT_USER._id
       );
 
-      // Update reactions locally
       if (userAlreadyReacted) {
         reactions[emoji] = emojiUsers.filter(
           (u) => u._id !== CURRENT_USER._id && u !== CURRENT_USER._id
@@ -327,31 +311,14 @@ const Chat = ({ navigation, route }) => {
         }
       });
 
-      // Convert reactions object to emoji array (only emojis with non-empty arrays)
-      const emojiArray = Object.keys(reactions).filter(
-        (key) => reactions[key] && reactions[key].length > 0
+      // Update message in Redux
+      dispatch(
+        updateMessage({
+          groupId,
+          messageId: originalMessage?._id || message._id,
+          updates: { reactions },
+        })
       );
-
-      try {
-        // Call API to update emoji reactions
-        await addUpdateEmoji({
-          messageId: originalMessage._id,
-          emoji: emojiArray,
-        });
-
-        // Update message in Redux after successful API call
-        dispatch(
-          updateMessage({
-            groupId,
-            messageId: originalMessage._id,
-            updates: { reactions },
-          })
-        );
-      } catch (error) {
-        console.error("Error updating emoji reaction:", error);
-        showToast("error", error?.message || "Failed to update reaction");
-        // Optionally revert the local change on error
-      }
 
       setShowEmojiPicker(false);
       setSelectedMessage(null);

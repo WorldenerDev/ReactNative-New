@@ -6,6 +6,28 @@ import { STORAGE_KEYS } from "@utils/storageKeys";
 import { store } from "@redux/store";
 
  export const URL = "https://api.worldener.com";
+
+/**
+ * Constructs a full image URL from a relative path
+ * @param {string} imagePath - The image path (can be relative, full URL, or empty)
+ * @returns {string|undefined} Full URL if path is provided, undefined if empty
+ */
+export const getImageUrl = (imagePath) => {
+  if (!imagePath || typeof imagePath !== 'string' || imagePath.trim() === '') {
+    return undefined;
+  }
+
+  // If already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+
+  // If relative path, prepend base URL
+  // Ensure path starts with / if it doesn't
+  const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  return `${URL}${normalizedPath}`;
+};
+
 const apiClient = axios.create({
   baseURL: URL + "/api/v1/user",
   timeout: 15000,

@@ -1,6 +1,7 @@
 // utils/messageTransform.js
+import { URL, getImageUrl } from "@api/apiClient";
 
-const BASEURL = "https://api.worldener.com";
+const BASEURL = URL;
 
 /**
  * Transform server message to GiftedChat format
@@ -62,6 +63,9 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
     senderAvatar = serverMessage.senderId.avatar || serverMessage.senderId.profileImage || serverMessage.senderId.image;
   }
 
+  // Construct full image URL if avatar path is provided
+  const avatarUrl = getImageUrl(senderAvatar);
+
   // Build message object
   const giftedMessage = {
     _id: messageId,
@@ -70,7 +74,7 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
     user: {
       _id: normalizedSenderId,
       name: senderName,
-      avatar: senderAvatar,
+      avatar: avatarUrl,
     },
   };
 
@@ -186,6 +190,9 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
     senderAvatar = currentUser?.image || currentUser?.avatar || currentUser?.profileImage;
   }
 
+  // Construct full image URL if avatar path is provided
+  const avatarUrl = getImageUrl(senderAvatar);
+
   // Don't create message if we don't have a valid senderId
   if (!normalizedSenderId) {
     console.warn("processSocketPayload: Cannot create message without senderId. Payload:", payload);
@@ -207,7 +214,7 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
       new Date().toISOString(),
     senderId: normalizedSenderId,
     senderName: senderName,
-    senderAvatar: senderAvatar,
+    senderAvatar: avatarUrl,
     messageType: messageData?.messageType || payload?.messageType || "text",
     ...(messageData?.messageType === "image" || payload?.messageType === "image"
       ? {
