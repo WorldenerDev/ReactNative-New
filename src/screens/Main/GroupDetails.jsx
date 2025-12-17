@@ -33,10 +33,13 @@ import {
   getGroupDetails,
   getTripBuddies,
   removeUserFromGroup,
+  compareUsersInGroup,
+  getGroupWishlisted,
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import usePermissions from "@hooks/usePermissions";
 import Contacts from "react-native-contacts";
+import { getImageUrl } from "@api/apiClient";
 
 // Dummy image URL for users without images
 const DUMMY_USER_IMAGE =
@@ -57,66 +60,66 @@ const GroupDetails = () => {
   const [loading, setLoading] = useState(false);
   const [groupData, setGroupData] = useState(null);
   const { requestContactsPermission } = usePermissions();
-  const [wishlisted] = useState([
-    {
-      id: "w1",
-      name: "Rovaniemi",
-      image:
-        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1200",
-      isLiked: false,
-      like_count: 3,
-    },
-    {
-      id: "w2",
-      name: "Tokyo Tower Visit",
-      image:
-        "https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=1200",
-      isLiked: true,
-      like_count: 4,
-    },
-    {
-      id: "w3",
-      name: "Night Safari",
-      image:
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200",
-      isLiked: false,
-      like_count: 2,
-    },
-    {
-      id: "w4",
-      name: "Aurora Hunt",
-      image:
-        "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200",
-      isLiked: true,
-      like_count: 1,
-    },
-    {
-      id: "w5",
-      name: "Beach Sunset",
-      image:
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200",
-      isLiked: false,
-      like_count: 6,
-    },
-    {
-      id: "w6",
-      name: "Mountain Trek",
-      image:
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200",
-      isLiked: false,
-      like_count: 5,
-    },
-  ]);
+  const [wishlisted, setWishlisted] = useState([]);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const tabs = ["Members", "Compare", "Wishlisted", "Settings"];
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [compareUser, setCompareUser] = useState(null);
+  const [comparisonData, setComparisonData] = useState(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
   // Always show selection list when switching to Compare tab
   useEffect(() => {
     if (activeTab === "Compare") {
       setCompareUser(null);
+      setComparisonData(null);
     }
   }, [activeTab]);
+
+  // Fetch comparison data when a user is selected for comparison
+  useEffect(() => {
+    const fetchComparisonData = async () => {
+      if (!compareUser || !groupId || !user) {
+        return;
+      }
+
+      const currentUserId = user?._id || user?.id;
+      const compareUserId = compareUser.id;
+
+      if (!currentUserId || !compareUserId) {
+        showToast("error", "Unable to get user information for comparison");
+        return;
+      }
+
+      try {
+        setComparisonLoading(true);
+        // Note: userId1 is always the current user (you), userId2 is the user being compared
+        const response = await compareUsersInGroup({
+          groupId: groupId,
+          userId1: currentUserId, // Always current user
+          userId2: compareUserId, // User to compare with
+        });
+
+        if (response?.success && response?.data) {
+          setComparisonData(response.data);
+        } else {
+          showToast(
+            "error",
+            response?.message || "Failed to fetch comparison data"
+          );
+          setComparisonData(null);
+        }
+      } catch (error) {
+        console.error("Error fetching comparison data:", error);
+        showToast("error", error?.message || "Something went wrong");
+        setComparisonData(null);
+      } finally {
+        setComparisonLoading(false);
+      }
+    };
+
+    fetchComparisonData();
+  }, [compareUser, groupId, user]);
 
   // Transform API response to members format
   const transformMembersData = (data) => {
@@ -135,12 +138,13 @@ const GroupDetails = () => {
     // Add createdBy user
     if (data.createdBy) {
       const isCurrentUser = data.createdBy._id === currentUserId;
+      const createdByImage =
+        data.createdBy.image || data.createdBy.avatar || "";
       membersList.push({
         id: data.createdBy._id,
         name: data.createdBy.name || "Unknown",
         isYou: isCurrentUser,
-        avatar:
-          data.createdBy.image || data.createdBy.avatar || DUMMY_USER_IMAGE,
+        avatar: getImageUrl(createdByImage) || DUMMY_USER_IMAGE,
         isOnline: data.createdBy.isOnline ?? false,
         isAdmin: true,
         avatarBg: avatarBgColors[0],
@@ -154,11 +158,12 @@ const GroupDetails = () => {
         if (addedUser._id === data.createdBy?._id) return;
 
         const isCurrentUser = addedUser._id === currentUserId;
+        const addedUserImage = addedUser.image || addedUser.avatar || "";
         membersList.push({
           id: addedUser._id,
           name: addedUser.name || "Unknown",
           isYou: isCurrentUser,
-          avatar: addedUser.image || addedUser.avatar || DUMMY_USER_IMAGE,
+          avatar: getImageUrl(addedUserImage) || DUMMY_USER_IMAGE,
           isOnline: addedUser.isOnline ?? false,
           isAdmin: false,
           avatarBg: avatarBgColors[(index + 1) % avatarBgColors.length],
@@ -203,6 +208,40 @@ const GroupDetails = () => {
 
     fetchGroupDetails();
   }, [groupId]);
+
+  // Fetch wishlist data when Wishlisted tab is active
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!groupId || activeTab !== "Wishlisted") {
+        return;
+      }
+
+      try {
+        setWishlistLoading(true);
+        const response = await getGroupWishlisted(groupId);
+
+        if (response?.success && response?.data) {
+          // API response structure: response.data.data.wishlisted_items
+          const wishlistData =
+            response.data?.wishlisted_items ||
+            response.data?.data?.wishlisted_items ||
+            [];
+          setWishlisted(wishlistData);
+        } else {
+          showToast("error", response?.message || "Failed to fetch wishlist");
+          setWishlisted([]);
+        }
+      } catch (error) {
+        console.error("Error fetching wishlist:", error);
+        showToast("error", error?.message || "Something went wrong");
+        setWishlisted([]);
+      } finally {
+        setWishlistLoading(false);
+      }
+    };
+
+    fetchWishlist();
+  }, [groupId, activeTab]);
 
   // Transform members data from groupData
   const members = groupData ? transformMembersData(groupData) : [];
@@ -459,6 +498,38 @@ const GroupDetails = () => {
 
   const renderComparisonDetails = () => {
     const currentUser = members.find((m) => m.isYou);
+    const currentUserId = user?._id || user?.id;
+
+    // Extract data from API response
+    // Note: userId1 is always the current user (you), userId2 is the compare user
+    // API response structure:
+    // - common_activities: array of activities both users have
+    // - uncommon_activities.added_by_user1: activities only user1 (current user) has
+    // - uncommon_activities.added_by_user2: activities only user2 (compare user) has
+    // - user1: user1 info (current user)
+    // - user2: user2 info (compare user)
+    const commonActivities = comparisonData?.common_activities || [];
+    const currentUserActivities =
+      comparisonData?.uncommon_activities?.added_by_user1 || [];
+    const compareUserActivities =
+      comparisonData?.uncommon_activities?.added_by_user2 || [];
+
+    // Get user info from API response (more accurate than members list)
+    const user1Info = comparisonData?.user1;
+    const user2Info = comparisonData?.user2;
+
+    // Use API response user info if available, otherwise fall back to members list
+    const displayCurrentUser = user1Info || currentUser;
+    const displayCompareUser = user2Info || compareUser;
+
+    if (comparisonLoading) {
+      return (
+        <View style={styles.compareDetails}>
+          <Loader />
+        </View>
+      );
+    }
+
     return (
       <ScrollView
         style={styles.compareDetails}
@@ -474,7 +545,12 @@ const GroupDetails = () => {
               ]}
             >
               <OptimizedImage
-                source={{ uri: currentUser?.avatar || DUMMY_USER_IMAGE }}
+                source={{
+                  uri:
+                    getImageUrl(displayCurrentUser?.image) ||
+                    currentUser?.avatar ||
+                    DUMMY_USER_IMAGE,
+                }}
                 style={styles.avatar}
                 resizeMode="cover"
               />
@@ -485,7 +561,9 @@ const GroupDetails = () => {
                 ]}
               />
             </View>
-            <Text style={styles.compareHeaderName}>You</Text>
+            <Text style={styles.compareHeaderName}>
+              {displayCurrentUser?.name || "You"}
+            </Text>
           </View>
           <Text style={styles.vsHeader}>V/S</Text>
           <View style={styles.compareHeaderSide}>
@@ -496,7 +574,12 @@ const GroupDetails = () => {
               ]}
             >
               <OptimizedImage
-                source={{ uri: compareUser?.avatar || DUMMY_USER_IMAGE }}
+                source={{
+                  uri:
+                    getImageUrl(displayCompareUser?.image) ||
+                    compareUser?.avatar ||
+                    DUMMY_USER_IMAGE,
+                }}
                 style={styles.avatar}
                 resizeMode="cover"
               />
@@ -511,57 +594,160 @@ const GroupDetails = () => {
                 ]}
               />
             </View>
-            <Text style={styles.compareHeaderName}>{compareUser?.name}</Text>
+            <Text style={styles.compareHeaderName}>
+              {displayCompareUser?.name || compareUser?.name}
+            </Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Common Activities</Text>
-          <Text style={styles.sectionNote}>
-            Note: Dates and tickets may vary, it is recommended to review
-          </Text>
-          <View style={styles.cardRow}>
-            <View style={styles.cardThumb} />
-            <View style={styles.cardInfo}>
-              <Text style={styles.cardTitle}>Tokyo Tower Visit</Text>
-              <Text style={styles.cardMeta}>Dec 16 • $129</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Uncommon Activities</Text>
-          <Text style={styles.sectionNote}>
-            Note: Dates and tickets may vary, it is recommended to review
-          </Text>
-          <Text style={styles.subSectionTitle}>Added by You</Text>
-          {[1, 2].map((i) => (
-            <View key={`you-${i}`} style={styles.cardRow}>
-              <View style={styles.cardThumb} />
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>Tokyo Tower Visit</Text>
-                <Text style={styles.cardMeta}>Dec 16 • $129</Text>
+        {/* Common Activities Section */}
+        {commonActivities.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Common Activities</Text>
+            <Text style={styles.sectionNote}>
+              {comparisonData?.note ||
+                "Note: Dates and tickets may vary, it is recommended to review"}
+            </Text>
+            {commonActivities.map((activity, index) => (
+              <View
+                key={`common-${activity?._id || activity?.id || index}`}
+                style={styles.cardRow}
+              >
+                {activity?.image ? (
+                  <OptimizedImage
+                    source={{ uri: getImageUrl(activity.image) }}
+                    style={styles.cardThumb}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.cardThumb} />
+                )}
+                <View style={styles.cardInfo}>
+                  <Text style={styles.cardTitle}>
+                    {activity?.name || activity?.title || "Activity"}
+                  </Text>
+                  <Text style={styles.cardMeta}>
+                    {activity?.date
+                      ? `${new Date(activity.date).toLocaleDateString()} • `
+                      : ""}
+                    {activity?.price
+                      ? `$${activity.price}`
+                      : activity?.cost
+                      ? `$${activity.cost}`
+                      : ""}
+                  </Text>
+                </View>
               </View>
-              <TouchableOpacity style={styles.removePill}>
-                <Text style={styles.removePillText}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-
-          <Text style={styles.subSectionTitle}>
-            Added by {compareUser?.name}
-          </Text>
-          <View style={styles.cardRow}>
-            <View style={styles.cardThumb} />
-            <View style={styles.cardInfo}>
-              <Text style={styles.cardTitle}>Tokyo Tower Visit</Text>
-              <Text style={styles.cardMeta}>Dec 16 • $129</Text>
-            </View>
-            <TouchableOpacity style={styles.addPill}>
-              <Text style={styles.addPillText}>Add</Text>
-            </TouchableOpacity>
+            ))}
           </View>
-        </View>
+        )}
+
+        {/* Uncommon Activities Section */}
+        {(currentUserActivities.length > 0 ||
+          compareUserActivities.length > 0) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Uncommon Activities</Text>
+            <Text style={styles.sectionNote}>
+              {comparisonData?.note ||
+                "Note: Dates and tickets may vary, it is recommended to review"}
+            </Text>
+
+            {/* Activities added by current user */}
+            {currentUserActivities.length > 0 && (
+              <>
+                <Text style={styles.subSectionTitle}>Added by You</Text>
+                {currentUserActivities.map((activity, index) => (
+                  <View
+                    key={`you-${activity?._id || activity?.id || index}`}
+                    style={styles.cardRow}
+                  >
+                    {activity?.image ? (
+                      <OptimizedImage
+                        source={{ uri: getImageUrl(activity.image) }}
+                        style={styles.cardThumb}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.cardThumb} />
+                    )}
+                    <View style={styles.cardInfo}>
+                      <Text style={styles.cardTitle}>
+                        {activity?.name || activity?.title || "Activity"}
+                      </Text>
+                      <Text style={styles.cardMeta}>
+                        {activity?.date
+                          ? `${new Date(activity.date).toLocaleDateString()} • `
+                          : ""}
+                        {activity?.price
+                          ? `$${activity.price}`
+                          : activity?.cost
+                          ? `$${activity.cost}`
+                          : ""}
+                      </Text>
+                    </View>
+                    <TouchableOpacity style={styles.removePill}>
+                      <Text style={styles.removePillText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            )}
+
+            {/* Activities added by compare user */}
+            {compareUserActivities.length > 0 && (
+              <>
+                <Text style={styles.subSectionTitle}>
+                  Added by {displayCompareUser?.name || compareUser?.name}
+                </Text>
+                {compareUserActivities.map((activity, index) => (
+                  <View
+                    key={`compare-${activity?._id || activity?.id || index}`}
+                    style={styles.cardRow}
+                  >
+                    {activity?.image ? (
+                      <OptimizedImage
+                        source={{ uri: getImageUrl(activity.image) }}
+                        style={styles.cardThumb}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.cardThumb} />
+                    )}
+                    <View style={styles.cardInfo}>
+                      <Text style={styles.cardTitle}>
+                        {activity?.name || activity?.title || "Activity"}
+                      </Text>
+                      <Text style={styles.cardMeta}>
+                        {activity?.date
+                          ? `${new Date(activity.date).toLocaleDateString()} • `
+                          : ""}
+                        {activity?.price
+                          ? `$${activity.price}`
+                          : activity?.cost
+                          ? `$${activity.cost}`
+                          : ""}
+                      </Text>
+                    </View>
+                    <TouchableOpacity style={styles.addPill}>
+                      <Text style={styles.addPillText}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            )}
+          </View>
+        )}
+
+        {/* Empty state */}
+        {commonActivities.length === 0 &&
+          currentUserActivities.length === 0 &&
+          compareUserActivities.length === 0 && (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                No activities to compare
+              </Text>
+            </View>
+          )}
 
         <View style={{ height: getHeight(120) }} />
       </ScrollView>
@@ -569,12 +755,51 @@ const GroupDetails = () => {
   };
 
   const renderWishlistedItem = ({ item }) => {
-    const likeCount = item?.like_count || item?.likes || item?.liked_by || 0;
+    // API response structure:
+    // - activity_id: unique identifier
+    // - name: activity name
+    // - image: full URL or empty string
+    // - like_count: number of likes
+    // - is_liked_by_current_user: boolean
+    // - liked_by_members: array of user objects
+    // - price: price value
+    // - currency: currency code
+
+    const likeCount = item?.like_count || 0;
+    const activityImage = item?.image || "";
+
+    // Ensure item has proper structure for ForYouCard
+    // ForYouCard expects: id, name, image, isLiked, like_count
+    // API returns full URLs for images, but some might be empty strings
+    // Only use getImageUrl if it's a relative path (starts with /)
+    const processedImage =
+      activityImage && activityImage.startsWith("/")
+        ? getImageUrl(activityImage)
+        : activityImage || undefined;
+
+    const cardItem = {
+      id: item?.activity_id,
+      name: item?.name || "Activity",
+      image: processedImage,
+      isLiked: item?.is_liked_by_current_user || false,
+      like_count: likeCount,
+      // Include additional fields that might be useful
+      price: item?.price,
+      currency: item?.currency,
+      location: item?.location,
+      city_name: item?.city_name,
+      description: item?.description,
+      duration: item?.duration,
+      ...item, // Spread to include any other fields
+    };
+
     return (
       <View style={styles.wishItem}>
-        <ForYouCard item={item} onPress={() => {}} />
+        <ForYouCard item={cardItem} onPress={() => {}} />
         <View style={styles.likedRow}>
-          <Text style={styles.likedText}>Liked by {likeCount} members</Text>
+          <Text style={styles.likedText}>
+            Liked by {likeCount} {likeCount === 1 ? "member" : "members"}
+          </Text>
           <Image
             source={icons.RIGHT_ICON}
             style={styles.likedArrow}
@@ -585,19 +810,41 @@ const GroupDetails = () => {
     );
   };
 
-  const renderWishlistedContent = () => (
-    <View style={styles.wishContainer}>
-      <FlatList
-        data={wishlisted}
-        keyExtractor={(it, idx) => String(it?.id || it?.activity_id || idx)}
-        renderItem={renderWishlistedItem}
-        numColumns={2}
-        columnWrapperStyle={{ paddingHorizontal: getHoriPadding(4) }}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.wishListContent}
-      />
-    </View>
-  );
+  const renderWishlistedContent = () => {
+    if (wishlistLoading) {
+      return (
+        <View style={styles.wishContainer}>
+          <Loader />
+        </View>
+      );
+    }
+
+    if (wishlisted.length === 0) {
+      return (
+        <View style={styles.wishContainer}>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No wishlisted activities</Text>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.wishContainer}>
+        <FlatList
+          data={wishlisted}
+          keyExtractor={(it, idx) =>
+            String(it?.activity_id || it?._id || it?.id || idx)
+          }
+          renderItem={renderWishlistedItem}
+          numColumns={2}
+          columnWrapperStyle={{ paddingHorizontal: getHoriPadding(4) }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.wishListContent}
+        />
+      </View>
+    );
+  };
 
   return (
     <MainContainer>
@@ -964,5 +1211,16 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontFamily: fonts.RobotoMedium,
     fontSize: getFontSize(12),
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: getHeight(40),
+  },
+  emptyStateText: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.gray,
   },
 });

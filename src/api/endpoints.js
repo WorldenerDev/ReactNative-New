@@ -56,6 +56,7 @@ export const endpoints = {
     getCityActivities: "/getCityActivities",
     compareUsersInGroup: "/compare-users-in-group",
     updateProfile: "/updateProfile",
+    getGroupWishlisted: "/group",
   },
 
 };
