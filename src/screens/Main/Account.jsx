@@ -11,7 +11,7 @@ import React from "react";
 import { removeItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { useDispatch } from "react-redux";
-import { logout } from "@redux/slices/authSlice";
+import { logoutUser } from "@redux/slices/authSlice";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import ProfileButton from "@components/ProfileButton";
 import colors from "@assets/colors";
@@ -38,7 +38,7 @@ const Account = ({ navigation }) => {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
-          dispatch(logout());
+          await dispatch(logoutUser());
           await removeItem(STORAGE_KEYS.USER_DATA);
           await removeItem(STORAGE_KEYS.TOKEN);
         },

@@ -14,6 +14,7 @@ import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
+import { updateUserOnlineStatus } from "./onlineStatusSlice";
 
 // ----------------- Thunks -----------------
 export const loginUser = createAsyncThunk(
@@ -115,6 +116,23 @@ export const postCategory = createAsyncThunk(
   }
 );
 
+export const logoutUser = createAsyncThunk(
+  "auth/logout",
+  async (_, { dispatch, getState }) => {
+    const { auth } = getState();
+    const token = auth?.user?.accessToken || auth?.user?.token || auth?.token;
+
+    if (token) {
+      try {
+        await dispatch(updateUserOnlineStatus(false)).unwrap();
+      } catch (error) {
+        console.warn("Failed to set offline status on logout:", error);
+      }
+    }
+    return true;
+  }
+);
+
 // ----------------- Slice -----------------
 const authSlice = createSlice({
   name: "auth",
@@ -128,7 +146,8 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
-      state.token = action.payload.accessToken || null;
+      // Store token from accessToken or token field
+      state.token = action.payload?.accessToken || action.payload?.token || null;
     },
     logout: (state) => {
       state.user = null;
@@ -157,14 +176,16 @@ const authSlice = createSlice({
     handleAsyncCases(builder, loginUser, {
       onFulfilled: (state, action) => {
         state.user = action.payload;
-        state.token = action.payload.token;
+        // Store token from accessToken or token field
+        state.token = action.payload?.accessToken || action.payload?.token || null;
       },
     });
 
     handleAsyncCases(builder, googleAppleSignIn, {
       onFulfilled: (state, action) => {
         state.user = action.payload;
-        state.token = action.payload.token;
+        // Store token from accessToken or token field
+        state.token = action.payload?.accessToken || action.payload?.token || null;
       },
     });
     handleAsyncCases(builder, category, {
@@ -177,6 +198,10 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.token = action.payload.token;
       },
+    });
+    builder.addCase(logoutUser.fulfilled, (state) => {
+      state.user = null;
+      state.token = null;
     });
   },
 });

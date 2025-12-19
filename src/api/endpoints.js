@@ -10,6 +10,7 @@ export const endpoints = {
     getCms: "getCms",
   },
   main: {
+    updateOnlineStatus: "/update-online-status",
     getAllCity: "/getAllCities",
     getEventForYou: "/getEventsForYou",
     getPopularEvents: "/getPopularEvents",

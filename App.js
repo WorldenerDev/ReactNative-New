@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import { store } from "@redux/store";
 import messaging from "@react-native-firebase/messaging";
 import { Platform } from "react-native";
+import AppStateHandler from "@components/AppStateHandler";
 
 const App = () => {
   useEffect(() => {
@@ -38,6 +39,7 @@ const App = () => {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
+        <AppStateHandler />
         <Routes />
         <AppToast />
       </SafeAreaProvider>
