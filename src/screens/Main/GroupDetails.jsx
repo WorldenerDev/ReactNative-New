@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Modal,
+  Dimensions,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import MainContainer from "@components/container/MainContainer";
@@ -62,6 +64,8 @@ const GroupDetails = () => {
   const { requestContactsPermission } = usePermissions();
   const [wishlisted, setWishlisted] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [showLikedByModal, setShowLikedByModal] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const tabs = ["Members", "Compare", "Wishlisted", "Settings"];
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [compareUser, setCompareUser] = useState(null);
@@ -796,7 +800,16 @@ const GroupDetails = () => {
     return (
       <View style={styles.wishItem}>
         <ForYouCard item={cardItem} onPress={() => {}} />
-        <View style={styles.likedRow}>
+        <TouchableOpacity
+          style={styles.likedRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            if (item?.liked_by_members && item.liked_by_members.length > 0) {
+              setSelectedActivity(item);
+              setShowLikedByModal(true);
+            }
+          }}
+        >
           <Text style={styles.likedText}>
             Liked by {likeCount} {likeCount === 1 ? "member" : "members"}
           </Text>
@@ -805,7 +818,7 @@ const GroupDetails = () => {
             style={styles.likedArrow}
             resizeMode="contain"
           />
-        </View>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -886,6 +899,111 @@ const GroupDetails = () => {
             />
           </View>
         )}
+
+      {/* Liked By Modal */}
+      <Modal
+        visible={showLikedByModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLikedByModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          {(() => {
+            const screenHeight = Dimensions.get("window").height;
+            const memberCount = selectedActivity?.liked_by_members?.length || 0;
+            // Calculate height: base height + (member count * item height)
+            // Each member item is approximately 76px (12px padding * 2 + 50px avatar + 2px spacing)
+            const headerHeight = 60; // Approximate header height
+            const itemHeight = 76;
+            const calculatedHeight = headerHeight + memberCount * itemHeight;
+            const minHeight = screenHeight * 0.4;
+            const maxHeight = screenHeight * 0.7;
+            const modalHeight = Math.min(
+              Math.max(calculatedHeight, minHeight),
+              maxHeight
+            );
+
+            return (
+              <View
+                style={[
+                  styles.likedByModal,
+                  {
+                    height: modalHeight,
+                  },
+                ]}
+              >
+                <View style={styles.likedByModalHeader}>
+                  <Text style={styles.likedByModalTitle}>Liked by</Text>
+                  <TouchableOpacity
+                    style={styles.likedByModalClose}
+                    onPress={() => {
+                      setShowLikedByModal(false);
+                      setSelectedActivity(null);
+                    }}
+                  >
+                    <Text style={styles.likedByModalCloseText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <FlatList
+                  data={selectedActivity?.liked_by_members || []}
+                  keyExtractor={(member, index) =>
+                    String(member?._id || member?.id || index)
+                  }
+                  renderItem={({ item: member }) => {
+                    const memberImage = member?.image || "";
+                    const avatarBgColors = [
+                      "#FFE5E5",
+                      "#FFF5C4",
+                      "#E5D5FF",
+                      "#E5F5FF",
+                      "#FFE5F5",
+                    ];
+                    const avatarBg =
+                      avatarBgColors[
+                        (member?._id?.length || 0) % avatarBgColors.length
+                      ];
+
+                    return (
+                      <View style={styles.likedByMemberItem}>
+                        <View
+                          style={[
+                            styles.likedByAvatarContainer,
+                            { backgroundColor: avatarBg },
+                          ]}
+                        >
+                          <OptimizedImage
+                            source={{
+                              uri: getImageUrl(memberImage) || DUMMY_USER_IMAGE,
+                            }}
+                            style={styles.likedByAvatar}
+                            resizeMode="cover"
+                          />
+                          <View
+                            style={[
+                              styles.likedByStatusIndicator,
+                              {
+                                backgroundColor: member?.isOnline
+                                  ? colors.green
+                                  : colors.red,
+                              },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.likedByMemberName}>
+                          {member?.name || "Unknown"}
+                        </Text>
+                      </View>
+                    );
+                  }}
+                  contentContainerStyle={styles.likedByListContent}
+                  showsVerticalScrollIndicator={false}
+                />
+              </View>
+            );
+          })()}
+        </View>
+      </Modal>
     </MainContainer>
   );
 };
@@ -1222,5 +1340,82 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(14),
     fontFamily: fonts.RobotoRegular,
     color: colors.gray,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+    alignItems: "center",
+  },
+  likedByModal: {
+    width: "100%",
+    backgroundColor: colors.white,
+    borderTopLeftRadius: getRadius(20),
+    borderTopRightRadius: getRadius(20),
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderBottomWidth: 0,
+    overflow: "hidden",
+  },
+  likedByModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: getHoriPadding(16),
+    paddingVertical: getVertiPadding(16),
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGray,
+  },
+  likedByModalTitle: {
+    fontSize: getFontSize(18),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
+  },
+  likedByModalClose: {
+    padding: getHoriPadding(4),
+  },
+  likedByModalCloseText: {
+    fontSize: getFontSize(20),
+    color: colors.black,
+    fontWeight: "bold",
+  },
+  likedByListContent: {
+    paddingVertical: getHeight(8),
+  },
+  likedByMemberItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: getHoriPadding(16),
+    paddingVertical: getVertiPadding(12),
+  },
+  likedByAvatarContainer: {
+    width: getWidth(50),
+    height: getWidth(50),
+    borderRadius: getWidth(25),
+    marginRight: getWidth(12),
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  likedByAvatar: {
+    width: getWidth(48),
+    height: getWidth(48),
+    borderRadius: getWidth(24),
+  },
+  likedByStatusIndicator: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: getWidth(14),
+    height: getWidth(14),
+    borderRadius: getWidth(7),
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  likedByMemberName: {
+    fontSize: getFontSize(16),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.black,
+    flex: 1,
   },
 });
