@@ -4,8 +4,6 @@ import {
   otp,
   resendOtp,
   login,
-  newPass,
-  freelancerProfile,
   SocialLogin,
   getCategory,
   SelectCategory,
@@ -21,9 +19,7 @@ export const loginUser = createAsyncThunk(
   endpoints?.auth.login,
   async (payload, { rejectWithValue }) => {
     try {
-      console.log("Login Payload: ", payload);
       const res = await login(payload);
-      console.log("Login Response: ", res);
       if (res && res.statusCode && res.statusCode >= 400) {
         return rejectWithValue(res.message || "Login failed");
       }
@@ -32,7 +28,6 @@ export const loginUser = createAsyncThunk(
       }
       return res;
     } catch (err) {
-      console.log("Login Error: ", err);
       return rejectWithValue(err.message);
     }
   }
@@ -79,14 +74,12 @@ export const googleAppleSignIn = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       const res = await SocialLogin(payload);
-      console.log("Social login Api res ", res);
       const result = {
         ...res?.data,
         token: res?.accessToken,
       };
       await setItem(STORAGE_KEYS?.USER_DATA, result);
-      // dispatch(setUser(result));
-      return result; // Return the user data object instead of the full response
+      return result;
     } catch (err) {
       return rejectWithValue(err.message || "Google Sign-In failed");
     }
@@ -146,7 +139,6 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
-      // Store token from accessToken or token field
       state.token = action.payload?.accessToken || action.payload?.token || null;
     },
     logout: (state) => {
@@ -176,15 +168,12 @@ const authSlice = createSlice({
     handleAsyncCases(builder, loginUser, {
       onFulfilled: (state, action) => {
         state.user = action.payload;
-        // Store token from accessToken or token field
         state.token = action.payload?.accessToken || action.payload?.token || null;
       },
     });
-
     handleAsyncCases(builder, googleAppleSignIn, {
       onFulfilled: (state, action) => {
         state.user = action.payload;
-        // Store token from accessToken or token field
         state.token = action.payload?.accessToken || action.payload?.token || null;
       },
     });
