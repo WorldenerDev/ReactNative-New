@@ -18,6 +18,7 @@ import {
   TextInput,
   FlatList,
   Modal,
+  Image,
 } from "react-native";
 import { GiftedChat, Message, MessageText } from "react-native-gifted-chat";
 import { useSelector, useDispatch } from "react-redux";
@@ -56,16 +57,13 @@ const Chat = ({ navigation, route }) => {
   const { messages: reduxMessages, loading: messagesLoading } = useSelector(
     (state) => state.chat
   );
-  // Normalize userId to string for consistent comparison
   const userId = user?._id || user?.id;
   const normalizedUserId = userId ? String(userId) : null;
   const socketRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [socketReady, setSocketReady] = useState(false);
-  // Get messages from Redux state for this group
   const groupMessages = reduxMessages[groupId] || [];
 
-  // Transform Redux messages to GiftedChat format
   const messages = useMemo(() => {
     if (!Array.isArray(groupMessages) || groupMessages.length === 0) {
       return [];
@@ -88,7 +86,6 @@ const Chat = ({ navigation, route }) => {
   const [reportLoading, setReportLoading] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
 
-  // Get current user for GiftedChat
   const CURRENT_USER = useMemo(() => {
     const userImage = user?.image || user?.avatar || user?.profileImage;
     return {
@@ -104,7 +101,6 @@ const Chat = ({ navigation, route }) => {
     user?.profileImage,
   ]);
 
-  // Check if selected user is the current user
   const isSelectedUserCurrentUser = useMemo(() => {
     if (!selectedMessage?.user) return false;
     const selectedUserId = String(selectedMessage.user._id || "");
@@ -112,16 +108,11 @@ const Chat = ({ navigation, route }) => {
     return selectedUserId === currentUserId;
   }, [selectedMessage, CURRENT_USER]);
 
-  // Step 1: Fetch messages from API first
   useEffect(() => {
-    if (!groupId) {
-      console.warn("Chat: groupId is missing from route params");
-      return;
-    }
+    if (!groupId) return;
     dispatch(fetchGroupMessages(groupId));
   }, [groupId, dispatch]);
 
-  // Step 2: Connect socket and join group after messages are loaded
   useEffect(() => {
     if (!normalizedUserId || !groupId || !socketReady) return;
 
@@ -133,21 +124,11 @@ const Chat = ({ navigation, route }) => {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("Socket connected");
       setConnected(true);
-      // Join group after socket is connected
-      socket.emit(
-        "join_group",
-        { groupId, userId: normalizedUserId },
-        (response) => {
-          console.log("Joined group response:", response);
-        }
-      );
+      socket.emit("join_group", { groupId, userId: normalizedUserId });
     });
 
-    // Receive group message
     socket.on("receive_group_message", (payload) => {
-      console.log("receive_group_message payload ===>", payload);
       const serverMessage = processSocketPayload(
         payload,
         normalizedUserId,
@@ -155,24 +136,15 @@ const Chat = ({ navigation, route }) => {
       );
 
       if (serverMessage) {
-        console.log(
-          "Transformed server message ===>",
-          JSON.stringify(serverMessage, null, 2)
-        );
-
-        // Add message to Redux store (in server format)
         dispatch(addMessage({ groupId, message: serverMessage }));
       }
     });
 
     socket.on("disconnect", () => {
-      console.log("Socket disconnected");
       setConnected(false);
     });
 
-    socket.on("connect_error", (err) => {
-      console.error("Socket connect_error", err);
-    });
+    socket.on("connect_error", () => {});
 
     return () => {
       socket.off("connect");
@@ -184,7 +156,6 @@ const Chat = ({ navigation, route }) => {
     };
   }, [normalizedUserId, groupId, socketReady, dispatch, user]);
 
-  // Set socket ready after messages are loaded (or loading is complete)
   useEffect(() => {
     if (!messagesLoading && groupId) {
       setSocketReady(true);
@@ -194,12 +165,8 @@ const Chat = ({ navigation, route }) => {
   const onSend = useCallback(
     (newMessages = []) => {
       const socket = socketRef.current;
-      if (!socket || !connected) {
-        console.warn("Socket not connected");
-        return;
-      }
+      if (!socket || !connected) return;
 
-      // Handle manual send from custom composer
       if (text.trim()) {
         const messageToSend = {
           groupId: groupId,
@@ -210,21 +177,9 @@ const Chat = ({ navigation, route }) => {
           createdAt: new Date().toISOString(),
         };
 
-        console.log(
-          "Sending message to socket:",
-          JSON.stringify(messageToSend, null, 2)
-        );
-
-        // Emit send_group_message event
-        // Message will be added via receive_group_message event
-        socket.emit("send_group_message", messageToSend, (response) => {
-          console.log("Send message response:", response, messageToSend);
-        });
-
-        // Clear text input - message will appear via receive_group_message
+        socket.emit("send_group_message", messageToSend);
         setText("");
       } else if (newMessages.length > 0) {
-        // Handle send from default composer
         const message = newMessages[0];
         const messageToSend = {
           groupId: groupId,
@@ -237,22 +192,12 @@ const Chat = ({ navigation, route }) => {
             : new Date().toISOString(),
         };
 
-        console.log(
-          "Sending message to socket:",
-          JSON.stringify(messageToSend, null, 2)
-        );
-
-        // Emit send_group_message event
-        // Message will be added via receive_group_message event
-        socket.emit("send_group_message", messageToSend, (response) => {
-          console.log("Send message response:", response);
-        });
+        socket.emit("send_group_message", messageToSend);
       }
     },
     [text, groupId, normalizedUserId, connected]
   );
 
-  // Mention
   const handleTextChange = useCallback((newText) => {
     setText(newText);
     const cursor = newText.length;
@@ -330,7 +275,6 @@ const Chat = ({ navigation, route }) => {
           })
         );
       } catch (error) {
-        console.error("Error updating emoji:", error);
         showToast("error", error?.message || "Failed to update emoji");
       }
 
@@ -392,14 +336,11 @@ const Chat = ({ navigation, route }) => {
     );
   };
 
-  // User actions
   const onUserAvatarPress = useCallback(
     (user) => {
-      // Check if the clicked user is the current user
       const clickedUserId = String(user?._id || "");
       const currentUserId = String(CURRENT_USER._id || "");
 
-      // Don't show modal if user clicks on their own profile
       if (clickedUserId === currentUserId) {
         return;
       }
@@ -424,7 +365,6 @@ const Chat = ({ navigation, route }) => {
       showToast("success", `Blocked ${user.name || "user"} successfully`);
       setShowUserActions(false);
     } catch (error) {
-      console.error("Error blocking user:", error);
       showToast("error", error?.message || "Failed to block user");
     } finally {
       setBlockLoading(false);
@@ -433,7 +373,6 @@ const Chat = ({ navigation, route }) => {
 
   const handleUserAction = useCallback(
     (action, user) => {
-      // Prevent users from reporting/blocking themselves (safety check)
       const clickedUserId = String(user?._id || "");
       const currentUserId = String(CURRENT_USER._id || "");
 
@@ -443,7 +382,6 @@ const Chat = ({ navigation, route }) => {
       }
 
       if (action === "report") {
-        // Close user actions modal and open report modal
         setShowUserActions(false);
         setShowReportModal(true);
         setReportReason("");
@@ -458,7 +396,6 @@ const Chat = ({ navigation, route }) => {
   const submitReport = useCallback(async () => {
     if (!selectedMessage?.user || !groupId) return;
 
-    // Validate inputs
     if (!reportReason.trim()) {
       showToast("error", "Please provide a reason for reporting");
       return;
@@ -485,19 +422,36 @@ const Chat = ({ navigation, route }) => {
       setReportReason("");
       setReportDescription("");
     } catch (error) {
-      console.error("Error reporting user:", error);
       showToast("error", error?.message || "Failed to report user");
     } finally {
       setReportLoading(false);
     }
   }, [selectedMessage, groupId, reportReason, reportDescription]);
 
-  // Render message
+  const handleActivityPress = useCallback(
+    (activityUuid, activityName, activityImage) => {
+      if (!activityUuid) return;
+
+      const eventData = {
+        id: activityUuid,
+        name: activityName,
+        image: activityImage,
+        cover_image_url: activityImage,
+      };
+
+      navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+        eventData: eventData,
+      });
+    },
+    [navigation]
+  );
+
   const renderMessage = (props) => {
     const { currentMessage, position } = props;
-    // Use String() comparison to handle type mismatches (number vs string)
     const isCurrentUser =
       String(currentMessage.user._id) === String(CURRENT_USER._id);
+
+    const hasActivity = !!currentMessage.activityImage;
 
     return (
       <View style={{ marginVertical: 2 }}>
@@ -508,18 +462,49 @@ const Chat = ({ navigation, route }) => {
           }
           onPressAvatar={() => onUserAvatarPress(currentMessage.user)}
           renderMessageText={(msgProps) => (
-            <MessageText
-              {...msgProps}
-              parsePatterns={(linkStyle) => [
-                {
-                  pattern: /@[\w\s]+/g,
-                  style: {
-                    color: isCurrentUser ? "#fff" : "#0b93f6",
-                    fontWeight: "bold",
-                  },
-                },
-              ]}
-            />
+            <TouchableOpacity
+              activeOpacity={hasActivity ? 0.8 : 1}
+              onPress={() => {
+                if (hasActivity && currentMessage.activityUuid) {
+                  handleActivityPress(
+                    currentMessage.activityUuid,
+                    currentMessage.activityName,
+                    currentMessage.activityImage
+                  );
+                }
+              }}
+              onLongPress={() => {
+                setSelectedMessage(currentMessage);
+                setShowEmojiPicker(true);
+              }}
+              delayLongPress={300}
+            >
+              <View style={styles.messageContentContainer}>
+                {currentMessage.activityImage && (
+                  <View style={styles.activityImageWrapper}>
+                    <Image
+                      source={{ uri: currentMessage.activityImage }}
+                      style={styles.activityImageInBubble}
+                      resizeMode="cover"
+                    />
+                  </View>
+                )}
+                {currentMessage.text && (
+                  <MessageText
+                    {...msgProps}
+                    parsePatterns={(linkStyle) => [
+                      {
+                        pattern: /@[\w\s]+/g,
+                        style: {
+                          color: isCurrentUser ? "#fff" : "#0b93f6",
+                          fontWeight: "bold",
+                        },
+                      },
+                    ]}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
           )}
         />
         {renderReactions(currentMessage, position)}
@@ -645,7 +630,6 @@ const Chat = ({ navigation, route }) => {
         </View>
       </Modal>
 
-      {/* Report User Modal */}
       <Modal visible={showReportModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.reportModal}>
@@ -719,15 +703,6 @@ const Chat = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "bold" },
   inputToolbar: {
     backgroundColor: "#fff",
     paddingHorizontal: 10,
@@ -759,7 +734,6 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: { opacity: 0.5 },
   sendButtonIcon: { fontSize: 20, color: "#000", fontWeight: "bold" },
-  sendButtonText: { color: "#fff", fontWeight: "600" },
   reactionsLeft: { flexDirection: "row", marginTop: 4, marginLeft: 60 },
   reactionsRight: {
     flexDirection: "row",
@@ -892,6 +866,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#000",
+  },
+  messageContentContainer: {
+    overflow: "hidden",
+  },
+  activityImageWrapper: {
+    marginBottom: 8,
+    marginHorizontal: -6,
+    marginTop: -6,
+    overflow: "hidden",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  activityImageInBubble: {
+    width: "100%",
+    maxWidth: 280,
+    height: 160,
   },
 });
 

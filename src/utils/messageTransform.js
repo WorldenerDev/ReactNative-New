@@ -57,16 +57,13 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
   }
   senderName = senderName || "User";
 
-  // Extract sender avatar - handle nested structure
   let senderAvatar = serverMessage.senderAvatar;
   if (!senderAvatar && serverMessage.senderId && typeof serverMessage.senderId === 'object') {
     senderAvatar = serverMessage.senderId.avatar || serverMessage.senderId.profileImage || serverMessage.senderId.image;
   }
 
-  // Construct full image URL if avatar path is provided
   const avatarUrl = getImageUrl(senderAvatar);
 
-  // Build message object
   const giftedMessage = {
     _id: messageId,
     text: serverMessage.message || serverMessage.text || "",
@@ -78,11 +75,16 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
     },
   };
 
-  // Add image if message type is image
   if (serverMessage.messageType === "image" && serverMessage.mediaUrl) {
     giftedMessage.image = serverMessage.mediaUrl.startsWith("http")
       ? serverMessage.mediaUrl
       : `${BASEURL}${serverMessage.mediaUrl}`;
+  }
+
+  if (serverMessage.activityImage) {
+    giftedMessage.activityImage = serverMessage.activityImage;
+    giftedMessage.activityName = serverMessage.activityName;
+    giftedMessage.activityUuid = serverMessage.activityUuid;
   }
 
   // Handle reactions - convert emoji array to reactions object
@@ -185,12 +187,10 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
     }
   }
 
-  // If sender is current user and no avatar found in payload, use current user's image
   if (!senderAvatar && currentUser && normalizedSenderId && normalizedSenderId === normalizedUserId) {
     senderAvatar = currentUser?.image || currentUser?.avatar || currentUser?.profileImage;
   }
 
-  // Construct full image URL if avatar path is provided
   const avatarUrl = getImageUrl(senderAvatar);
 
   // Don't create message if we don't have a valid senderId
@@ -229,9 +229,15 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
     ...(messageData?.emoji || payload?.emoji
       ? { emoji: messageData?.emoji || payload?.emoji }
       : {}),
-    // Include reactions if present
     ...(messageData?.reactions || payload?.reactions
       ? { reactions: messageData?.reactions || payload?.reactions }
+      : {}),
+    ...(messageData?.activityImage || payload?.activityImage
+      ? {
+          activityImage: messageData?.activityImage || payload?.activityImage,
+          activityName: messageData?.activityName || payload?.activityName,
+          activityUuid: messageData?.activityUuid || payload?.activityUuid,
+        }
       : {}),
   };
 
