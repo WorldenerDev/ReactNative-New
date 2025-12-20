@@ -30,6 +30,7 @@ import {
   activityLikeUnlike,
   getEventDetails,
   getGroupList,
+  shareActivityWithGroups,
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import RadioCheckbox from "@components/RadioCheckbox";
@@ -71,6 +72,7 @@ const ActivityDetails = ({ navigation, route }) => {
   const [groups, setGroups] = useState([]);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const cityId = eventData?.city_data?.id;
   const currentCityTrips = tripsByCity[cityId] || [];
@@ -220,14 +222,36 @@ const ActivityDetails = ({ navigation, route }) => {
     );
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (selectedGroups.length === 0) {
       showToast("error", "Please select at least one group");
       return;
     }
-    showToast("success", `Shared to ${selectedGroups.length} group(s)`);
-    setShowShareModal(false);
-    setSelectedGroups([]);
+
+    if (!eventData?.id) {
+      showToast("error", "Activity information not available");
+      return;
+    }
+
+    try {
+      setSharing(true);
+      const response = await shareActivityWithGroups({
+        activityUuid: eventData?.id,
+        groupIds: selectedGroups,
+      });
+
+      if (response?.success) {
+        setShowShareModal(false);
+        setSelectedGroups([]);
+      } else {
+        showToast("error", response?.message || "Failed to share activity");
+      }
+    } catch (error) {
+      console.error("Error sharing activity:", error);
+      showToast("error", error?.message || "Failed to share activity");
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -445,9 +469,9 @@ const ActivityDetails = ({ navigation, route }) => {
           {(() => {
             const screenHeight = Dimensions.get("window").height;
             const groupCount = groups.length;
-            const headerHeight = 60;
-            const footerHeight = 80;
-            const itemHeight = 76;
+            const headerHeight = 56;
+            const footerHeight = 72;
+            const itemHeight = 60;
             const minHeight = screenHeight * 0.3;
             const maxHeight = screenHeight * 0.7;
             const calculatedHeight =
@@ -502,18 +526,15 @@ const ActivityDetails = ({ navigation, route }) => {
                         <Text style={styles.groupName} numberOfLines={1}>
                           {item.name}
                         </Text>
-                        <View style={styles.checkboxContainer}>
-                          <View
-                            style={[
-                              styles.checkbox,
-                              selectedGroups.includes(item.id) &&
-                                styles.checkboxSelected,
-                            ]}
-                          >
-                            {selectedGroups.includes(item.id) && (
-                              <View style={styles.checkboxInner} />
-                            )}
-                          </View>
+                        <View style={styles.tickButtonContainer}>
+                          {selectedGroups.includes(item.id) ? (
+                            <Image
+                              source={imagePath.CHECK_ICON}
+                              style={styles.tickIcon}
+                            />
+                          ) : (
+                            <View style={styles.tickButton} />
+                          )}
                         </View>
                       </TouchableOpacity>
                     )}
@@ -541,22 +562,29 @@ const ActivityDetails = ({ navigation, route }) => {
                   <TouchableOpacity
                     style={[
                       styles.shareButton,
-                      selectedGroups.length === 0 && styles.shareButtonDisabled,
+                      (selectedGroups.length === 0 || sharing) &&
+                        styles.shareButtonDisabled,
                     ]}
                     onPress={handleShare}
-                    disabled={selectedGroups.length === 0}
-                    activeOpacity={selectedGroups.length === 0 ? 1 : 0.8}
+                    disabled={selectedGroups.length === 0 || sharing}
+                    activeOpacity={
+                      selectedGroups.length === 0 || sharing ? 1 : 0.8
+                    }
                   >
                     <Text
                       style={[
                         styles.shareButtonText,
-                        selectedGroups.length === 0 &&
+                        (selectedGroups.length === 0 || sharing) &&
                           styles.shareButtonTextDisabled,
                       ]}
                     >
-                      Share{" "}
-                      {selectedGroups.length > 0 &&
-                        `(${selectedGroups.length})`}
+                      {sharing
+                        ? "Sharing..."
+                        : `Share${
+                            selectedGroups.length > 0
+                              ? ` (${selectedGroups.length})`
+                              : ""
+                          }`}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -753,7 +781,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: getHoriPadding(20),
-    paddingVertical: getVertiPadding(18),
+    paddingVertical: getVertiPadding(16),
     borderBottomWidth: 1,
     borderBottomColor: colors.lightGray,
     backgroundColor: colors.white,
@@ -793,7 +821,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: getHoriPadding(20),
-    paddingVertical: getVertiPadding(16),
+    paddingVertical: getVertiPadding(12),
     borderBottomWidth: 1,
     borderBottomColor: colors.lightGray,
     backgroundColor: colors.white,
@@ -802,16 +830,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F8FF",
   },
   groupImageContainer: {
-    width: getWidth(56),
-    height: getHeight(56),
-    borderRadius: getRadius(28),
+    width: getWidth(48),
+    height: getHeight(48),
+    borderRadius: getRadius(24),
     overflow: "hidden",
     backgroundColor: colors.lightGray,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   groupImage: {
     width: "100%",
@@ -823,30 +846,28 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(16),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
-    marginLeft: getHoriPadding(16),
-  },
-  checkboxContainer: {
     marginLeft: getHoriPadding(12),
   },
-  checkbox: {
-    width: getWidth(26),
-    height: getHeight(26),
-    borderRadius: getRadius(6),
-    borderWidth: 2,
-    borderColor: colors.gray,
+  tickButtonContainer: {
+    marginLeft: getHoriPadding(12),
+    width: getWidth(22),
+    height: getHeight(22),
     justifyContent: "center",
     alignItems: "center",
+  },
+  tickButton: {
+    width: getWidth(20),
+    height: getHeight(20),
+    borderRadius: getRadius(12),
+    borderWidth: 2,
+    borderColor: colors.gray,
     backgroundColor: colors.white,
   },
-  checkboxSelected: {
-    borderColor: "#007AFF",
-    backgroundColor: "#007AFF",
-  },
-  checkboxInner: {
-    width: getWidth(14),
-    height: getHeight(14),
-    borderRadius: getRadius(3),
-    backgroundColor: colors.white,
+  tickIcon: {
+    width: getWidth(24),
+    height: getHeight(24),
+    resizeMode: "contain",
+    tintColor: "#007AFF",
   },
   emptyContainer: {
     padding: getVertiPadding(60),
@@ -861,7 +882,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: getHoriPadding(20),
-    paddingVertical: getVertiPadding(16),
+    paddingVertical: getVertiPadding(12),
     borderTopWidth: 1,
     borderTopColor: colors.lightGray,
     backgroundColor: colors.white,
@@ -869,7 +890,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: getVertiPadding(14),
+    paddingVertical: getVertiPadding(12),
     borderRadius: getRadius(12),
     borderWidth: 1,
     borderColor: colors.lightGray,
@@ -883,7 +904,7 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     flex: 1,
-    paddingVertical: getVertiPadding(14),
+    paddingVertical: getVertiPadding(12),
     borderRadius: getRadius(12),
     backgroundColor: colors.secondary,
     alignItems: "center",

@@ -32,7 +32,11 @@ import {
   addMessage,
   updateMessage,
 } from "@redux/slices/chatSlice";
-import { reportUser, blockUser } from "@api/services/mainServices";
+import {
+  reportUser,
+  blockUser,
+  addUpdateEmoji,
+} from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import { getImageUrl, URL } from "@api/apiClient";
 
@@ -278,16 +282,16 @@ const Chat = ({ navigation, route }) => {
     setMentionSuggestions([]);
   };
 
-  // Emoji
   const handleEmojiReaction = useCallback(
-    (emoji, message = selectedMessage) => {
+    async (emoji, message = selectedMessage) => {
       if (!message || !groupId) return;
 
-      // Find the original message in Redux state to get reactions
       const originalMessage = groupMessages.find((msg) => {
         const transformed = transformServerMessage(msg, normalizedUserId);
         return transformed._id === message._id;
       });
+
+      if (!originalMessage?._id) return;
 
       const currentReactions = originalMessage?.reactions || {};
       const reactions = { ...currentReactions };
@@ -304,21 +308,31 @@ const Chat = ({ navigation, route }) => {
         reactions[emoji] = [...emojiUsers, CURRENT_USER._id];
       }
 
-      // Remove empty reaction arrays
       Object.keys(reactions).forEach((key) => {
         if (!reactions[key] || reactions[key].length === 0) {
           delete reactions[key];
         }
       });
 
-      // Update message in Redux
-      dispatch(
-        updateMessage({
-          groupId,
-          messageId: originalMessage?._id || message._id,
-          updates: { reactions },
-        })
-      );
+      const emojiArray = Object.keys(reactions);
+
+      try {
+        await addUpdateEmoji({
+          messageId: originalMessage._id,
+          emoji: emojiArray,
+        });
+
+        dispatch(
+          updateMessage({
+            groupId,
+            messageId: originalMessage._id,
+            updates: { reactions },
+          })
+        );
+      } catch (error) {
+        console.error("Error updating emoji:", error);
+        showToast("error", error?.message || "Failed to update emoji");
+      }
 
       setShowEmojiPicker(false);
       setSelectedMessage(null);
