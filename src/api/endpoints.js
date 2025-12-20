@@ -42,6 +42,7 @@ export const endpoints = {
     getTripBuddies: "/getTripBuddies",
     getTripBycity: "/getTripBycity",
     getGroups: "/getGroups",
+    getGroupList: "/group-list",
     getGroupDetails: "/getGroupDetails",
     sendInvitation: "/sendInvitation",
     getInvitations: "/getInvitations",
