@@ -29,6 +29,7 @@ import {
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import Loader from "@components/Loader";
+import navigationStrings from "@navigation/navigationStrings";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SWIPE_THRESHOLD = 120;
@@ -49,6 +50,7 @@ const Surprises = ({ navigation, route }) => {
   const surprisesRef = useRef([]);
   const currentIndexRef = useRef(0);
   const pendingAdvance = useRef(false);
+  const isPanning = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -186,9 +188,13 @@ const Surprises = ({ navigation, route }) => {
     PanResponder.create({
       onStartShouldSetPanResponder: () => !isAnimating.current,
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return !isAnimating.current && Math.abs(gestureState.dx) > 5;
+        return (
+          !isAnimating.current &&
+          (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5)
+        );
       },
       onPanResponderGrant: () => {
+        isPanning.current = false;
         position.stopAnimation();
         position.setOffset({
           x: currentPosition.current.x,
@@ -198,6 +204,7 @@ const Surprises = ({ navigation, route }) => {
       },
       onPanResponderMove: (evt, gestureState) => {
         if (isAnimating.current) return;
+        isPanning.current = true;
         position.setValue({ x: gestureState.dx, y: gestureState.dy });
       },
       onPanResponderRelease: (evt, gestureState) => {
@@ -207,8 +214,13 @@ const Surprises = ({ navigation, route }) => {
 
         const swipeDistance = Math.abs(gestureState.dx);
         const swipeVelocity = Math.abs(gestureState.vx);
+        const wasPanning = isPanning.current;
+        const isTap =
+          !wasPanning && swipeDistance < 15 && Math.abs(gestureState.dy) < 15;
 
-        if (swipeDistance > SWIPE_THRESHOLD || swipeVelocity > 0.5) {
+        if (isTap) {
+          handleCardPress();
+        } else if (swipeDistance > SWIPE_THRESHOLD || swipeVelocity > 0.5) {
           handleSwipe(gestureState.dx > 0 ? "right" : "left");
         } else {
           isAnimating.current = true;
@@ -221,9 +233,36 @@ const Surprises = ({ navigation, route }) => {
             isAnimating.current = false;
           });
         }
+
+        isPanning.current = false;
+      },
+      onPanResponderTerminate: () => {
+        isPanning.current = false;
       },
     })
   ).current;
+
+  const handleCardPress = () => {
+    const currentIdx = currentIndexRef.current;
+    const currentSurprises = surprisesRef.current;
+    const safeIdx = Math.min(currentIdx, currentSurprises.length - 1);
+    const currentCardData = currentSurprises[safeIdx];
+
+    if (!currentCardData?.id) return;
+
+    const eventData = {
+      id: currentCardData.id,
+      name: currentCardData.name,
+      image: currentCardData.image,
+      cover_image_url: currentCardData.image,
+      description: currentCardData.description,
+      subtitle: currentCardData.subtitle,
+    };
+
+    navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+      eventData: eventData,
+    });
+  };
 
   const handleSwipe = (direction) => {
     if (isAnimating.current) return;
