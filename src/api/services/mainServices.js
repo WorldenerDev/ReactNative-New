@@ -79,8 +79,8 @@ export const addUpdateEmoji = (data) => apiPost(endpoints?.main?.addUpdateEmoji,
 export const removeUserFromGroup = (data) => apiPost(endpoints?.main?.removeUserFromGroup, data);
 export const getCityActivities = (params) => apiGet(endpoints?.main?.getCityActivities, params);
 export const compareUsersInGroup = (data) => apiPost(endpoints?.main?.compareUsersInGroup, data);
-export const getGroupWishlisted = (groupId) =>
-  apiGet(`${endpoints?.main?.getGroupWishlisted}/${groupId}/wishlisted`);
+export const getGroupWishlisted = (groupId, cityId) =>
+  apiGet(`${endpoints?.main?.getGroupWishlisted}/${groupId}/wishlisted`, cityId ? { cityId } : {});
 export const updateProfile = (formData) =>
   apiPost(endpoints?.main?.updateProfile, formData, {
     headers: {

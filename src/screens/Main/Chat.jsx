@@ -61,7 +61,7 @@ const Chat = ({ navigation, route }) => {
   const normalizedUserId = userId ? String(userId) : null;
   const socketRef = useRef(null);
   const [connected, setConnected] = useState(false);
-  const [socketReady, setSocketReady] = useState(false);
+  const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
   const groupMessages = reduxMessages[groupId] || [];
 
   const messages = useMemo(() => {
@@ -109,12 +109,7 @@ const Chat = ({ navigation, route }) => {
   }, [selectedMessage, CURRENT_USER]);
 
   useEffect(() => {
-    if (!groupId) return;
-    dispatch(fetchGroupMessages(groupId));
-  }, [groupId, dispatch]);
-
-  useEffect(() => {
-    if (!normalizedUserId || !groupId || !socketReady) return;
+    if (!normalizedUserId || !groupId) return;
 
     const socket = io(URL, {
       transports: ["websocket", "polling"],
@@ -126,6 +121,7 @@ const Chat = ({ navigation, route }) => {
     socket.on("connect", () => {
       setConnected(true);
       socket.emit("join_group", { groupId, userId: normalizedUserId });
+      setHasJoinedGroup(true);
     });
 
     socket.on("receive_group_message", (payload) => {
@@ -142,6 +138,7 @@ const Chat = ({ navigation, route }) => {
 
     socket.on("disconnect", () => {
       setConnected(false);
+      setHasJoinedGroup(false);
     });
 
     socket.on("connect_error", () => {});
@@ -153,14 +150,14 @@ const Chat = ({ navigation, route }) => {
       socket.off("connect_error");
       socket.disconnect();
       socketRef.current = null;
+      setHasJoinedGroup(false);
     };
-  }, [normalizedUserId, groupId, socketReady, dispatch, user]);
+  }, [normalizedUserId, groupId, dispatch, user]);
 
   useEffect(() => {
-    if (!messagesLoading && groupId) {
-      setSocketReady(true);
-    }
-  }, [messagesLoading, groupId]);
+    if (!groupId || !hasJoinedGroup) return;
+    dispatch(fetchGroupMessages(groupId));
+  }, [groupId, hasJoinedGroup, dispatch]);
 
   const onSend = useCallback(
     (newMessages = []) => {

@@ -34,6 +34,7 @@ const Group = ({ navigation }) => {
 
   // Transform API data to match UI structure
   const transformGroupData = (groupsData) => {
+    console.log("groupsData", groupsData);
     return groupsData.map((group) => {
       const peopleCount = group.addedUsers?.length || 0;
       const totalPeople = peopleCount + 1; // +1 for creator
@@ -45,6 +46,7 @@ const Group = ({ navigation }) => {
 
       return {
         id: group._id,
+        cityId: group?.cityId?.city_id,
         title: group.groupName || group.cityId?.name || "Trip",
         location: group.cityId?.name || "",
         status: status,
@@ -114,11 +116,11 @@ const Group = ({ navigation }) => {
         </View>
 
         <View style={styles.peopleRow}>
-          <View style={styles.peopleIcons}>
+          {/* <View style={styles.peopleIcons}>
             <View style={[styles.personIcon, styles.personIcon1]} />
             <View style={[styles.personIcon, styles.personIcon2]} />
             <View style={[styles.personIcon, styles.personIcon3]} />
-          </View>
+          </View> */}
           <Text style={styles.peopleText}>{item.people}</Text>
         </View>
       </View>
@@ -129,6 +131,7 @@ const Group = ({ navigation }) => {
           onPress={() =>
             navigation.navigate(navigationStrings.GROUP_DETAILS, {
               groupId: item?.id,
+              cityId: item?.cityId,
             })
           }
         >

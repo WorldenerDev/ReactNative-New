@@ -280,6 +280,7 @@ const Surprises = ({ navigation, route }) => {
       activityLikeUnlike({
         activity_id: currentCardData.id,
         is_liked: direction === "right",
+        city_id: cityData?.city_id,
       }).catch(() => {
         // Error handling is done in API interceptor
       });
@@ -339,6 +340,7 @@ const Surprises = ({ navigation, route }) => {
       activityLikeUnlike({
         activity_id: currentCard.id,
         is_liked: true,
+        city_id: cityData?.city_id,
       }).catch(() => {
         // Error handling is done in API interceptor
       });
@@ -367,6 +369,7 @@ const Surprises = ({ navigation, route }) => {
       activityLikeUnlike({
         activity_id: currentCard.id,
         is_liked: false,
+        city_id: cityData?.city_id,
       }).catch(() => {
         // Error handling is done in API interceptor
       });

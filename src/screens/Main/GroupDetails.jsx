@@ -51,7 +51,7 @@ const GroupDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { user } = useSelector((state) => state.auth);
-  const { groupId } = route?.params || {};
+  const { groupId, cityId } = route?.params || {};
 
   // Debug: Log route params
   useEffect(() => {
@@ -222,7 +222,7 @@ const GroupDetails = () => {
 
       try {
         setWishlistLoading(true);
-        const response = await getGroupWishlisted(groupId);
+        const response = await getGroupWishlisted(groupId, cityId);
 
         if (response?.success && response?.data) {
           // API response structure: response.data.data.wishlisted_items
@@ -245,7 +245,7 @@ const GroupDetails = () => {
     };
 
     fetchWishlist();
-  }, [groupId, activeTab]);
+  }, [groupId, activeTab, cityId]);
 
   // Transform members data from groupData
   const members = groupData ? transformMembersData(groupData) : [];
