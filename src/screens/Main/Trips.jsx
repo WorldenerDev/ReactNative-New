@@ -94,7 +94,7 @@ const Trips = ({ navigation }) => {
         renderItem={({ item }) => (
           <TripCard
             image={item?.city?.image}
-            city={item?.city?.name}
+            city={item?.name || item?.city?.name}
             startDate={item?.start_at.slice(0, 10)}
             endDate={item?.end_at.slice(0, 10)}
             onItineraryPress={() =>
@@ -102,7 +102,13 @@ const Trips = ({ navigation }) => {
                 tripId: item?._id,
               })
             }
-            onGroupPress={() => { item?.groupId ? navigation.navigate(navigationStrings.GROUP_DETAILS, { groupId: item?.groupId }) : Alert.alert('Group not available') }}
+            onGroupPress={() => {
+              item?.groupId
+                ? navigation.navigate(navigationStrings.GROUP_DETAILS, {
+                    groupId: item?.groupId,
+                  })
+                : Alert.alert("Group not available");
+            }}
             onDeletePress={() => handleDelete(item._id)}
             onPressCard={() =>
               navigation.navigate(navigationStrings.TRIP_DETAILS, {

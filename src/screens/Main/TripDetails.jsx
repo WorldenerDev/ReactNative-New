@@ -194,9 +194,12 @@ const TripDetails = ({ navigation, route }) => {
                     </Text>
                   </View>
                   <View style={styles.statusContainer}>
-                    <View style={styles.statusIndicator} />
+                    <Image
+                      source={imagePath.CHECK_ICON}
+                      style={styles.statusIndicator}
+                    />
                     <Text style={styles.statusText}>
-                      {tripData?.status || "Planning"}
+                      {tripData?.tripStatus || ""}
                     </Text>
                   </View>
                 </View>
@@ -487,11 +490,11 @@ const styles = StyleSheet.create({
     borderRadius: getRadius(12),
   },
   statusIndicator: {
-    width: getWidth(6),
-    height: getWidth(6),
-    borderRadius: getWidth(3),
-    backgroundColor: colors.green,
-    marginRight: getWidth(4),
+    width: getWidth(12),
+    height: getHeight(12),
+    tintColor: colors.green,
+    marginRight: getWidth(2),
+    marginLeft: getWidth(-4),
   },
   statusText: {
     fontSize: getHeight(11),
