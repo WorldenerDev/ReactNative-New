@@ -7,9 +7,10 @@ const BASEURL = URL;
  * Transform server message to GiftedChat format
  * @param {Object} serverMessage - The message object from server
  * @param {string|number} currentUserId - Current user's ID
+ * @param {Array} usersArray - Optional array of users from API to lookup sender info
  * @returns {Object} Message in GiftedChat format
  */
-export const transformServerMessage = (serverMessage, currentUserId) => {
+export const transformServerMessage = (serverMessage, currentUserId, usersArray = []) => {
   // Generate a unique ID if missing
   const messageId =
     serverMessage._id ||
@@ -35,8 +36,24 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
   // Get sender info - handle both direct ID and nested object structure
   // Note: serverMessage should always have senderId from processSocketPayload
   // But we keep fallback for messages loaded from API
+  const senderIdObj = serverMessage.senderId;
+
+  // Extract name and avatar FIRST before we modify senderId
+  // Extract sender name - handle nested structure
+  let senderName = serverMessage.senderName;
+  if (!senderName && senderIdObj && typeof senderIdObj === 'object') {
+    senderName = senderIdObj.name || senderIdObj.userName;
+  }
+
+  // Extract sender avatar - prioritize image field from senderId object
+  let senderAvatar = serverMessage.senderAvatar;
+  if (!senderAvatar && senderIdObj && typeof senderIdObj === 'object') {
+    senderAvatar = senderIdObj.image || senderIdObj.avatar || senderIdObj.profileImage;
+  }
+
+  // Now extract the ID from senderId object
   let senderId =
-    serverMessage.senderId ||
+    senderIdObj ||
     serverMessage.from ||
     serverMessage.userId ||
     currentUserId;
@@ -50,17 +67,21 @@ export const transformServerMessage = (serverMessage, currentUserId) => {
   // Use currentUserId as fallback only for API-loaded messages (not socket messages)
   const normalizedSenderId = senderId ? String(senderId) : String(currentUserId || "");
 
-  // Extract sender name - handle nested structure
-  let senderName = serverMessage.senderName;
-  if (!senderName && serverMessage.senderId && typeof serverMessage.senderId === 'object') {
-    senderName = serverMessage.senderId.name || serverMessage.senderId.userName;
+  // Always check users array as it's the source of truth from API
+  // This ensures we have the most up-to-date user info
+  if (usersArray?.length > 0 && normalizedSenderId) {
+    const userFromArray = usersArray.find(
+      (u) => String(u?._id) === normalizedSenderId || String(u?.id) === normalizedSenderId
+    );
+    if (userFromArray) {
+      // Prefer users array data - it's more reliable than message data
+      senderName = userFromArray.name || userFromArray.userName || senderName;
+      senderAvatar = userFromArray.image || userFromArray.avatar || userFromArray.profileImage || senderAvatar;
+    }
   }
-  senderName = senderName || "User";
 
-  let senderAvatar = serverMessage.senderAvatar;
-  if (!senderAvatar && serverMessage.senderId && typeof serverMessage.senderId === 'object') {
-    senderAvatar = serverMessage.senderId.avatar || serverMessage.senderId.profileImage || serverMessage.senderId.image;
-  }
+  // Final fallback
+  senderName = senderName || "User";
 
   const avatarUrl = getImageUrl(senderAvatar);
 
@@ -254,15 +275,16 @@ export const processSocketPayload = (payload, userId, currentUser = null) => {
  * Transform multiple server messages to GiftedChat format
  * @param {Array} serverMessages - Array of message objects from server
  * @param {string|number} currentUserId - Current user's ID
+ * @param {Array} usersArray - Optional array of users from API to lookup sender info
  * @returns {Array} Array of messages in GiftedChat format
  */
-export const transformServerMessages = (serverMessages, currentUserId) => {
+export const transformServerMessages = (serverMessages, currentUserId, usersArray = []) => {
   if (!Array.isArray(serverMessages)) {
     return [];
   }
 
   return serverMessages
-    .map((msg) => transformServerMessage(msg, currentUserId))
+    .map((msg) => transformServerMessage(msg, currentUserId, usersArray))
     .filter((msg) => msg && msg.text !== undefined);
 };
 

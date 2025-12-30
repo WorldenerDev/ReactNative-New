@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getGroupMessages } from "@api/services/mainServices";
-import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
 
 // ----------------- Thunks -----------------
@@ -15,7 +14,11 @@ export const fetchGroupMessages = createAsyncThunk(
     try {
       const res = await getGroupMessages(groupId);
       console.log("getGroupMessages response", res);
-      return { groupId, messages: res?.data || res || [] };
+      return {
+        groupId,
+        messages: res?.data || res || [],
+        users: res?.users || []
+      };
     } catch (err) {
       console.error("Error fetching group messages:", err);
       return rejectWithValue(err.message || "Failed to fetch messages");
@@ -28,6 +31,7 @@ const chatSlice = createSlice({
   name: "chat",
   initialState: {
     messages: {}, // Store messages by groupId: { groupId: [messages] }
+    users: {}, // Store users by groupId: { groupId: [users] }
     loading: false,
     error: null,
   },
@@ -108,7 +112,7 @@ const chatSlice = createSlice({
   extraReducers: (builder) => {
     handleAsyncCases(builder, fetchGroupMessages, {
       onFulfilled: (state, action) => {
-        const { groupId, messages } = action.payload;
+        const { groupId, messages, users } = action.payload;
         if (groupId && Array.isArray(messages)) {
           // Sort messages by createdAt (newest first for GiftedChat)
           const sortedMessages = [...messages].sort(
@@ -116,6 +120,9 @@ const chatSlice = createSlice({
               new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
           );
           state.messages[groupId] = sortedMessages;
+        }
+        if (groupId && Array.isArray(users)) {
+          state.users[groupId] = users;
         }
       },
     });

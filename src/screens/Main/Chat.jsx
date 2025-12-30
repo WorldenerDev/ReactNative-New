@@ -24,7 +24,6 @@ import { GiftedChat, Message, MessageText } from "react-native-gifted-chat";
 import { useSelector, useDispatch } from "react-redux";
 import io from "socket.io-client";
 import {
-  transformServerMessage,
   transformServerMessages,
   processSocketPayload,
 } from "@utils/messageTransform";
@@ -41,35 +40,64 @@ import {
 import { showToast } from "@components/AppToast";
 import { getImageUrl, URL } from "@api/apiClient";
 
-const MOCK_USERS = [
-  { _id: 1, name: "John Doe", avatar: "https://i.pravatar.cc/150?u=john" },
-  { _id: 2, name: "Jane Smith", avatar: "https://i.pravatar.cc/150?u=jane" },
-  { _id: 3, name: "Mike Johnson", avatar: "https://i.pravatar.cc/150?u=mike" },
-  { _id: 4, name: "Sarah Wilson", avatar: "https://i.pravatar.cc/150?u=sarah" },
-];
-
 const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
+
+// Avatar component to handle image loading errors
+const AvatarComponent = ({ avatar, name, onPress, styles }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  if (!avatar || imageError) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        style={[styles.avatar, styles.avatarInitials]}
+      >
+        <Text style={styles.avatarInitialsText}>{initials}</Text>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity onPress={onPress}>
+      <Image
+        source={{ uri: avatar }}
+        style={styles.avatar}
+        onError={() => setImageError(true)}
+      />
+    </TouchableOpacity>
+  );
+};
 
 const Chat = ({ navigation, route }) => {
   const { groupId } = route?.params || {};
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { messages: reduxMessages, loading: messagesLoading } = useSelector(
-    (state) => state.chat
-  );
+  const {
+    messages: reduxMessages,
+    users: reduxUsers,
+    loading: messagesLoading,
+  } = useSelector((state) => state.chat);
   const userId = user?._id || user?.id;
   const normalizedUserId = userId ? String(userId) : null;
   const socketRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
   const groupMessages = reduxMessages[groupId] || [];
+  const groupUsers = reduxUsers[groupId] || [];
 
   const messages = useMemo(() => {
     if (!Array.isArray(groupMessages) || groupMessages.length === 0) {
       return [];
     }
-    return transformServerMessages(groupMessages, normalizedUserId);
-  }, [groupMessages, normalizedUserId]);
+    return transformServerMessages(groupMessages, normalizedUserId, groupUsers);
+  }, [groupMessages, normalizedUserId, groupUsers]);
 
   const [text, setText] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -195,24 +223,27 @@ const Chat = ({ navigation, route }) => {
     [text, groupId, normalizedUserId, connected]
   );
 
-  const handleTextChange = useCallback((newText) => {
-    setText(newText);
-    const cursor = newText.length;
-    setCursorPosition(cursor);
+  const handleTextChange = useCallback(
+    (newText) => {
+      setText(newText);
+      const cursor = newText.length;
+      setCursorPosition(cursor);
 
-    const lastAt = newText.lastIndexOf("@", cursor - 1);
-    if (lastAt >= 0) {
-      const query = newText.slice(lastAt + 1, cursor);
-      const suggestions = MOCK_USERS.filter((u) =>
-        u.name.toLowerCase().startsWith(query.toLowerCase())
-      );
-      setMentionSuggestions(suggestions);
-      setShowSuggestions(suggestions.length > 0);
-    } else {
-      setShowSuggestions(false);
-      setMentionSuggestions([]);
-    }
-  }, []);
+      const lastAt = newText.lastIndexOf("@", cursor - 1);
+      if (lastAt >= 0) {
+        const query = newText.slice(lastAt + 1, cursor);
+        const suggestions = groupUsers.filter((u) =>
+          u.name.toLowerCase().startsWith(query.toLowerCase())
+        );
+        setMentionSuggestions(suggestions);
+        setShowSuggestions(suggestions.length > 0);
+      } else {
+        setShowSuggestions(false);
+        setMentionSuggestions([]);
+      }
+    },
+    [groupUsers]
+  );
 
   const insertMention = (user) => {
     const before = text.slice(0, cursorPosition);
@@ -228,10 +259,9 @@ const Chat = ({ navigation, route }) => {
     async (emoji, message = selectedMessage) => {
       if (!message || !groupId) return;
 
-      const originalMessage = groupMessages.find((msg) => {
-        const transformed = transformServerMessage(msg, normalizedUserId);
-        return transformed._id === message._id;
-      });
+      const originalMessage = groupMessages.find(
+        (msg) => msg._id === message._id
+      );
 
       if (!originalMessage?._id) return;
 
@@ -443,6 +473,21 @@ const Chat = ({ navigation, route }) => {
     [navigation]
   );
 
+  const renderAvatar = (props) => {
+    const { currentMessage } = props;
+    const avatar = currentMessage?.user?.avatar;
+    const name = currentMessage?.user?.name || "U";
+
+    return (
+      <AvatarComponent
+        avatar={avatar}
+        name={name}
+        onPress={() => onUserAvatarPress(currentMessage.user)}
+        styles={styles}
+      />
+    );
+  };
+
   const renderMessage = (props) => {
     const { currentMessage, position } = props;
     const isCurrentUser =
@@ -556,6 +601,7 @@ const Chat = ({ navigation, route }) => {
         onSend={onSend}
         user={CURRENT_USER}
         renderMessage={renderMessage}
+        renderAvatar={renderAvatar}
         renderInputToolbar={renderInputToolbar}
         showUserAvatar
       />
@@ -702,7 +748,7 @@ const Chat = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   inputToolbar: {
     backgroundColor: "#fff",
-    paddingHorizontal: 10,
+    // paddingHorizontal: 10,
     paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
@@ -879,6 +925,23 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 280,
     height: 160,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    // marginRight: 8,
+    marginLeft: 8,
+  },
+  avatarInitials: {
+    backgroundColor: "#87CEEB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitialsText: {
+    color: "#000",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });
 
