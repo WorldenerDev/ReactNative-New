@@ -25,7 +25,12 @@ import {
   cartCustomerInfo,
   updateParticipants,
 } from "@api/services/mainServices";
-import { validateForm, validateLetter, validateEmail, validateDateOfBirth } from "@utils/validators";
+import {
+  validateForm,
+  validateLetter,
+  validateEmail,
+  validateDateOfBirth,
+} from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import ParticipantAccordion from "@components/ParticipantAccordion";
 import navigationStrings from "@navigation/navigationStrings";
@@ -33,6 +38,7 @@ import navigationStrings from "@navigation/navigationStrings";
 const CartCustomerInfo = ({ navigation, route }) => {
   // Get user data from Redux store
   const { user } = useSelector((state) => state.auth);
+  console.log("user", user);
   const { cart_id, trip_id } = route.params;
   const [userData, setUserData] = useState({});
   const [formFields, setFormFields] = useState([]);
@@ -50,7 +56,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
     if (user) {
       setUserData({
         firstName: user?.name || "",
-        lastName: user?.lastName || "",
+        lastName: user?.last_name || "",
         email: user.email || "",
       });
     }
@@ -310,7 +316,8 @@ const CartCustomerInfo = ({ navigation, route }) => {
       if (!schema?.properties?.participants?.items?.properties) return;
 
       const participantFields = schema.properties.participants.items.properties;
-      const requiredFields = schema.properties.participants.items.required || [];
+      const requiredFields =
+        schema.properties.participants.items.required || [];
 
       // Validate each participant instance
       for (let i = 0; i < item.quantity; i++) {
@@ -321,7 +328,9 @@ const CartCustomerInfo = ({ navigation, route }) => {
           const value = participantData[fieldPath];
 
           if (isRequired && (!value || value.trim() === "")) {
-            newParticipantErrors[fieldPath] = `${field.title || fieldKey} is required`;
+            newParticipantErrors[fieldPath] = `${
+              field.title || fieldKey
+            } is required`;
             hasErrors = true;
           } else if (value && fieldKey === "date_of_birth") {
             // Special validation for date_of_birth field
@@ -346,7 +355,10 @@ const CartCustomerInfo = ({ navigation, route }) => {
 
     if (!isPersonalDataValid || !isParticipantDataValid) {
       if (!isPersonalDataValid) {
-        showToast("error", "Please fix the validation errors in personal details");
+        showToast(
+          "error",
+          "Please fix the validation errors in personal details"
+        );
       } else if (!isParticipantDataValid) {
         showToast("error", "Please fill all required participant information");
       }
@@ -373,16 +385,16 @@ const CartCustomerInfo = ({ navigation, route }) => {
         const extraCustomerData = {};
 
         // Group form fields by their parent key (the extra customer data key)
-        const extraFields = formFields.filter(field =>
-          field.key.startsWith('extra_customer_data.')
+        const extraFields = formFields.filter((field) =>
+          field.key.startsWith("extra_customer_data.")
         );
 
         if (extraFields.length > 0) {
           // Create the nested structure for extra customer data
           extraCustomerData[extraCustomerDataKey] = {};
 
-          extraFields.forEach(field => {
-            const fieldPath = field.key.split('.');
+          extraFields.forEach((field) => {
+            const fieldPath = field.key.split(".");
             if (fieldPath.length === 3) {
               // This is a nested field like extra_customer_data.165fcd0d-2046-11e7-9cc9-06a7e332783f.phone_number
               const parentKey = fieldPath[1];
@@ -392,11 +404,13 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 extraCustomerData[extraCustomerDataKey][parentKey] = {};
               }
 
-              extraCustomerData[extraCustomerDataKey][parentKey][fieldName] = userData[field.key];
+              extraCustomerData[extraCustomerDataKey][parentKey][fieldName] =
+                userData[field.key];
             } else if (fieldPath.length === 2) {
               // This is a direct field like extra_customer_data.phone_number
               const fieldName = fieldPath[1];
-              extraCustomerData[extraCustomerDataKey][fieldName] = userData[field.key];
+              extraCustomerData[extraCustomerDataKey][fieldName] =
+                userData[field.key];
             }
           });
         }
@@ -410,7 +424,10 @@ const CartCustomerInfo = ({ navigation, route }) => {
         showToast("success", "Customer information submitted successfully!");
 
         // If participant schema exists, call update participants API
-        if (participantSchemaData?.items && Object.keys(participantData).length > 0) {
+        if (
+          participantSchemaData?.items &&
+          Object.keys(participantData).length > 0
+        ) {
           try {
             // Prepare participant info payload
             const participantInfo = [];
@@ -424,7 +441,8 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 const schema = item.participantSchema;
 
                 if (schema?.properties?.participants?.items?.properties) {
-                  const fields = schema.properties.participants.items.properties;
+                  const fields =
+                    schema.properties.participants.items.properties;
 
                   Object.keys(fields).forEach((fieldKey) => {
                     const fieldPath = `${item.uuid}.${i}.${fieldKey}`;
@@ -454,17 +472,23 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 participantInfo: participantInfo,
               };
 
-              const participantResponse = await updateParticipants(participantPayload);
+              const participantResponse = await updateParticipants(
+                participantPayload
+              );
 
               if (participantResponse?.success) {
-                showToast("success", "Participant information submitted successfully!");
+                showToast(
+                  "success",
+                  "Participant information submitted successfully!"
+                );
                 navigation.navigate(navigationStrings.PAYMENT, {
                   trip_id: trip_id,
                 });
               } else {
                 showToast(
                   "error",
-                  participantResponse?.message || "Failed to submit participant information"
+                  participantResponse?.message ||
+                    "Failed to submit participant information"
                 );
               }
             } else {
@@ -474,10 +498,14 @@ const CartCustomerInfo = ({ navigation, route }) => {
               });
             }
           } catch (participantError) {
-            console.error("Error submitting participant info:", participantError);
+            console.error(
+              "Error submitting participant info:",
+              participantError
+            );
             showToast(
               "error",
-              participantError?.message || "Failed to submit participant information"
+              participantError?.message ||
+                "Failed to submit participant information"
             );
           }
         } else {
@@ -551,7 +579,6 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 onChangeText={(value) => handleInputChange("lastName", value)}
                 containerStyle={styles.inputContainer}
                 inputStyle={{ color: colors.black }}
-
                 error={errors.lastName}
               />
             </View>
@@ -571,7 +598,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
           {/* Participant Information Section */}
           {participantSchemaData?.items &&
             participantSchemaData.items.length > 0 &&
-            participantSchemaData.items.some(item => item.quantity > 0) && (
+            participantSchemaData.items.some((item) => item.quantity > 0) && (
               <View style={styles.participantSection}>
                 <Text style={styles.sectionTitle}>Participant Information</Text>
 

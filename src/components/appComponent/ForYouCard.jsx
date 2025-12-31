@@ -44,6 +44,7 @@ const ForYouCard = ({ item, onPress }) => {
       const response = await activityLikeUnlike({
         activity_id: item?.id || item?.activity_id,
         is_liked: newLikeState,
+        city_id: item?.city_data?.id,
       });
 
       // Handle success response

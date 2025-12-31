@@ -54,7 +54,7 @@ const Account = ({ navigation }) => {
   };
 
   const handleMyUpcomingBookings = () => {
-    // TODO: Navigate to upcoming bookings screen
+    navigation.navigate(navigationStrings.BOOKING, { initialTab: "Upcoming" });
   };
 
   const handleTransactionHistory = () => {
@@ -70,11 +70,15 @@ const Account = ({ navigation }) => {
   };
 
   const handleTermsOfService = () => {
-    // TODO: Navigate to terms of service screen
+    navigation.navigate(navigationStrings.PRIVACYTERMS, {
+      type: "term-condition",
+    });
   };
 
   const handlePrivacyPolicy = () => {
-    // TODO: Navigate to privacy policy screen
+    navigation.navigate(navigationStrings.PRIVACYTERMS, {
+      type: "privacy-policy",
+    });
   };
 
   const handleFAQs = () => {

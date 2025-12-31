@@ -27,6 +27,7 @@ import {
   AiChat,
   ViewAiChat,
   Surprises,
+  PrivacyTerms,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -108,14 +109,8 @@ const MainNavigator = () => {
           name={navigationStrings.PAYMENT}
           component={Payment}
         />
-        <MainStack.Screen
-          name={navigationStrings.CHAT}
-          component={Chat}
-        />
-        <MainStack.Screen
-          name={navigationStrings.AI_CHAT}
-          component={AiChat}
-        />
+        <MainStack.Screen name={navigationStrings.CHAT} component={Chat} />
+        <MainStack.Screen name={navigationStrings.AI_CHAT} component={AiChat} />
         <MainStack.Screen
           name={navigationStrings.VIEW_AI_CHAT}
           component={ViewAiChat}
@@ -135,6 +130,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.SURPRISES}
           component={Surprises}
+        />
+        <MainStack.Screen
+          name={navigationStrings.PRIVACYTERMS}
+          component={PrivacyTerms}
         />
       </MainStack.Navigator>
     </>

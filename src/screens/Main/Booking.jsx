@@ -11,11 +11,19 @@ import { getHeight } from "@utils/responsive";
 import { getOrders } from "@api/services/mainServices";
 import navigationStrings from "@navigation/navigationStrings";
 
-const Booking = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState("All");
+const Booking = ({ navigation, route }) => {
+  const initialTab = route?.params?.initialTab || "All";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Update activeTab when route params change
+  useEffect(() => {
+    if (route?.params?.initialTab) {
+      setActiveTab(route.params.initialTab);
+    }
+  }, [route?.params?.initialTab]);
 
   // Fetch orders from API based on active tab
   useEffect(() => {
