@@ -70,9 +70,21 @@ const Booking = ({ navigation, route }) => {
     ordersData.forEach((order) => {
       const tripId = order.trip?.trip_id || order._id;
       const tripTitle = order.city?.name || "Trip";
-      const tripDates = order.trip ?
-        `${new Date(order.trip.start_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(order.trip.end_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` :
-        new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const tripDates = order.trip
+        ? `${new Date(order.trip.start_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })} - ${new Date(order.trip.end_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}`
+        : new Date(order.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
 
       // Determine if order is past or upcoming based on booking_date or earliest activity date
       let bookingDate = null;
@@ -81,8 +93,10 @@ const Booking = ({ navigation, route }) => {
       } else if (order.musement_data?.items?.length > 0) {
         // Find the earliest activity date from items
         const activityDates = order.musement_data.items
-          .map(item => item.product?.date ? new Date(item.product.date) : null)
-          .filter(date => date !== null);
+          .map((item) =>
+            item.product?.date ? new Date(item.product.date) : null
+          )
+          .filter((date) => date !== null);
         if (activityDates.length > 0) {
           bookingDate = new Date(Math.min(...activityDates));
         }
@@ -90,7 +104,9 @@ const Booking = ({ navigation, route }) => {
 
       // If no booking date found, fall back to trip end date or createdAt
       if (!bookingDate) {
-        bookingDate = order.trip?.end_at ? new Date(order.trip.end_at) : new Date(order.createdAt);
+        bookingDate = order.trip?.end_at
+          ? new Date(order.trip.end_at)
+          : new Date(order.createdAt);
       }
 
       const orderType = bookingDate > new Date() ? "upcoming" : "past";
@@ -101,14 +117,11 @@ const Booking = ({ navigation, route }) => {
         tripTitle,
         tripDates,
         type: orderType,
-        bookings: []
+        bookings: [],
       };
 
-      // Only mark as cancelled if:
-      // 1. We're on Cancelled tab (all bookings on this tab are cancelled)
-      // 2. OR the order status is explicitly "cancelled"
-      // Note: Don't mark past bookings as cancelled
-      const isCancelled = currentTab === "Cancelled" ||
+      const isCancelled =
+        currentTab === "Cancelled" ||
         (order.status === "cancelled" && currentTab !== "Past") ||
         (order.order_status === "cancelled" && currentTab !== "Past");
 
@@ -119,26 +132,30 @@ const Booking = ({ navigation, route }) => {
           orderId: order?._id, // Add order _id to booking object
           activityTitle: item.product?.title || "Activity",
           bookingId: order.order_identifier || order.order_id,
-          price: item.total_retail_price_in_order_currency?.formatted_value || "$0.00",
-          dateTime: item.product?.date ?
-            new Date(item.product.date).toLocaleDateString('en-US', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }) :
-            new Date(order.createdAt).toLocaleDateString('en-US', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }),
+          price:
+            item.total_retail_price_in_order_currency?.formatted_value ||
+            "$0.00",
+          dateTime: item.product?.date
+            ? new Date(item.product.date).toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : new Date(order.createdAt).toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
           image: {
-            uri: item.product?.cover_image_url || "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&h=300&fit=crop"
+            uri:
+              item.product?.cover_image_url ||
+              "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=300&h=300&fit=crop",
           },
-          isCancelled: isCancelled // This will be true for cancelled tab
+          isCancelled: isCancelled, // This will be true for cancelled tab
         };
 
         trip.bookings.push(booking);
@@ -179,7 +196,10 @@ const Booking = ({ navigation, route }) => {
 
   const handleViewDetails = (item) => {
     console.log("item", item);
-    navigation.navigate(navigationStrings.BOOKING_DETAILS, { orderId: item.orderId, bookingId: item?.bookingId });
+    navigation.navigate(navigationStrings.BOOKING_DETAILS, {
+      orderId: item.orderId,
+      bookingId: item?.bookingId,
+    });
   };
 
   const renderTripItem = ({ item }) => (

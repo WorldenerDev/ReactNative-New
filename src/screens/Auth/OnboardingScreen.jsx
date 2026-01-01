@@ -26,23 +26,23 @@ import { STORAGE_KEYS } from "@utils/storageKeys";
 const slides = [
   {
     id: "1",
-    title: "AI-Powered Matching",
+    title: "Travel Booking",
     description:
-      "Quickly find the most qualified freelancers for your gigs using our advanced matching engine.",
+      "Discover and book amazing trips, and experiences in one place.",
     image: imagePath.ONBOARDING1,
   },
   {
     id: "2",
-    title: "Secure Payments & Escrow",
+    title: "Group Planning",
     description:
-      "Fund projects confidently with escrow and pay freelancers only when milestones are approved.",
+      "Plan trips together—chat, vote, and decide with your travel group easily.",
     image: imagePath.ONBOARDING2,
   },
   {
     id: "3",
-    title: "Monitor Progress in Real-Time",
+    title: "AI Recommendations",
     description:
-      "Monitor progress, communicate instantly, and review final deliverables all in one place.",
+      "Get smart activity picks tailored to your interests and travel style.",
     image: imagePath.ONBOARDING3,
   },
 ];

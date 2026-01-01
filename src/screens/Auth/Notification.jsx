@@ -44,8 +44,8 @@ const Notification = ({ navigation }) => {
   return (
     <ResponsiveContainer>
       <StepTitle
-        title="Enable Notification"
-        subtitle="Enable notification to receive updates on your gigs and freelancers."
+        title="Stay updated with real-time alerts"
+        subtitle="Get instant alerts when bookings are confirmed, groups are created or, friends respond are confirmed."
       />
       <Image
         source={imagePath.NOTIFICATION_IMAGE}
