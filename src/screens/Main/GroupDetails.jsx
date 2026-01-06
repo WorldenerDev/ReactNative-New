@@ -759,23 +759,10 @@ const GroupDetails = () => {
   };
 
   const renderWishlistedItem = ({ item }) => {
-    // API response structure:
-    // - activity_id: unique identifier
-    // - name: activity name
-    // - image: full URL or empty string
-    // - like_count: number of likes
-    // - is_liked_by_current_user: boolean
-    // - liked_by_members: array of user objects
-    // - price: price value
-    // - currency: currency code
-
+    console.log("item", item);
     const likeCount = item?.like_count || 0;
     const activityImage = item?.image || "";
 
-    // Ensure item has proper structure for ForYouCard
-    // ForYouCard expects: id, name, image, isLiked, like_count
-    // API returns full URLs for images, but some might be empty strings
-    // Only use getImageUrl if it's a relative path (starts with /)
     const processedImage =
       activityImage && activityImage.startsWith("/")
         ? getImageUrl(activityImage)
@@ -787,7 +774,6 @@ const GroupDetails = () => {
       image: processedImage,
       isLiked: item?.is_liked_by_current_user || false,
       like_count: likeCount,
-      // Include additional fields that might be useful
       price: item?.price,
       currency: item?.currency,
       location: item?.location,

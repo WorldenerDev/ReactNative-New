@@ -128,7 +128,7 @@ const Account = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Essentials</Text>
         <ProfileButton title="Edit Profile" onPress={handleEditProfile} />
-        <ProfileButton title="Saved Cards" onPress={handleSavedCards} />
+        <ProfileButton title="Sign Out" onPress={handleLogout} />
       </View>
 
       {/* My Bookings Section */}
@@ -142,11 +142,17 @@ const Account = ({ navigation }) => {
           title="Transaction History"
           onPress={handleTransactionHistory}
         />
+        <ProfileButton title="Saved Cards" onPress={handleSavedCards} />
       </View>
 
       {/* Preferences Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferences</Text>
+        <ProfileButton
+          title="Interests"
+          onPress={() => console.log("Interests")}
+        />
+
         <ProfileButton
           title="Notification Settings"
           onPress={handleNotificationSettings}
@@ -168,7 +174,6 @@ const Account = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <ProfileButton title="Delete Account" onPress={handleDeleteAccount} />
-        <ProfileButton title="Sign Out" onPress={handleLogout} />
       </View>
     </ResponsiveContainer>
   );

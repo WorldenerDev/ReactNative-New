@@ -21,13 +21,13 @@ import { googleAppleSignIn, loginUser, setUser } from "@redux/slices/authSlice";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 import { getDeviceId, getDeviceType } from "@utils/uiUtils";
-import messaging from '@react-native-firebase/messaging';
+import messaging from "@react-native-firebase/messaging";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const [data, setData] = useState({
     countryCode: "+91",
-    phoneNumber: "9891678848",
+    phoneNumber: "",
   });
   const handlePhoneNumberChange = (text) => {
     setData((prev) => ({ ...prev, phoneNumber: text }));
@@ -40,7 +40,7 @@ const SignInScreen = ({ navigation }) => {
   const getFCMToken = async () => {
     try {
       // Ensure device is registered for remote messages on iOS
-      if (Platform.OS === 'ios') {
+      if (Platform.OS === "ios") {
         await messaging().registerDeviceForRemoteMessages();
       }
 
@@ -48,17 +48,19 @@ const SignInScreen = ({ navigation }) => {
       const authStatus = await messaging().hasPermission();
       if (!authStatus) {
         const requestStatus = await messaging().requestPermission();
-        const granted = requestStatus === messaging.AuthorizationStatus.AUTHORIZED || requestStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        const granted =
+          requestStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          requestStatus === messaging.AuthorizationStatus.PROVISIONAL;
         if (!granted) {
           return null;
         }
       }
 
       const fcmToken = await messaging().getToken();
-      console.log('FCM Token:', fcmToken);
+      console.log("FCM Token:", fcmToken);
       return fcmToken;
     } catch (error) {
-      console.error('Error getting FCM token:', error);
+      console.error("Error getting FCM token:", error);
       return null;
     }
   };
@@ -67,7 +69,7 @@ const SignInScreen = ({ navigation }) => {
     try {
       const deviceId = await getDeviceId();
       const fcmToken = await getFCMToken();
-      console.log ('fcmToken', fcmToken);
+      console.log("fcmToken", fcmToken);
       const error = validateForm([
         { validator: validateMobileNumber, values: [data?.phoneNumber] },
       ]);
@@ -158,7 +160,7 @@ const SignInScreen = ({ navigation }) => {
 
   return (
     <ResponsiveContainer>
-      <Header />
+      {/* <Header /> */}
       <StepTitle
         title="Welcome Back"
         subtitle="Enter the phone number associated with your account"

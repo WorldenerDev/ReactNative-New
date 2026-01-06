@@ -27,15 +27,12 @@ const ForYouCard = ({ item, onPress }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [localIsLiked, setLocalIsLiked] = useState(item?.isLiked || false);
 
-  // Sync local state when item prop changes
   useEffect(() => {
     setLocalIsLiked(item?.isLiked || false);
   }, [item?.isLiked]);
 
   const handleLikePress = async () => {
     if (isLoading) return;
-
-    // Update UI immediately for better UX
     const newLikeState = !localIsLiked;
     setLocalIsLiked(newLikeState);
 
@@ -44,16 +41,12 @@ const ForYouCard = ({ item, onPress }) => {
       const response = await activityLikeUnlike({
         activity_id: item?.id || item?.activity_id,
         is_liked: newLikeState,
-        city_id: item?.city_data?.id,
+        city_id: item?.city_data?.id || item?.city_id,
       });
-
-      // Handle success response
       console.log("Like/Unlike response:", response);
     } catch (error) {
       console.error("Error liking/unliking activity:", error);
-      // Revert the UI change if API call failed
       setLocalIsLiked(!newLikeState);
-      // Error handling is already done in the API interceptor
     } finally {
       setIsLoading(false);
     }
