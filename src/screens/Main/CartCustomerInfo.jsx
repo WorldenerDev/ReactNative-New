@@ -7,7 +7,7 @@ import {
   Keyboard,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import Header from "@components/Header";
 import CustomInput from "@components/CustomInput";
@@ -34,9 +34,13 @@ import {
 import { showToast } from "@components/AppToast";
 import ParticipantAccordion from "@components/ParticipantAccordion";
 import navigationStrings from "@navigation/navigationStrings";
+import { setUser } from "@redux/slices/authSlice";
+import { setItem } from "@utils/storage";
+import { STORAGE_KEYS } from "@utils/storageKeys";
 
 const CartCustomerInfo = ({ navigation, route }) => {
   // Get user data from Redux store
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   console.log("user", user);
   const { cart_id, trip_id } = route.params;
@@ -170,6 +174,26 @@ const CartCustomerInfo = ({ navigation, route }) => {
     };
   }, []);
 
+  // Helper function to update user data in Redux and AsyncStorage
+  const updateUserDataLocally = async (updates) => {
+    if (!user) return;
+
+    const updatedUser = {
+      ...user,
+      ...updates,
+    };
+
+    // Update Redux
+    dispatch(setUser(updatedUser));
+
+    // Update AsyncStorage
+    try {
+      await setItem(STORAGE_KEYS.USER_DATA, updatedUser);
+    } catch (error) {
+      console.error("Error saving user data to AsyncStorage:", error);
+    }
+  };
+
   const handleInputChange = (field, value) => {
     setUserData((prev) => ({
       ...prev,
@@ -182,6 +206,22 @@ const CartCustomerInfo = ({ navigation, route }) => {
         ...prev,
         [field]: "",
       }));
+    }
+  };
+
+  // Handle blur event - update Redux and AsyncStorage when user finishes editing lastName or email
+  const handleInputBlur = async (field, value) => {
+    if (field === "lastName" || field === "email") {
+      const updates = {};
+
+      if (field === "lastName") {
+        updates.last_name = value;
+      } else if (field === "email") {
+        updates.email = value;
+      }
+
+      // Update locally (Redux + AsyncStorage)
+      await updateUserDataLocally(updates);
     }
   };
 
@@ -577,6 +617,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 placeholder="Last Name"
                 value={userData.lastName}
                 onChangeText={(value) => handleInputChange("lastName", value)}
+                onBlur={() => handleInputBlur("lastName", userData.lastName)}
                 containerStyle={styles.inputContainer}
                 inputStyle={{ color: colors.black }}
                 error={errors.lastName}
@@ -587,6 +628,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
             placeholder="Email"
             value={userData.email}
             onChangeText={(value) => handleInputChange("email", value)}
+            onBlur={() => handleInputBlur("email", userData.email)}
             keyboardType="email-address"
             autoCapitalize="none"
             containerStyle={styles.inputContainer}

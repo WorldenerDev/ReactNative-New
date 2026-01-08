@@ -38,3 +38,4 @@ export { default as GroupDetails } from "./Main/GroupDetails";
 export { default as SavedCards } from "./Main/SavedCards";
 export { default as ViewAiChat } from "./Main/ViewAiChat";
 export { default as Surprises } from "./Main/Surprises";
+export { default as MemberProfile } from "./Main/MemberProfile";

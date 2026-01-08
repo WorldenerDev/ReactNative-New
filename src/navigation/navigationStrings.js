@@ -40,4 +40,5 @@ export default {
   SAVED_CARDS: "SavedCards",
   VIEW_AI_CHAT: "ViewAiChat",
   SURPRISES: "Surprises",
+  MEMBER_PROFILE: "MemberProfile",
 };

@@ -19,7 +19,11 @@ import {
   FlatList,
   Modal,
   Image,
+  Keyboard,
+  Platform,
+  Dimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GiftedChat, Message, MessageText } from "react-native-gifted-chat";
 import { useSelector, useDispatch } from "react-redux";
 import io from "socket.io-client";
@@ -41,6 +45,10 @@ import { showToast } from "@components/AppToast";
 import { getImageUrl, URL } from "@api/apiClient";
 
 const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
+
+// Calculate input toolbar height: padding (8*2) + input minHeight (40) + buffer
+// Based on styles: paddingVertical: 8, input minHeight: 40, send button: 40
+const INPUT_TOOLBAR_HEIGHT = 60;
 
 // Avatar component to handle image loading errors
 const AvatarComponent = ({ avatar, name, onPress, styles }) => {
@@ -106,6 +114,8 @@ const Chat = ({ navigation, route }) => {
   const [mentionSuggestions, setMentionSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const [showUserActions, setShowUserActions] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -186,6 +196,37 @@ const Chat = ({ navigation, route }) => {
     if (!groupId || !hasJoinedGroup) return;
     dispatch(fetchGroupMessages(groupId));
   }, [groupId, hasJoinedGroup, dispatch]);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const keyboardWillShowListener = Keyboard.addListener(showEvent, (e) => {
+      const height = e.endCoordinates?.height || 0;
+      setKeyboardHeight(height);
+    });
+
+    const keyboardWillHideListener = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    // Handle keyboard frame changes (when keyboard resizes)
+    const keyboardWillChangeFrameListener =
+      Platform.OS === "ios"
+        ? Keyboard.addListener("keyboardWillChangeFrame", (e) => {
+            const height = e.endCoordinates?.height || 0;
+            setKeyboardHeight(height);
+          })
+        : null;
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+      keyboardWillChangeFrameListener?.remove();
+    };
+  }, []);
 
   const onSend = useCallback(
     (newMessages = []) => {
@@ -607,7 +648,20 @@ const Chat = ({ navigation, route }) => {
       />
 
       {showSuggestions && (
-        <View style={styles.mentionPopup}>
+        <View
+          style={[
+            styles.mentionPopup,
+            {
+              bottom:
+                keyboardHeight > 0
+                  ? keyboardHeight +
+                    INPUT_TOOLBAR_HEIGHT +
+                    (Platform.OS === "ios" ? insets.bottom : 0)
+                  : INPUT_TOOLBAR_HEIGHT +
+                    (Platform.OS === "ios" ? insets.bottom : 0),
+            },
+          ]}
+        >
           <FlatList
             data={mentionSuggestions}
             keyExtractor={(item) => item._id.toString()}
