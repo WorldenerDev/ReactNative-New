@@ -1,7 +1,6 @@
 import React from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
@@ -12,7 +11,6 @@ import Svg, { Path } from "react-native-svg";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import {
-  getFontSize,
   getHeight,
   getVertiPadding,
   getWidth,
@@ -33,7 +31,7 @@ const tabIcons = {
   Account: imagePath.ACCOUNT,
 };
 
-const CustomTabBar = ({ state, descriptors, navigation }) => {
+const CustomTabBar = ({ state, navigation }) => {
   const activeIndex = state.index;
   const activeX = tabWidth * activeIndex;
 
@@ -60,10 +58,6 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
       <View style={styles.tabRow}>
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
-          const label =
-            descriptors[route.key].options.tabBarLabel ||
-            descriptors[route.key].options.title ||
-            route.name;
 
           const onPress = () => {
             if (!isFocused) navigation.navigate(route.name);
@@ -77,17 +71,12 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
               activeOpacity={0.7}
             >
               <Image
-                source={tabIcons[route.name]} // ✅ JS: no TypeScript casting
+                source={tabIcons[route.name]}
                 style={[
                   styles.icon,
                   { tintColor: isFocused ? colors.white : colors.primary },
                 ]}
               />
-              <Text
-                style={[styles.label, isFocused && { color: colors.white }]}
-              >
-                {label}
-              </Text>
             </TouchableOpacity>
           );
         })}
@@ -128,13 +117,8 @@ const styles = StyleSheet.create({
     paddingBottom: getVertiPadding(6),
   },
   icon: {
-    width: getWidth(22),
-    height: getHeight(22),
+    width: getWidth(24),
+    height: getHeight(24),
     resizeMode: "contain",
-  },
-  label: {
-    fontSize: getFontSize(10),
-    color: colors.primary,
-    marginTop: 2,
   },
 });
