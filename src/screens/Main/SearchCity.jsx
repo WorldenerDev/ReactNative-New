@@ -163,8 +163,19 @@ const SearchCity = ({ navigation, route }) => {
 
   return (
     <MainContainer>
-      {/* Search Bar with icon on RIGHT */}
-      <View style={styles.searchWrapper}>
+      {/* Back Icon and Search Bar */}
+      <View style={styles.searchContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Image
+            source={imagePath.BACK_ICON}
+            style={styles.backIcon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+        <View style={styles.searchWrapper}>
         <TextInput
           placeholder="Where are you going?"
           style={styles.searchBar}
@@ -172,7 +183,8 @@ const SearchCity = ({ navigation, route }) => {
           value={query}
           onChangeText={setQuery}
         />
-        <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
+          <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
+        </View>
       </View>
 
       {/* List */}
@@ -221,7 +233,27 @@ const SearchCity = ({ navigation, route }) => {
 export default SearchCity;
 
 const styles = StyleSheet.create({
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: getVertiPadding(15),
+    gap: getWidth(12),
+  },
+  backButton: {
+    width: getWidth(32),
+    height: getHeight(32),
+    borderRadius: getRadius(16),
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.border,
+  },
+  backIcon: {
+    width: getWidth(20),
+    height: getHeight(20),
+    tintColor: colors.black,
+  },
   searchWrapper: {
+    flex: 1,
     height: getHeight(44),
     borderRadius: getRadius(8),
     backgroundColor: colors.input,
@@ -232,8 +264,6 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: colors.border,
-    flexDirection: "row",
-    marginVertical: getVertiPadding(15),
   },
   searchBar: {
     flex: 1,
