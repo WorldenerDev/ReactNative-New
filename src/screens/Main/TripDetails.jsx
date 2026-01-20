@@ -77,6 +77,25 @@ const TripDetails = ({ navigation, route }) => {
     // TODO: Navigate to group details
   };
 
+  const handleExploreMore = () => {
+    if (!tripData) return;
+
+    // Get city ID - check both direct city_id and nested city object
+    const cityId = tripData?.city_id || tripData?.city?.city_id || tripData?.city?._id;
+
+    if (cityId) {
+      navigation.navigate(navigationStrings.CITY_DETAIL, {
+        cityData: {
+          city_id: cityId,
+          name: tripData?.city?.name || tripData?.destination || "City",
+          image: tripData?.city?.image || tripData?.image || null,
+        },
+      });
+    } else {
+      showToast("error", "City information not available");
+    }
+  };
+
   const handleInviteParticipants = async () => {
     if (!tripData?.groupId) {
       showToast("error", "Group ID not found");
@@ -333,15 +352,25 @@ const TripDetails = ({ navigation, route }) => {
                       </TouchableOpacity>
                     </>
                   ) : (
-                    // Show Invite Participants button when no participants
-                    <TouchableOpacity
-                      style={styles.inviteButton}
-                      onPress={handleInviteParticipants}
-                    >
-                      <Text style={styles.inviteButtonText}>
-                        Invite Participants
-                      </Text>
-                    </TouchableOpacity>
+                    // Show Invite Participants and Explore More buttons when no participants
+                    <View style={styles.buttonsContainer}>
+                      <TouchableOpacity
+                        style={styles.inviteButton}
+                        onPress={handleInviteParticipants}
+                      >
+                        <Text style={styles.inviteButtonText}>
+                          Invite Participants
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.exploreMoreButton}
+                        onPress={handleExploreMore}
+                      >
+                        <Text style={styles.exploreMoreButtonText}>
+                          Explore More
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
 
@@ -622,14 +651,33 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
   },
+  buttonsContainer: {
+    flexDirection: "row",
+    gap: getWidth(8),
+    width: "100%",
+  },
   inviteButton: {
+    flex: 1,
     backgroundColor: colors.secondary,
     paddingHorizontal: getWidth(16),
     paddingVertical: getHeight(10),
     borderRadius: getRadius(6),
-    alignSelf: "center",
+    alignItems: "center",
   },
   inviteButtonText: {
+    fontSize: getHeight(12),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.black,
+  },
+  exploreMoreButton: {
+    flex: 1,
+    backgroundColor: colors.secondary,
+    paddingHorizontal: getWidth(16),
+    paddingVertical: getHeight(10),
+    borderRadius: getRadius(6),
+    alignItems: "center",
+  },
+  exploreMoreButtonText: {
     fontSize: getHeight(12),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
