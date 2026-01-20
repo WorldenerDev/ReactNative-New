@@ -10,7 +10,7 @@ import {
 import React from "react";
 import { removeItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "@redux/slices/authSlice";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import ProfileButton from "@components/ProfileButton";
@@ -18,6 +18,8 @@ import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import navigationStrings from "@navigation/navigationStrings";
+import OptimizedImage from "@components/OptimizedImage";
+import { URL } from "@api/apiClient";
 import {
   getFontSize,
   getVertiPadding,
@@ -27,6 +29,22 @@ import {
 
 const Account = ({ navigation }) => {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+
+  // Get user profile image URI
+  const getUserImageUri = () => {
+    const userImage = user?.image || user?.profileImage;
+    if (userImage && userImage.trim() !== "") {
+      // If image already has http/https, use as is, otherwise prepend URL
+      if (userImage.startsWith("http://") || userImage.startsWith("https://")) {
+        return userImage;
+      }
+      return `${URL}${userImage}`;
+    }
+    return null;
+  };
+
+  const imageUri = getUserImageUri();
 
   const handleLogout = async () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -110,8 +128,31 @@ const Account = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>My Profile</Text>
-        <Text style={styles.subtitle}>Account, bookings and payments.</Text>
+        <View style={styles.headerContent}>
+          {/* Profile Picture */}
+          <View style={styles.profileImageContainer}>
+            {imageUri ? (
+              <OptimizedImage
+                source={{ uri: imageUri }}
+                style={styles.profileImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Image
+                source={imagePath.DUMMY_ICON}
+                style={styles.profileImage}
+                resizeMode="cover"
+              />
+            )}
+          </View>
+
+          {/* Title and Subtitle */}
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>My Profile</Text>
+            <Text style={styles.subtitle}>Account, bookings and payments.</Text>
+          </View>
+        </View>
+
         <TouchableOpacity
           style={styles.notificationContainer}
           onPress={handleNotificationIcon}
@@ -186,6 +227,28 @@ const styles = StyleSheet.create({
     paddingTop: getVertiPadding(20),
     paddingBottom: getVertiPadding(30),
     position: "relative",
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingRight: getWidth(60), // Space for notification icon
+  },
+  profileImageContainer: {
+    width: getWidth(50),
+    height: getWidth(50),
+    borderRadius: getWidth(25),
+    backgroundColor: colors.border,
+    marginRight: getWidth(16),
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+  },
+  titleContainer: {
+    flex: 1,
   },
   title: {
     fontSize: getFontSize(19),

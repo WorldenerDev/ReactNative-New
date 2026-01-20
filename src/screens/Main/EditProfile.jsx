@@ -143,8 +143,20 @@ const EditProfile = ({ navigation }) => {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>My Profile</Text>
-          <Text style={styles.subtitle}>Update your profile information.</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Image
+              source={imagePath.BACK_ICON}
+              style={styles.backIcon}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.title}>My Profile</Text>
+            <Text style={styles.subtitle}>Update your profile information.</Text>
+          </View>
           <TouchableOpacity
             style={styles.notificationContainer}
             onPress={handleNotificationIcon}
@@ -235,9 +247,28 @@ const styles = StyleSheet.create({
     paddingBottom: getVertiPadding(100), // Add padding to prevent content from being hidden behind fixed button
   },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingTop: getVertiPadding(20),
     paddingBottom: getVertiPadding(30),
     position: "relative",
+  },
+  backButton: {
+    width: getWidth(32),
+    height: getHeight(32),
+    borderRadius: getRadius(16),
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.border,
+    marginRight: getWidth(12),
+  },
+  backIcon: {
+    width: getWidth(20),
+    height: getHeight(20),
+    tintColor: colors.black,
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   title: {
     fontSize: getFontSize(19),
@@ -251,10 +282,8 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   notificationContainer: {
-    position: "absolute",
-    top: getVertiPadding(20),
-    right: 0,
     alignItems: "center",
+    marginLeft: getWidth(12),
   },
   notificationIcon: {
     width: getWidth(50),
