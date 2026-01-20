@@ -23,12 +23,18 @@ import { getOrderDetails, getRefundPolicies, cancelOrderItem } from '@api/servic
 import { showToast } from '@components/AppToast';
 
 const BookingDetails = ({ navigation, route }) => {
-    const { orderId, bookingId } = route?.params || {};
+    const { orderId, bookingId, isCancelled, activeTab } = route?.params || {};
     const [loading, setLoading] = useState(false);
     const [bookingData, setBookingData] = useState(null);
     const [orderData, setOrderData] = useState(null); // Store full order data for cancellation
     const [cancelling, setCancelling] = useState(false);
     const [cancellableByDate, setCancellableByDate] = useState(null); // Store raw date for comparison
+    const [isPastBooking, setIsPastBooking] = useState(false); // Track if booking is past based on order data
+    const [isOrderCancelled, setIsOrderCancelled] = useState(false); // Track if order is cancelled from API
+
+    // Determine if cancel button should be shown
+    // Hide if: cancelled (from params or API), from Past/Cancelled tab, or booking date is in the past
+    const shouldShowCancelButton = !isCancelled && !isOrderCancelled && activeTab !== "Past" && activeTab !== "Cancelled" && !isPastBooking;
 
     // Fetch order details on mount
     useEffect(() => {
@@ -56,17 +62,27 @@ const BookingDetails = ({ navigation, route }) => {
                     // Format date from first item's product date (format: "2025-11-19 09:00")
                     const productDate = firstItem?.product?.date;
                     let formattedDate = 'N/A';
+                    let bookingDateObj = null;
                     if (productDate) {
                         try {
-                            const dateObj = new Date(productDate);
-                            formattedDate = dateObj.toLocaleDateString('en-US', {
+                            bookingDateObj = new Date(productDate);
+                            formattedDate = bookingDateObj.toLocaleDateString('en-US', {
                                 day: 'numeric',
                                 month: 'long',
                                 year: 'numeric'
                             });
+                            // Check if booking date is in the past
+                            const now = new Date();
+                            setIsPastBooking(bookingDateObj < now);
                         } catch (e) {
                             formattedDate = productDate;
                         }
+                    }
+
+                    // Also check order status for cancelled bookings
+                    const orderStatus = orderData?.status || orderData?.order_status;
+                    if (orderStatus === 'cancelled') {
+                        setIsOrderCancelled(true);
                     }
 
                     // Build options string from price feature and meeting point
@@ -346,14 +362,16 @@ const BookingDetails = ({ navigation, route }) => {
                     </View>
                 </View>
 
-                {/* Cancel Button */}
-                <ButtonComp
-                    title={cancelling ? "Cancelling..." : "Cancel"}
-                    onPress={handleCancel}
-                    disabled={cancelling || !orderData}
-                    containerStyle={styles.cancelButton}
-                    textStyle={styles.cancelButtonText}
-                />
+                {/* Cancel Button - Hide for Past and Cancelled bookings */}
+                {shouldShowCancelButton && (
+                    <ButtonComp
+                        title={cancelling ? "Cancelling..." : "Cancel"}
+                        onPress={handleCancel}
+                        disabled={cancelling || !orderData}
+                        containerStyle={styles.cancelButton}
+                        textStyle={styles.cancelButtonText}
+                    />
+                )}
 
                 {/* Contact Support Link */}
                 <TouchableOpacity

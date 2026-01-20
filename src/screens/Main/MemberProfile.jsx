@@ -25,7 +25,7 @@ import {
 
 const MemberProfile = ({ route, navigation }) => {
   // Get user data from route params or use default
-  const userData = route?.params?.userData || {
+  const userData = {
     name: "Alessandro",
     avatar: null,
     interests: [

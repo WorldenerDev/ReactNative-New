@@ -199,6 +199,8 @@ const Booking = ({ navigation, route }) => {
     navigation.navigate(navigationStrings.BOOKING_DETAILS, {
       orderId: item.orderId,
       bookingId: item?.bookingId,
+      isCancelled: item.isCancelled || false,
+      activeTab: activeTab, // Pass current tab to know if it's Past or Cancelled
     });
   };
 

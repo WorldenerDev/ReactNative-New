@@ -26,9 +26,10 @@ const AddToTrip = ({ navigation, route }) => {
   const [allData, setAllData] = useState([]);
   const [isSendingInvitations, setIsSendingInvitations] = useState(false); // Track loading state for Done button
 
-  // Get API response data and groupId from route params
+  // Get API response data, groupId, and name from route params
   const apiResponse = route?.params?.selectedBuddyPhones || {};
   const groupId = route?.params?.groupId;
+  const tripName = route?.params?.name; // Name passed from TripDetails (city name)
 
   // Initialize data from API response
   useEffect(() => {
@@ -249,9 +250,8 @@ const AddToTrip = ({ navigation, route }) => {
       try {
         setIsSendingInvitations(true);
 
-        // Get name from first selected item, or use default
-        const firstSelectedItem = selectedBuddies[0] || invitedContacts[0];
-        const name = firstSelectedItem?.name || "User";
+        // Use name passed from TripDetails (city name), or fallback to first selected item name, or default
+        const name = tripName || selectedBuddies[0]?.name || invitedContacts[0]?.name || "User";
 
         // Call sendInvitation API with batch phone numbers
         const response = await sendInvitation({
@@ -263,8 +263,8 @@ const AddToTrip = ({ navigation, route }) => {
 
         if (response?.success || response?.data) {
           showToast("success", "Invitations sent successfully");
-          // Navigate back to home after successful invitation
-          navigation.navigate(navigationStrings.BOTTOM_TAB);
+          // Navigate back to TripDetails after successful invitation
+          navigation.goBack();
         } else {
           showToast("error", response?.message || "Failed to send invitations");
         }

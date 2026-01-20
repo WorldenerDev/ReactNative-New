@@ -28,6 +28,7 @@ import {
   ViewAiChat,
   Surprises,
   PrivacyTerms,
+  MemberProfile,
 } from "@screens/index";
 
 const MainStack = createNativeStackNavigator();
@@ -134,6 +135,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.PRIVACYTERMS}
           component={PrivacyTerms}
+        />
+        <MainStack.Screen
+          name={navigationStrings.MEMBER_PROFILE}
+          component={MemberProfile}
         />
       </MainStack.Navigator>
     </>

@@ -75,7 +75,7 @@ const CreateTrip = ({ navigation, route }) => {
         start_at: fromDate,
         end_at: toDate,
         groups: selectedBuddyPhones,
-        isGroupTrip: true
+        isGroupTrip: selectedBuddyPhones.length > 0 ? true : false
 
       };
 

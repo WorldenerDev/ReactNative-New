@@ -20,15 +20,18 @@ import {
   getVertiPadding,
 } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
-import { getTripDetails, checkoutTrip } from "@api/services/mainServices";
+import { getTripDetails, checkoutTrip, getTripBuddies } from "@api/services/mainServices";
 import navigationStrings from "@navigation/navigationStrings";
 import { showToast } from "@components/AppToast";
+import usePermissions from "@hooks/usePermissions";
+import Contacts from "react-native-contacts";
 
 const TripDetails = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
   const [tripData, setTripData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { requestContactsPermission } = usePermissions();
 
   // Get trip ID from route params or trip object
   const currentTripId = tripId || trip?.id || trip?._id;
@@ -74,8 +77,53 @@ const TripDetails = ({ navigation, route }) => {
     // TODO: Navigate to group details
   };
 
-  const handleInviteParticipants = () => {
-    // TODO: Navigate to invite participants screen
+  const handleInviteParticipants = async () => {
+    if (!tripData?.groupId) {
+      showToast("error", "Group ID not found");
+      return;
+    }
+
+    try {
+      const permissionGranted = await requestContactsPermission();
+      if (permissionGranted) {
+        // Fetch contacts after permission is granted
+        try {
+          const contacts = await Contacts.getAll();
+          const phoneNumbers = contacts
+            .flatMap((contact) => contact.phoneNumbers || [])
+            .map((phone) => phone.number)
+            .filter((phone) => phone && phone.trim() !== "") // Filter out empty phone numbers
+            .map((phone) => phone.replace(/[()\s-]/g, "")); // Remove parentheses, spaces, and dashes (preserves + sign)
+
+          if (phoneNumbers.length > 0) {
+            try {
+              setLoading(true);
+              const response = await getTripBuddies({
+                contacts: phoneNumbers,
+              });
+              const cityName = tripData?.city?.name || tripData?.destination || "Trip";
+              navigation.navigate(navigationStrings.ADD_TO_TRIP, {
+                name: cityName,
+                groupId: tripData.groupId,
+                selectedBuddyPhones: response?.data,
+              });
+            } catch (apiError) {
+              console.error("Error calling getTripBuddies:", apiError);
+              showToast("error", apiError?.message || "Failed to fetch trip buddies");
+            } finally {
+              setLoading(false);
+            }
+          }
+        } catch (contactsError) {
+          console.error("Error fetching contacts:", contactsError);
+        }
+      } else {
+        showToast("error", "Contacts permission is required to add participants");
+      }
+    } catch (error) {
+      console.error("Error requesting contacts permission:", error);
+      showToast("error", "Failed to request contacts permission");
+    }
   };
 
   const handleActivityPress = () => {

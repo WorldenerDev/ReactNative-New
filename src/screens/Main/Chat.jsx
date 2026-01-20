@@ -696,6 +696,25 @@ const Chat = ({ navigation, route }) => {
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => {
+                if (selectedMessage?.user) {
+                  setShowUserActions(false);
+                  navigation.navigate(navigationStrings.MEMBER_PROFILE, {
+                    userData: selectedMessage.user,
+                  });
+                }
+              }}
+            >
+              <View style={styles.actionButtonContent}>
+                <Image
+                  source={imagePath.ACCOUNT}
+                  style={styles.actionButtonIcon}
+                />
+                <Text style={styles.actionButtonText}>User Detail</Text>
+              </View>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionButton}
@@ -896,6 +915,16 @@ const styles = StyleSheet.create({
   closeButtonText: { fontSize: 16 },
   actionButton: { paddingVertical: 8 },
   actionButtonDisabled: { opacity: 0.5 },
+  actionButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  actionButtonIcon: {
+    width: 20,
+    height: 20,
+    tintColor: "#000",
+  },
   actionButtonText: { fontSize: 16 },
   blockButton: { marginTop: 4 },
   blockButtonText: { color: "red" },
