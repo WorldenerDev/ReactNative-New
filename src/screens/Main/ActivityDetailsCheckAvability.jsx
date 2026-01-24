@@ -72,7 +72,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       if (from === "cart" && selectedDate) {
         // Convert ISO string or any date format to YYYY-MM-DD
         const date = new Date(selectedDate);
-        formattedDate = date.toISOString().split('T')[0];
+        formattedDate = date.toISOString().split("T")[0];
       }
 
       const requestData = {
@@ -98,7 +98,10 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     if (!selectedDate && eventDate.length > 0) {
       // If coming from cart, use the selectedDate from eventData (item?.activities?.[0]?.date from Cart.jsx)
       if (from === "cart" && eventData?.selectedDate) {
-        console.log("📅 Setting selectedDate from cart:", eventData.selectedDate);
+        console.log(
+          "📅 Setting selectedDate from cart:",
+          eventData.selectedDate,
+        );
         setSelectedDate(eventData.selectedDate);
         // Call the API with the selected date from cart
         fetchEventDatesDetails(eventData.selectedDate);
@@ -127,14 +130,22 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   useEffect(() => {
     if (from === "cart" && eventData?.selectedDate && !selectedDate) {
       // Set the selected date from cart immediately (from item?.activities?.[0]?.date in Cart.jsx)
-      console.log("📅 Initializing selectedDate from cart (early):", eventData.selectedDate);
+      console.log(
+        "📅 Initializing selectedDate from cart (early):",
+        eventData.selectedDate,
+      );
       setSelectedDate(eventData.selectedDate);
     }
   }, [from, eventData?.selectedDate]);
 
   // Fetch event dates details when date is available and eventDate list is loaded
   useEffect(() => {
-    if (from === "cart" && eventData?.selectedDate && selectedDate && eventDate.length > 0) {
+    if (
+      from === "cart" &&
+      eventData?.selectedDate &&
+      selectedDate &&
+      eventDate.length > 0
+    ) {
       // Fetch details for the selected date from cart
       fetchEventDatesDetails(selectedDate);
     }
@@ -144,7 +155,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const getTimeSlotsForSelectedGroup = () => {
     if (!selectedOption || !dateDetails) return [];
     const selectedGroup = dateDetails.find(
-      (group) => group.name === selectedOption
+      (group) => group.name === selectedOption,
     );
     if (!selectedGroup || !selectedGroup.slots) return [];
 
@@ -159,12 +170,12 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const getProductsForSelectedTime = () => {
     if (!selectedOption || !selectedTime || !dateDetails) return [];
     const selectedGroup = dateDetails.find(
-      (group) => group.name === selectedOption
+      (group) => group.name === selectedOption,
     );
     if (!selectedGroup || !selectedGroup.slots) return [];
 
     const selectedSlot = selectedGroup.slots.find(
-      (slot) => slot.time === selectedTime.value
+      (slot) => slot.time === selectedTime.value,
     );
     if (!selectedSlot || !selectedSlot.products) return [];
 
@@ -324,7 +335,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         if (isNaN(dateObj.getTime())) {
           throw new Error("Invalid date");
         }
-        formattedDate = dateObj.toISOString().split('T')[0];
+        formattedDate = dateObj.toISOString().split("T")[0];
       } catch (error) {
         showToast("error", "Invalid date selected");
         setIsLoading(false);
@@ -348,7 +359,10 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           return;
         }
 
-        console.log("updateCart requestData", JSON.stringify(updateCartData, null, 2));
+        console.log(
+          "updateCart requestData",
+          JSON.stringify(updateCartData, null, 2),
+        );
         const response = await updateCart(updateCartData);
         showToast("success", response?.message || "Cart updated successfully");
         navigation.reset({
@@ -366,6 +380,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           free_cancellation: eventData?.free_cancellation ? true : false,
           duration: eventData?.duration,
           trip_id: eventData?.tripId,
+          ...(eventData?.pickupPointId && { pickup_point: eventData.pickupPointId }),
         };
 
         console.log("addEventInTrip requestData", requestData);
@@ -378,9 +393,10 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error("❌ Error:", error);
-      const errorMessage = from === "cart"
-        ? "Failed to update cart"
-        : "Failed to add event to trip";
+      const errorMessage =
+        from === "cart"
+          ? "Failed to update cart"
+          : "Failed to add event to trip";
       showToast("error", error?.message || errorMessage);
     } finally {
       setIsLoading(false);
@@ -457,7 +473,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                     style={[
                       styles.radioButton,
                       selectedOption === option?.name &&
-                      styles.selectedRadioButton,
+                        styles.selectedRadioButton,
                     ]}
                   >
                     {selectedOption === option?.name && (
@@ -505,7 +521,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                           style={[
                             styles.quantityButton,
                             (ticketQuantities[ticket.id] || 0) === 0 &&
-                            styles.disabledButton,
+                              styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, -1)}
                           disabled={(ticketQuantities[ticket.id] || 0) === 0}
@@ -514,7 +530,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                             style={[
                               styles.quantityButtonText,
                               (ticketQuantities[ticket.id] || 0) === 0 &&
-                              styles.disabledButtonText,
+                                styles.disabledButtonText,
                             ]}
                           >
                             -
@@ -527,7 +543,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                           style={[
                             styles.quantityButton,
                             (ticketQuantities[ticket.id] || 0) === ticket.max &&
-                            styles.disabledButton,
+                              styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, 1)}
                           disabled={
@@ -538,7 +554,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                             style={[
                               styles.quantityButtonText,
                               (ticketQuantities[ticket.id] || 0) ===
-                              ticket.max && styles.disabledButtonText,
+                                ticket.max && styles.disabledButtonText,
                             ]}
                           >
                             +
@@ -598,8 +614,12 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         <ButtonComp
           title={
             isLoading
-              ? (from === "cart" ? "Updating Cart..." : "Adding to Trip...")
-              : (from === "cart" ? "Update Cart" : "Add to Trip")
+              ? from === "cart"
+                ? "Updating Cart..."
+                : "Adding to Trip..."
+              : from === "cart"
+              ? "Update Cart"
+              : "Add to Trip"
           }
           onPress={handleSave}
           disabled={isLoading}

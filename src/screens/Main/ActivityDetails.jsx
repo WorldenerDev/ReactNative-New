@@ -114,6 +114,7 @@ const ActivityDetails = ({ navigation, route }) => {
       const response = await getEventDetails({
         activityUuid: eventData?.id,
       });
+      console.log("GetEventDetails response:", response);
       setEventDetail(response?.data);
     } catch (error) {
       console.error("Error fetching event details:", error);
@@ -128,7 +129,7 @@ const ActivityDetails = ({ navigation, route }) => {
     ) {
       showToast(
         "error",
-        "Please select a pickup point before checking availability"
+        "Please select a pickup point before checking availability",
       );
       return;
     }
@@ -218,7 +219,7 @@ const ActivityDetails = ({ navigation, route }) => {
     setSelectedGroups((prev) =>
       prev.includes(groupId)
         ? prev.filter((id) => id !== groupId)
-        : [...prev, groupId]
+        : [...prev, groupId],
     );
   };
 
@@ -478,7 +479,7 @@ const ActivityDetails = ({ navigation, route }) => {
               headerHeight + footerHeight + groupCount * itemHeight;
             const modalHeight = Math.min(
               Math.max(calculatedHeight, minHeight),
-              maxHeight
+              maxHeight,
             );
 
             return (
