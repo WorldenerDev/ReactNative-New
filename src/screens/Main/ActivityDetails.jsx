@@ -1,44 +1,44 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Modal,
-  FlatList,
-  Dimensions,
-} from "react-native";
-import React, { useState, useEffect } from "react";
-import ScreenWapper from "@components/container/ScreenWapper";
-import OptimizedImage from "@components/OptimizedImage";
-import ImagePlaceholder from "@components/ImagePlaceholder";
-import colors from "@assets/colors";
-import fonts from "@assets/fonts";
-import {
-  getHeight,
-  getRadius,
-  getFontSize,
-  getWidth,
-  getVertiPadding,
-  getHoriPadding,
-} from "@utils/responsive";
-import imagePath from "@assets/icons";
-import Accordion from "@components/Accordion";
-import navigationStrings from "@navigation/navigationStrings";
+import { getImageUrl } from "@api/apiClient";
 import {
   activityLikeUnlike,
   getEventDetails,
   getGroupList,
   shareActivityWithGroups,
 } from "@api/services/mainServices";
+import colors from "@assets/colors";
+import fonts from "@assets/fonts";
+import imagePath from "@assets/icons";
+import Accordion from "@components/Accordion";
 import { showToast } from "@components/AppToast";
-import RadioCheckbox from "@components/RadioCheckbox";
-import { isoDurationToHours } from "@utils/uiUtils";
+import ScreenWapper from "@components/container/ScreenWapper";
 import CustomDropdown from "@components/CustomDropdown";
-import { useDispatch, useSelector } from "react-redux";
+import ImagePlaceholder from "@components/ImagePlaceholder";
+import OptimizedImage from "@components/OptimizedImage";
+import RadioCheckbox from "@components/RadioCheckbox";
+import navigationStrings from "@navigation/navigationStrings";
 import { fetchTripByCity } from "@redux/slices/cityTripSlice";
-import { getImageUrl } from "@api/apiClient";
+import {
+  getFontSize,
+  getHeight,
+  getHoriPadding,
+  getRadius,
+  getVertiPadding,
+  getWidth,
+} from "@utils/responsive";
+import { isoDurationToHours } from "@utils/uiUtils";
+import { useEffect, useState } from "react";
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 
 // Helper function to get city name only
 const getCityName = (trip) => {
@@ -50,9 +50,9 @@ const formatTripLabel = (trip) => {
   const cityName = trip?.city_id?.name || "Trip";
   const startDate = trip?.start_at
     ? new Date(trip.start_at).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+    })
     : "";
   return cityName + (startDate ? ` - ${startDate}` : "");
 };
@@ -67,6 +67,7 @@ const ActivityDetails = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [eventDetail, setEventDetail] = useState(null);
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [groups, setGroups] = useState([]);
@@ -134,9 +135,24 @@ const ActivityDetails = ({ navigation, route }) => {
       return;
     }
 
+    const languagesAvailable = eventDetail?.tourDetails?.languagesAvailable;
+    if (
+      languagesAvailable &&
+      Array.isArray(languagesAvailable) &&
+      languagesAvailable.length > 0 &&
+      !selectedLanguage
+    ) {
+      showToast(
+        "error",
+        "Please select a language before checking availability",
+      );
+      return;
+    }
+
     const data = {
       activityUuid: eventData?.id,
       pickupPointId: selectedPoint,
+      ...(selectedLanguage && { language: selectedLanguage }),
       activityName: eventData?.name,
       cityId: eventData?.city_data?.id,
       instant_confirmation: eventDetail?.bookingPolicies?.maxConfirmationTime,
@@ -348,10 +364,10 @@ const ActivityDetails = ({ navigation, route }) => {
             <Image source={imagePath.LANGUAGE_ICON} style={styles.likeIcon} />
             <Text style={styles.text}>
               {eventDetail?.tourDetails?.languagesAvailable &&
-              eventDetail.tourDetails.languagesAvailable.length > 0
+                eventDetail.tourDetails.languagesAvailable.length > 0
                 ? eventDetail.tourDetails.languagesAvailable
-                    .map((lang) => lang.name)
-                    .join(", ")
+                  .map((lang) => lang.name)
+                  .join(", ")
                 : "Language not available"}
             </Text>
           </View>
@@ -378,7 +394,7 @@ const ActivityDetails = ({ navigation, route }) => {
           defaultOpen={false}
         >
           {eventDetail?.generalInfo?.highlights &&
-          eventDetail.generalInfo.highlights.length > 0 ? (
+            eventDetail.generalInfo.highlights.length > 0 ? (
             eventDetail.generalInfo.highlights.map((item, index) => (
               <Text key={index} style={styles.content}>
                 {"\u2022 "} {item}
@@ -400,7 +416,7 @@ const ActivityDetails = ({ navigation, route }) => {
 
         <Accordion title={"Included"} key={"Included"} defaultOpen={false}>
           {eventDetail?.inclusions?.included &&
-          eventDetail.inclusions.included.length > 0 ? (
+            eventDetail.inclusions.included.length > 0 ? (
             eventDetail.inclusions.included.map((item, index) => (
               <Text key={index} style={styles.content}>
                 {"\u2022 "} {item}
@@ -440,6 +456,21 @@ const ActivityDetails = ({ navigation, route }) => {
               ) : (
                 <Text style={styles.content}>Pickup not available</Text>
               )}
+            </View>
+          </Accordion>
+        )}
+
+        {eventDetail?.tourDetails?.languagesAvailable?.length > 0 && (
+          <Accordion title={"Language"} key={"Language"} defaultOpen={false}>
+            <View style={styles.listContainer}>
+              {eventDetail.tourDetails.languagesAvailable.map((lang, index) => (
+                <RadioCheckbox
+                  key={index}
+                  label={lang.name || lang.code || "Unnamed"}
+                  selected={selectedLanguage === lang.code}
+                  onPress={() => setSelectedLanguage(lang.code)}
+                />
+              ))}
             </View>
           </Accordion>
         )}
@@ -513,7 +544,7 @@ const ActivityDetails = ({ navigation, route }) => {
                         style={[
                           styles.groupItem,
                           selectedGroups.includes(item.id) &&
-                            styles.groupItemSelected,
+                          styles.groupItemSelected,
                         ]}
                         onPress={() => toggleGroupSelection(item.id)}
                         activeOpacity={0.7}
@@ -564,7 +595,7 @@ const ActivityDetails = ({ navigation, route }) => {
                     style={[
                       styles.shareButton,
                       (selectedGroups.length === 0 || sharing) &&
-                        styles.shareButtonDisabled,
+                      styles.shareButtonDisabled,
                     ]}
                     onPress={handleShare}
                     disabled={selectedGroups.length === 0 || sharing}
@@ -576,16 +607,15 @@ const ActivityDetails = ({ navigation, route }) => {
                       style={[
                         styles.shareButtonText,
                         (selectedGroups.length === 0 || sharing) &&
-                          styles.shareButtonTextDisabled,
+                        styles.shareButtonTextDisabled,
                       ]}
                     >
                       {sharing
                         ? "Sharing..."
-                        : `Share${
-                            selectedGroups.length > 0
-                              ? ` (${selectedGroups.length})`
-                              : ""
-                          }`}
+                        : `Share${selectedGroups.length > 0
+                          ? ` (${selectedGroups.length})`
+                          : ""
+                        }`}
                     </Text>
                   </TouchableOpacity>
                 </View>

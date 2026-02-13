@@ -1,31 +1,31 @@
 import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
+  addEventInTrip,
+  getEventDates,
+  getEventDatesDetails,
+  updateCart,
+} from "@api/services/mainServices";
+import colors from "@assets/colors";
+import fonts from "@assets/fonts";
+import imagePath from "@assets/icons";
+import { showToast } from "@components/AppToast";
+import ButtonComp from "@components/ButtonComp";
+import MainContainer from "@components/container/MainContainer";
+import CustomDropdown from "@components/CustomDropdown";
+import Header from "@components/Header";
+import navigationStrings from "@navigation/navigationStrings";
+import { getFontSize, getHeight, getRadius, getWidth } from "@utils/responsive";
+import { useEffect, useState } from "react";
+import {
   FlatList,
   Image,
   Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-import React, { useEffect, useState } from "react";
-import MainContainer from "@components/container/MainContainer";
-import Header from "@components/Header";
-import CustomDropdown from "@components/CustomDropdown";
-import ButtonComp from "@components/ButtonComp";
-import colors from "@assets/colors";
-import fonts from "@assets/fonts";
-import { getHeight, getRadius, getFontSize, getWidth } from "@utils/responsive";
-import imagePath from "@assets/icons";
-import {
-  getEventDates,
-  getEventDatesDetails,
-  addEventInTrip,
-  updateCart,
-} from "@api/services/mainServices";
-import { showToast } from "@components/AppToast";
-import navigationStrings from "@navigation/navigationStrings";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const { eventData, from } = route?.params || {};
@@ -381,6 +381,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           duration: eventData?.duration,
           trip_id: eventData?.tripId,
           ...(eventData?.pickupPointId && { pickup_point: eventData.pickupPointId }),
+          ...(eventData?.language && { language: eventData.language }),
         };
 
         console.log("addEventInTrip requestData", requestData);
@@ -473,7 +474,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                     style={[
                       styles.radioButton,
                       selectedOption === option?.name &&
-                        styles.selectedRadioButton,
+                      styles.selectedRadioButton,
                     ]}
                   >
                     {selectedOption === option?.name && (
@@ -521,7 +522,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                           style={[
                             styles.quantityButton,
                             (ticketQuantities[ticket.id] || 0) === 0 &&
-                              styles.disabledButton,
+                            styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, -1)}
                           disabled={(ticketQuantities[ticket.id] || 0) === 0}
@@ -530,7 +531,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                             style={[
                               styles.quantityButtonText,
                               (ticketQuantities[ticket.id] || 0) === 0 &&
-                                styles.disabledButtonText,
+                              styles.disabledButtonText,
                             ]}
                           >
                             -
@@ -543,7 +544,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                           style={[
                             styles.quantityButton,
                             (ticketQuantities[ticket.id] || 0) === ticket.max &&
-                              styles.disabledButton,
+                            styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, 1)}
                           disabled={
@@ -554,7 +555,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                             style={[
                               styles.quantityButtonText,
                               (ticketQuantities[ticket.id] || 0) ===
-                                ticket.max && styles.disabledButtonText,
+                              ticket.max && styles.disabledButtonText,
                             ]}
                           >
                             +
@@ -618,8 +619,8 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                 ? "Updating Cart..."
                 : "Adding to Trip..."
               : from === "cart"
-              ? "Update Cart"
-              : "Add to Trip"
+                ? "Update Cart"
+                : "Add to Trip"
           }
           onPress={handleSave}
           disabled={isLoading}
