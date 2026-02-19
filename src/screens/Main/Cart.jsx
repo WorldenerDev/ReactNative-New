@@ -137,7 +137,7 @@ const Cart = ({ navigation }) => {
         <View style={styles.detailsWrap}>
           {!!item?.start_at && (
             <Text style={styles.meta}>{`Date: ${formattedDate(
-              item?.start_at
+              item?.date
             )}`}</Text>
           )}
 
