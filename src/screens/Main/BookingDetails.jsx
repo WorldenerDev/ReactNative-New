@@ -23,7 +23,7 @@ import { getOrderDetails, getRefundPolicies, cancelOrderItem } from '@api/servic
 import { showToast } from '@components/AppToast';
 
 const BookingDetails = ({ navigation, route }) => {
-    const { orderId, bookingId, isCancelled, activeTab } = route?.params || {};
+    const { orderId, bookingId, bookingItemId, isCancelled, activeTab } = route?.params || {};
     const [loading, setLoading] = useState(false);
     const [bookingData, setBookingData] = useState(null);
     const [orderData, setOrderData] = useState(null); // Store full order data for cancellation
@@ -55,12 +55,14 @@ const BookingDetails = ({ navigation, route }) => {
                     const musementData = orderData?.musement_data;
                     const items = musementData?.items || [];
 
-                    // Get title from first item's product
-                    const firstItem = items[0];
-                    const title = firstItem?.product?.title || 'N/A';
+                    // Resolve which item to show: the one clicked (bookingItemId) or first item for backward compatibility
+                    const selectedItem = bookingItemId
+                        ? items.find((i) => i?.uuid === bookingItemId) || items[0]
+                        : items[0];
+                    const title = selectedItem?.product?.title || 'N/A';
 
-                    // Format date from first item's product date (format: "2025-11-19 09:00")
-                    const productDate = firstItem?.product?.date;
+                    // Format date from selected item's product date (format: "2025-11-19 09:00")
+                    const productDate = selectedItem?.product?.date;
                     let formattedDate = 'N/A';
                     let bookingDateObj = null;
                     if (productDate) {
@@ -85,15 +87,15 @@ const BookingDetails = ({ navigation, route }) => {
                         setIsOrderCancelled(true);
                     }
 
-                    // Build options string from price feature and meeting point
-                    const priceFeature = firstItem?.product?.price_tag?.price_feature || '';
-                    const meetingPoint = firstItem?.product?.meeting_point || '';
+                    // Build options string from price feature and meeting point (selected item only)
+                    const priceFeature = selectedItem?.product?.price_tag?.price_feature || '';
+                    const meetingPoint = selectedItem?.product?.meeting_point || '';
                     const timeMatch = productDate?.match(/\d{2}:\d{2}/);
                     const time = timeMatch ? timeMatch[0] : '';
                     const options = [priceFeature, time, meetingPoint].filter(Boolean).join(' - ') || 'N/A';
 
-                    // Transform items to tickets array
-                    const tickets = items.map(item => {
+                    // Transform selected item to tickets array (this activity's tickets only, not entire order)
+                    const tickets = [selectedItem].map(item => {
                         const ticketHolder = item?.product?.price_tag?.ticket_holder || 'Ticket';
                         // ticket_holder already contains age range like "Child (3-10)", so use it as-is
                         // Extract just the type name (without age range) for cleaner display
@@ -136,19 +138,19 @@ const BookingDetails = ({ navigation, route }) => {
                         cancellableBy: 'N/A', // Will be updated after refund policies API call
                     });
 
-                    // Fetch refund policies after order details are loaded
+                    // Fetch refund policies for the selected item only (so "Cancellable by" matches this activity)
                     const orderUuid = musementData?.uuid;
-                    const orderItemUuids = items.map(item => item?.uuid).filter(Boolean);
+                    const selectedItemUuid = selectedItem?.uuid;
+                    const orderItemUuidsForRefund = selectedItemUuid ? [selectedItemUuid] : items.map(item => item?.uuid).filter(Boolean);
 
-                    if (orderUuid && orderItemUuids.length > 0) {
+                    if (orderUuid && orderItemUuidsForRefund.length > 0) {
                         try {
                             const refundResponse = await getRefundPolicies({
                                 orderUuid: orderUuid,
-                                orderItemUuids: orderItemUuids,
+                                orderItemUuids: orderItemUuidsForRefund,
                             });
 
                             if (refundResponse?.success && refundResponse?.data?.length > 0) {
-                                // Get the first refund policy's applicable_until date
                                 const applicableUntil = refundResponse.data[0]?.applicable_until;
                                 let formattedCancellableBy = 'N/A';
 

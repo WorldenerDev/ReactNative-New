@@ -195,12 +195,12 @@ const Booking = ({ navigation, route }) => {
   }, [activeTab, orders]);
 
   const handleViewDetails = (item) => {
-    console.log("item", item);
     navigation.navigate(navigationStrings.BOOKING_DETAILS, {
       orderId: item.orderId,
       bookingId: item?.bookingId,
+      bookingItemId: item.id, // Unique item uuid so detail screen shows correct activity (same order can have multiple items)
       isCancelled: item.isCancelled || false,
-      activeTab: activeTab, // Pass current tab to know if it's Past or Cancelled
+      activeTab: activeTab,
     });
   };
 
