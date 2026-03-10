@@ -1,26 +1,28 @@
-import {
-    StyleSheet,
-    Text,
-    View,
-    ScrollView,
-    TouchableOpacity,
-    Alert,
-} from 'react-native';
-import React, { useState, useEffect } from 'react';
-import MainContainer from '@components/container/MainContainer';
-import Header from '@components/Header';
-import ButtonComp from '@components/ButtonComp';
+import { cancelOrderItem, getOrderDetails, getRefundPolicies } from '@api/services/mainServices';
 import colors from '@assets/colors';
 import fonts from '@assets/fonts';
+import { showToast } from '@components/AppToast';
+import ButtonComp from '@components/ButtonComp';
+import MainContainer from '@components/container/MainContainer';
+import Header from '@components/Header';
 import {
-    getHeight,
     getFontSize,
-    getRadius,
+    getHeight,
     getHoriPadding,
+    getRadius,
     getVertiPadding,
 } from '@utils/responsive';
-import { getOrderDetails, getRefundPolicies, cancelOrderItem } from '@api/services/mainServices';
-import { showToast } from '@components/AppToast';
+import { useEffect, useState } from 'react';
+import {
+    Alert,
+    Linking,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const BookingDetails = ({ navigation, route }) => {
     const { orderId, bookingId, bookingItemId, isCancelled, activeTab } = route?.params || {};
@@ -31,6 +33,8 @@ const BookingDetails = ({ navigation, route }) => {
     const [cancellableByDate, setCancellableByDate] = useState(null); // Store raw date for comparison
     const [isPastBooking, setIsPastBooking] = useState(false); // Track if booking is past based on order data
     const [isOrderCancelled, setIsOrderCancelled] = useState(false); // Track if order is cancelled from API
+    const [voucherModalVisible, setVoucherModalVisible] = useState(false);
+    const [voucherUrls, setVoucherUrls] = useState([]);
 
     // Determine if cancel button should be shown
     // Hide if: cancelled (from params or API), from Past/Cancelled tab, or booking date is in the past
@@ -138,6 +142,14 @@ const BookingDetails = ({ navigation, route }) => {
                         cancellableBy: 'N/A', // Will be updated after refund policies API call
                     });
 
+                    // Extract voucher URLs for selected item
+                    const vouchers = Array.isArray(selectedItem?.vouchers)
+                        ? selectedItem.vouchers
+                            .map(v => v?.url)
+                            .filter(Boolean)
+                        : [];
+                    setVoucherUrls(vouchers);
+
                     // Fetch refund policies for the selected item only (so "Cancellable by" matches this activity)
                     const orderUuid = musementData?.uuid;
                     const selectedItemUuid = selectedItem?.uuid;
@@ -198,7 +210,21 @@ const BookingDetails = ({ navigation, route }) => {
     }, [orderId]);
 
     const handleViewTicket = () => {
-        // Handle view ticket action
+        setVoucherModalVisible(true);
+    };
+
+    const handleOpenVoucher = async (url) => {
+        try {
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+            } else {
+                showToast('error', 'Unable to open voucher link');
+            }
+        } catch (error) {
+            console.error('Error opening voucher link:', error);
+            showToast('error', 'Something went wrong while opening voucher');
+        }
     };
 
     const handleCancel = () => {
@@ -386,6 +412,41 @@ const BookingDetails = ({ navigation, route }) => {
                     </Text>
                 </TouchableOpacity>
             </ScrollView>
+            <Modal
+                visible={voucherModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setVoucherModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Your vouchers</Text>
+                        {voucherUrls.length > 0 ? (
+                            voucherUrls.map((url, index) => (
+                                <View key={url + index} style={styles.voucherItem}>
+                                    <Text style={styles.voucherLabel}>Voucher {index + 1}</Text>
+                                    <TouchableOpacity
+                                        style={styles.voucherButton}
+                                        onPress={() => handleOpenVoucher(url)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.voucherButtonText}>Open voucher</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.noVoucherText}>No voucher available</Text>
+                        )}
+                        <ButtonComp
+                            title="Close"
+                            onPress={() => setVoucherModalVisible(false)}
+                            disabled={false}
+                            containerStyle={styles.modalCloseButton}
+                            textStyle={styles.modalCloseButtonText}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </MainContainer>
     );
 };
@@ -556,5 +617,63 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(16),
         color: colors.red,
         textAlign: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: getHoriPadding(20),
+    },
+    modalContainer: {
+        width: '100%',
+        backgroundColor: colors.white,
+        borderRadius: getRadius(12),
+        paddingVertical: getVertiPadding(20),
+        paddingHorizontal: getHoriPadding(20),
+    },
+    modalTitle: {
+        fontSize: getFontSize(18),
+        fontWeight: '700',
+        color: colors.black,
+        marginBottom: getHeight(16),
+        textAlign: 'center',
+        fontFamily: fonts.RobotoBold,
+    },
+    voucherItem: {
+        marginBottom: getHeight(12),
+    },
+    voucherLabel: {
+        fontSize: getFontSize(14),
+        color: colors.black,
+        marginBottom: getHeight(6),
+    },
+    voucherButton: {
+        backgroundColor: colors.secondary,
+        borderRadius: getRadius(8),
+        paddingVertical: getVertiPadding(10),
+        alignItems: 'center',
+    },
+    voucherButtonText: {
+        fontSize: getFontSize(14),
+        color: colors.black,
+        fontWeight: '600',
+    },
+    noVoucherText: {
+        fontSize: getFontSize(14),
+        color: colors.lightText,
+        textAlign: 'center',
+        marginBottom: getHeight(16),
+    },
+    modalCloseButton: {
+        marginTop: getHeight(8),
+        backgroundColor: colors.white,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    modalCloseButtonText: {
+        color: colors.black,
+        fontSize: getFontSize(14),
+        fontWeight: '600',
     },
 });
