@@ -345,7 +345,11 @@ const ActivityDetails = ({ navigation, route }) => {
           </Text>
         </View>
       </View>
-      <ScrollView style={styles.innerContainer}>
+      <ScrollView
+        style={styles.innerContainer}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.shareIconContainer}>
           <TouchableOpacity onPress={handleSharePress}>
             <Image source={imagePath.SHARE_ICON} style={styles.shareIcon} />
@@ -700,6 +704,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
     padding: 20,
+  },
+  scrollContent: {
+    paddingBottom: getHeight(50),
   },
   shareIconContainer: {
     height: getHeight(30),

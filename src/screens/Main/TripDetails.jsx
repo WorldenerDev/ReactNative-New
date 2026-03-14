@@ -24,7 +24,12 @@ import { getTripDetails, checkoutTrip, getTripBuddies } from "@api/services/main
 import navigationStrings from "@navigation/navigationStrings";
 import { showToast } from "@components/AppToast";
 import usePermissions from "@hooks/usePermissions";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Contacts from "react-native-contacts";
+
+const CHECKOUT_BUTTON_HEIGHT = 56;
+const BOTTOM_MARGIN = 20;
+const EXTRA_SCROLL_PADDING = 48;
 
 const TripDetails = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
@@ -32,6 +37,9 @@ const TripDetails = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { requestContactsPermission } = usePermissions();
+  const insets = useSafeAreaInsets();
+  const scrollContentBottomPadding =
+    insets.bottom + getHeight(BOTTOM_MARGIN) + CHECKOUT_BUTTON_HEIGHT + getHeight(EXTRA_SCROLL_PADDING);
 
   // Get trip ID from route params or trip object
   const currentTripId = tripId || trip?.id || trip?._id;
@@ -424,59 +432,55 @@ const TripDetails = ({ navigation, route }) => {
                   data={activityDates}
                   keyExtractor={(item, index) => `date-${index}-${item}`}
                   showsVerticalScrollIndicator={false}
+                  contentContainerStyle={[
+                    styles.activitiesListContent,
+                    { paddingBottom: scrollContentBottomPadding },
+                  ]}
                   renderItem={({ item: date, index: dateIndex }) => {
                     const activitiesForDate = groupedActivities[date] || [];
 
                     return (
-                      <View style={styles.dateGroup}>
+                      <View style={styles.dateGroup} key={`date-${dateIndex}-${date}`}>
                         <Text style={styles.dateHeader}>
                           {formatGroupDate(date)}
                         </Text>
-                        <FlatList
-                          data={activitiesForDate}
-                          keyExtractor={(item, index) =>
-                            `activity-${dateIndex}-${index}-${
-                              item.product_id || item.id || item._id || index
-                            }`
-                          }
-                          showsVerticalScrollIndicator={false}
-                          renderItem={({ item: activity }) => (
-                            <TouchableOpacity
-                              style={styles.activityCard}
-                              onPress={handleActivityPress}
-                            >
-                              <OptimizedImage
-                                source={{
-                                  uri:
-                                    activity.image ||
-                                    activity.product_image ||
-                                    activity.thumbnail ||
-                                    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
-                                }}
-                                style={styles.activityImage}
-                                resizeMode="cover"
-                              />
-                              <View style={styles.activityInfo}>
-                                <Text style={styles.activityTitle}>
-                                  {activity.title ||
-                                    activity.name ||
-                                    activity.product_name ||
-                                    "Activity"}
-                                </Text>
-                                <Text style={styles.activityDetails}>
-                                  {formatActivityDate(
-                                    activity.date || activity.time || "TBD"
-                                  )}{" "}
-                                  • Qty: {activity.quantity || 1} • $
-                                  {activity.total_price ||
-                                    activity.price ||
-                                    activity.retail_price ||
-                                    0}
-                                </Text>
-                              </View>
-                            </TouchableOpacity>
-                          )}
-                        />
+                        {activitiesForDate.map((activity, index) => (
+                          <TouchableOpacity
+                            key={`activity-${dateIndex}-${index}-${activity.product_id || activity.id || activity._id || index}`}
+                            style={styles.activityCard}
+                            onPress={handleActivityPress}
+                          >
+                            <OptimizedImage
+                              source={{
+                                uri:
+                                  activity.image ||
+                                  activity.product_image ||
+                                  activity.thumbnail ||
+                                  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
+                              }}
+                              style={styles.activityImage}
+                              resizeMode="cover"
+                            />
+                            <View style={styles.activityInfo}>
+                              <Text style={styles.activityTitle}>
+                                {activity.title ||
+                                  activity.name ||
+                                  activity.product_name ||
+                                  "Activity"}
+                              </Text>
+                              <Text style={styles.activityDetails}>
+                                {formatActivityDate(
+                                  activity.date || activity.time || "TBD"
+                                )}{" "}
+                                • Qty: {activity.quantity || 1} • $
+                                {activity.total_price ||
+                                  activity.price ||
+                                  activity.retail_price ||
+                                  0}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
                       </View>
                     );
                   }}
@@ -703,6 +707,9 @@ const styles = StyleSheet.create({
   activitiesContainer: {
     flex: 1,
     marginTop: getHeight(20),
+  },
+  activitiesListContent: {
+    paddingTop: getHeight(8),
   },
   activitiesHeader: {
     flexDirection: "row",

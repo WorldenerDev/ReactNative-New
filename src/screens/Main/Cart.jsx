@@ -17,6 +17,7 @@ import imagePath from "@assets/icons";
 import { getCartList, cartCheckout, removeItemFromCart } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import navigationStrings from "@navigation/navigationStrings";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getHeight,
   getWidth,
@@ -26,9 +27,16 @@ import {
 } from "@utils/responsive";
 import { formattedDate, isoDurationToHours } from "@utils/uiUtils";
 
+const NEXT_BUTTON_HEIGHT = 56;
+const BOTTOM_MARGIN = 20;
+const EXTRA_SCROLL_PADDING = 48;
+
 const Cart = ({ navigation }) => {
   const [cartList, setCartList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
+  const scrollContentBottomPadding =
+    insets.bottom + getHeight(BOTTOM_MARGIN) + NEXT_BUTTON_HEIGHT + getHeight(EXTRA_SCROLL_PADDING);
 
   // Function to fetch cart list from API
   const fetchCartList = async () => {
@@ -210,7 +218,10 @@ const Cart = ({ navigation }) => {
       <FlatList
         data={cartList}
         keyExtractor={(item, index) => `${item?.id || item?._id || index}`}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: scrollContentBottomPadding },
+        ]}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -235,7 +246,7 @@ export default Cart;
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingBottom: getVertiPadding(20),
+    paddingTop: getVertiPadding(8),
   },
   card: {
     backgroundColor: colors.white,
