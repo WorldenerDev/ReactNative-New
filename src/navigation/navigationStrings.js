@@ -41,4 +41,5 @@ export default {
   VIEW_AI_CHAT: "ViewAiChat",
   SURPRISES: "Surprises",
   MEMBER_PROFILE: "MemberProfile",
+  UPDATE_INTERESTS: "UpdateInterests",
 };

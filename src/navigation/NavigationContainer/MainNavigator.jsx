@@ -1,35 +1,35 @@
-import React from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import navigationStrings from "@navigation/navigationStrings";
-import BottomTabNavigator from "./BottomTabNavigator";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   ActivityDetails,
   ActivityDetailsCheckAvability,
-  BrouseByCategory,
-  CityDetail,
-  SearchCity,
-  CreateTrip,
   AddToTrip,
-  TripDetails,
-  EditTrip,
+  AiChat,
+  BookingDetails,
+  BrouseByCategory,
   CalendarViewTripDetail,
   Cart,
   CartCustomerInfo,
-  NotificationSettings,
-  NotificationScreen,
+  Chat,
+  CityDetail,
+  CreateTrip,
   EditProfile,
+  EditTrip,
+  GroupDetails,
+  MemberProfile,
+  NotificationScreen,
+  NotificationSettings,
   Payment,
   PaymentSuccess,
-  Chat,
-  GroupDetails,
-  BookingDetails,
-  SavedCards,
-  AiChat,
-  ViewAiChat,
-  Surprises,
   PrivacyTerms,
-  MemberProfile,
+  SavedCards,
+  SearchCity,
+  Surprises,
+  TripDetails,
+  UpdateInterests,
+  ViewAiChat,
 } from "@screens/index";
+import BottomTabNavigator from "./BottomTabNavigator";
 
 const MainStack = createNativeStackNavigator();
 const MainNavigator = () => {
@@ -139,6 +139,10 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.MEMBER_PROFILE}
           component={MemberProfile}
+        />
+        <MainStack.Screen
+          name={navigationStrings.UPDATE_INTERESTS}
+          component={UpdateInterests}
         />
       </MainStack.Navigator>
     </>

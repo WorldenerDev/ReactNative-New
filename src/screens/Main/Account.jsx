@@ -1,31 +1,30 @@
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  View,
-  StatusBar,
-  Image,
-  TouchableOpacity,
-} from "react-native";
-import React from "react";
-import { removeItem } from "@utils/storage";
-import { STORAGE_KEYS } from "@utils/storageKeys";
-import { useDispatch, useSelector } from "react-redux";
-import { logoutUser } from "@redux/slices/authSlice";
-import ResponsiveContainer from "@components/container/ResponsiveContainer";
-import ProfileButton from "@components/ProfileButton";
+import { URL } from "@api/apiClient";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
-import navigationStrings from "@navigation/navigationStrings";
+import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import OptimizedImage from "@components/OptimizedImage";
-import { URL } from "@api/apiClient";
+import ProfileButton from "@components/ProfileButton";
+import navigationStrings from "@navigation/navigationStrings";
+import { logoutUser } from "@redux/slices/authSlice";
 import {
   getFontSize,
+  getHeight,
   getVertiPadding,
   getWidth,
-  getHeight,
 } from "@utils/responsive";
+import { removeItem } from "@utils/storage";
+import { STORAGE_KEYS } from "@utils/storageKeys";
+import {
+  Alert,
+  Image,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 
 const Account = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -191,7 +190,7 @@ const Account = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Preferences</Text>
         <ProfileButton
           title="Interests"
-          onPress={() => console.log("Interests")}
+          onPress={() => navigation.navigate(navigationStrings.UPDATE_INTERESTS)}
         />
 
         <ProfileButton
