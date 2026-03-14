@@ -1,35 +1,35 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  FlatList,
-  TouchableOpacity,
-  Image,
-} from "react-native";
-import React, { useMemo, useEffect, useState } from "react";
-import MainContainer from "@components/container/MainContainer";
-import Header from "@components/Header";
-import OptimizedImage from "@components/OptimizedImage";
-import ButtonComp from "@components/ButtonComp";
+import { cartCheckout, getCartList, removeItemFromCart } from "@api/services/mainServices";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
-import { getCartList, cartCheckout, removeItemFromCart } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
+import ButtonComp from "@components/ButtonComp";
+import MainContainer from "@components/container/MainContainer";
+import Header from "@components/Header";
+import OptimizedImage from "@components/OptimizedImage";
 import navigationStrings from "@navigation/navigationStrings";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  getHeight,
-  getWidth,
-  getRadius,
   getFontSize,
+  getHeight,
+  getRadius,
   getVertiPadding,
+  getWidth,
 } from "@utils/responsive";
 import { formattedDate, isoDurationToHours } from "@utils/uiUtils";
+import { useEffect, useState } from "react";
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const NEXT_BUTTON_HEIGHT = 56;
+const NEXT_BUTTON_HEIGHT = 16;
 const BOTTOM_MARGIN = 20;
-const EXTRA_SCROLL_PADDING = 48;
+const EXTRA_SCROLL_PADDING = 18;
 
 const Cart = ({ navigation }) => {
   const [cartList, setCartList] = useState([]);

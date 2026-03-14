@@ -1,35 +1,35 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  Image,
-  FlatList,
-} from "react-native";
-import React, { useState, useEffect } from "react";
-import MainContainer from "@components/container/MainContainer";
-import Header from "@components/Header";
-import ButtonComp from "@components/ButtonComp";
-import imagePath from "@assets/icons";
+import { checkoutTrip, getTripBuddies, getTripDetails } from "@api/services/mainServices";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import imagePath from "@assets/icons";
+import { showToast } from "@components/AppToast";
+import ButtonComp from "@components/ButtonComp";
+import MainContainer from "@components/container/MainContainer";
+import Header from "@components/Header";
+import OptimizedImage from "@components/OptimizedImage";
+import usePermissions from "@hooks/usePermissions";
+import navigationStrings from "@navigation/navigationStrings";
 import {
   getHeight,
-  getWidth,
   getRadius,
   getVertiPadding,
+  getWidth,
 } from "@utils/responsive";
-import OptimizedImage from "@components/OptimizedImage";
-import { getTripDetails, checkoutTrip, getTripBuddies } from "@api/services/mainServices";
-import navigationStrings from "@navigation/navigationStrings";
-import { showToast } from "@components/AppToast";
-import usePermissions from "@hooks/usePermissions";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Contacts from "react-native-contacts";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const CHECKOUT_BUTTON_HEIGHT = 56;
+const CHECKOUT_BUTTON_HEIGHT = 16;
 const BOTTOM_MARGIN = 20;
-const EXTRA_SCROLL_PADDING = 48;
+const EXTRA_SCROLL_PADDING = 10;
 
 const TripDetails = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
@@ -308,9 +308,8 @@ const TripDetails = ({ navigation, route }) => {
                           {(tripData?.participantsList || []).map(
                             (participant, index) => (
                               <View
-                                key={`participant-${index}-${
-                                  participant.id || participant._id || index
-                                }`}
+                                key={`participant-${index}-${participant.id || participant._id || index
+                                  }`}
                                 style={[
                                   styles.avatar,
                                   {
@@ -335,15 +334,15 @@ const TripDetails = ({ navigation, route }) => {
                           {(tripData?.participants ||
                             tripData?.participantsList?.length ||
                             0) > 3 && (
-                            <View style={styles.avatar}>
-                              <Text style={styles.avatarText}>
-                                +
-                                {(tripData?.participants ||
-                                  tripData?.participantsList?.length ||
-                                  0) - 3}
-                              </Text>
-                            </View>
-                          )}
+                              <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>
+                                  +
+                                  {(tripData?.participants ||
+                                    tripData?.participantsList?.length ||
+                                    0) - 3}
+                                </Text>
+                              </View>
+                            )}
                         </View>
                         <Text style={styles.participantsCount}>
                           {tripData?.participants ||

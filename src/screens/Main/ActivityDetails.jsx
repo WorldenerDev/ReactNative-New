@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   scrollContent: {
-    paddingBottom: getHeight(50),
+    paddingBottom: getHeight(15),
   },
   shareIconContainer: {
     height: getHeight(30),
