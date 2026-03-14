@@ -995,6 +995,8 @@ const styles = StyleSheet.create({
   },
   messageContentContainer: {
     overflow: "hidden",
+    maxWidth: 220,
+    borderRadius: 16,
   },
   activityImageWrapper: {
     marginBottom: 8,
@@ -1006,8 +1008,8 @@ const styles = StyleSheet.create({
   },
   activityImageInBubble: {
     width: "100%",
-    maxWidth: 280,
-    height: 160,
+    maxWidth: 220,
+    height: 120,
   },
   avatar: {
     width: 36,
