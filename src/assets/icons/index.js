@@ -41,6 +41,7 @@ const imagePath = {
   AI_ICON: require("./source/aiIcon.png"),
   MAGIC_ICON: require("./source/magicWand.png"),
   SHARE_ICON: require("./source/share.png"),
+  CART_ICON: require("./source/shopping.png"),
 };
 
 export default imagePath;

@@ -3,7 +3,6 @@ import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
-import ButtonComp from "@components/ButtonComp";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import OptimizedImage from "@components/OptimizedImage";
@@ -415,15 +414,26 @@ const TripDetails = ({ navigation, route }) => {
             <View style={styles.activitiesContainer}>
               <View style={styles.activitiesHeader}>
                 <Text style={styles.activitiesTitle}>Activities</Text>
-                <TouchableOpacity
-                  style={styles.calendarButton}
-                  onPress={handleCalendarView}
-                >
-                  <Image
-                    source={imagePath.CALENDER_ICON}
-                    style={styles.calendarIcon1}
-                  />
-                </TouchableOpacity>
+                <View style={styles.activitiesHeaderIcons}>
+                  <TouchableOpacity
+                    style={styles.calendarButton}
+                    onPress={handleCheckout}
+                  >
+                    <Image
+                      source={imagePath.CART_ICON}
+                      style={styles.calendarIcon1}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.calendarButton}
+                    onPress={handleCalendarView}
+                  >
+                    <Image
+                      source={imagePath.CALENDER_ICON}
+                      style={styles.calendarIcon1}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {activityDates.length > 0 ? (
@@ -494,13 +504,13 @@ const TripDetails = ({ navigation, route }) => {
             </View>
 
             {/* Floating Checkout Button */}
-            <View style={styles.floatingButtonContainer}>
+            {/* <View style={styles.floatingButtonContainer}>
               <ButtonComp
                 disabled={loading}
                 title="Checkout"
                 onPress={handleCheckout}
               />
-            </View>
+            </View> */}
           </>
         )}
       </View>
@@ -715,6 +725,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: getHeight(16),
+  },
+  activitiesHeaderIcons: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   activitiesTitle: {
     fontSize: getHeight(20),
