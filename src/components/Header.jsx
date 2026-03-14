@@ -15,6 +15,7 @@ const Header = ({
   title = "",
   rightIconImage = null,
   onRightIconPress = null,
+  rightIconSize,
 }) => {
   const navigation = useNavigation();
 
@@ -44,7 +45,16 @@ const Header = ({
           onPress={onRightIconPress}
           style={[, { backgroundColor: colors.white }]}
         >
-          <Image source={rightIconImage} style={styles.rightIconStyle} />
+          <Image
+            source={rightIconImage}
+            style={[
+              styles.rightIconStyle,
+              rightIconSize != null && {
+                width: getWidth(rightIconSize),
+                height: getHeight(rightIconSize),
+              },
+            ]}
+          />
         </TouchableOpacity>
       ) : (
         <View style={[styles.iconStyle, { backgroundColor: colors.white }]} />

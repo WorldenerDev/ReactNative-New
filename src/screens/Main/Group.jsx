@@ -149,6 +149,10 @@ const Group = ({ navigation }) => {
     </View>
   );
 
+  const handleNotificationIcon = () => {
+    navigation.navigate(navigationStrings.NOTIFICATION_SCREEN);
+  };
+
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>No Trips Found</Text>
@@ -160,7 +164,13 @@ const Group = ({ navigation }) => {
 
   return (
     <MainContainer loader={loading}>
-      <Header title="My Groups" showBack={false} />
+      <Header
+        title="My Groups"
+        showBack={false}
+        rightIconImage={imagePath.NOTIFICATION_ICON}
+        onRightIconPress={handleNotificationIcon}
+        rightIconSize={38}
+      />
 
       <FlatList
         data={trips}
