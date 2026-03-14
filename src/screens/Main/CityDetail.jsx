@@ -1,38 +1,36 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  Image,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
-import OptimizedImage from "@components/OptimizedImage";
-import ImagePlaceholder from "@components/ImagePlaceholder";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
-import {
-  getWidth,
-  getHeight,
-  getFontSize,
-  getVertiPadding,
-  getHoriPadding,
-  getRadius,
-} from "@utils/responsive";
 import imagePath from "@assets/icons";
-import Header from "@components/Header";
+import CategoryCard from "@components/appComponent/CategoryCard";
+import ForYouCard from "@components/appComponent/ForYouCard";
+import ScreenWapper from "@components/container/ScreenWapper";
+import CustomDropdown from "@components/CustomDropdown";
+import ImagePlaceholder from "@components/ImagePlaceholder";
+import OptimizedImage from "@components/OptimizedImage";
 import navigationStrings from "@navigation/navigationStrings";
-import { useDispatch, useSelector } from "react-redux";
 import {
   fetchEventForYouCityID,
   fetchPopularEvent,
   fetchTripByCity,
 } from "@redux/slices/cityTripSlice";
-import CategoryCard from "@components/appComponent/CategoryCard";
-import ForYouCard from "@components/appComponent/ForYouCard";
-import ScreenWapper from "@components/container/ScreenWapper";
-import CustomDropdown from "@components/CustomDropdown";
+import {
+  getFontSize,
+  getHeight,
+  getHoriPadding,
+  getRadius,
+  getVertiPadding,
+  getWidth,
+} from "@utils/responsive";
+import { useEffect, useState } from "react";
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 
 // Helper function to get city name only
 const getCityName = (trip) => {

@@ -637,8 +637,8 @@ const GroupDetails = () => {
                     {activity?.price
                       ? `$${activity.price}`
                       : activity?.cost
-                      ? `$${activity.cost}`
-                      : ""}
+                        ? `$${activity.cost}`
+                        : ""}
                   </Text>
                 </View>
               </View>
@@ -649,98 +649,98 @@ const GroupDetails = () => {
         {/* Uncommon Activities Section */}
         {(currentUserActivities.length > 0 ||
           compareUserActivities.length > 0) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Uncommon Activities</Text>
-            <Text style={styles.sectionNote}>
-              {comparisonData?.note ||
-                "Note: Dates and tickets may vary, it is recommended to review"}
-            </Text>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Uncommon Activities</Text>
+              <Text style={styles.sectionNote}>
+                {comparisonData?.note ||
+                  "Note: Dates and tickets may vary, it is recommended to review"}
+              </Text>
 
-            {/* Activities added by current user */}
-            {currentUserActivities.length > 0 && (
-              <>
-                <Text style={styles.subSectionTitle}>Added by You</Text>
-                {currentUserActivities.map((activity, index) => (
-                  <View
-                    key={`you-${activity?._id || activity?.id || index}`}
-                    style={styles.cardRow}
-                  >
-                    {activity?.image ? (
-                      <OptimizedImage
-                        source={{ uri: getImageUrl(activity.image) }}
-                        style={styles.cardThumb}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={styles.cardThumb} />
-                    )}
-                    <View style={styles.cardInfo}>
-                      <Text style={styles.cardTitle}>
-                        {activity?.name || activity?.title || "Activity"}
-                      </Text>
-                      <Text style={styles.cardMeta}>
-                        {activity?.date
-                          ? `${new Date(activity.date).toLocaleDateString()} • `
-                          : ""}
-                        {activity?.price
-                          ? `$${activity.price}`
-                          : activity?.cost
-                          ? `$${activity.cost}`
-                          : ""}
-                      </Text>
+              {/* Activities added by current user */}
+              {currentUserActivities.length > 0 && (
+                <>
+                  <Text style={styles.subSectionTitle}>Added by You</Text>
+                  {currentUserActivities.map((activity, index) => (
+                    <View
+                      key={`you-${activity?._id || activity?.id || index}`}
+                      style={styles.cardRow}
+                    >
+                      {activity?.image ? (
+                        <OptimizedImage
+                          source={{ uri: getImageUrl(activity.image) }}
+                          style={styles.cardThumb}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.cardThumb} />
+                      )}
+                      <View style={styles.cardInfo}>
+                        <Text style={styles.cardTitle}>
+                          {activity?.name || activity?.title || "Activity"}
+                        </Text>
+                        <Text style={styles.cardMeta}>
+                          {activity?.date
+                            ? `${new Date(activity.date).toLocaleDateString()} • `
+                            : ""}
+                          {activity?.price
+                            ? `$${activity.price}`
+                            : activity?.cost
+                              ? `$${activity.cost}`
+                              : ""}
+                        </Text>
+                      </View>
+                      <TouchableOpacity style={styles.removePill}>
+                        <Text style={styles.removePillText}>Remove</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.removePill}>
-                      <Text style={styles.removePillText}>Remove</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            )}
+                  ))}
+                </>
+              )}
 
-            {/* Activities added by compare user */}
-            {compareUserActivities.length > 0 && (
-              <>
-                <Text style={styles.subSectionTitle}>
-                  Added by {displayCompareUser?.name || compareUser?.name}
-                </Text>
-                {compareUserActivities.map((activity, index) => (
-                  <View
-                    key={`compare-${activity?._id || activity?.id || index}`}
-                    style={styles.cardRow}
-                  >
-                    {activity?.image ? (
-                      <OptimizedImage
-                        source={{ uri: getImageUrl(activity.image) }}
-                        style={styles.cardThumb}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={styles.cardThumb} />
-                    )}
-                    <View style={styles.cardInfo}>
-                      <Text style={styles.cardTitle}>
-                        {activity?.name || activity?.title || "Activity"}
-                      </Text>
-                      <Text style={styles.cardMeta}>
-                        {activity?.date
-                          ? `${new Date(activity.date).toLocaleDateString()} • `
-                          : ""}
-                        {activity?.price
-                          ? `$${activity.price}`
-                          : activity?.cost
-                          ? `$${activity.cost}`
-                          : ""}
-                      </Text>
+              {/* Activities added by compare user */}
+              {compareUserActivities.length > 0 && (
+                <>
+                  <Text style={styles.subSectionTitle}>
+                    Added by {displayCompareUser?.name || compareUser?.name}
+                  </Text>
+                  {compareUserActivities.map((activity, index) => (
+                    <View
+                      key={`compare-${activity?._id || activity?.id || index}`}
+                      style={styles.cardRow}
+                    >
+                      {activity?.image ? (
+                        <OptimizedImage
+                          source={{ uri: getImageUrl(activity.image) }}
+                          style={styles.cardThumb}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.cardThumb} />
+                      )}
+                      <View style={styles.cardInfo}>
+                        <Text style={styles.cardTitle}>
+                          {activity?.name || activity?.title || "Activity"}
+                        </Text>
+                        <Text style={styles.cardMeta}>
+                          {activity?.date
+                            ? `${new Date(activity.date).toLocaleDateString()} • `
+                            : ""}
+                          {activity?.price
+                            ? `$${activity.price}`
+                            : activity?.cost
+                              ? `$${activity.cost}`
+                              : ""}
+                        </Text>
+                      </View>
+                      <TouchableOpacity style={styles.addPill}>
+                        <Text style={styles.addPillText}>Add</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.addPill}>
-                      <Text style={styles.addPillText}>Add</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            )}
-          </View>
-        )}
+                  ))}
+                </>
+              )}
+            </View>
+          )}
 
         {/* Empty state */}
         {commonActivities.length === 0 &&
@@ -759,7 +759,6 @@ const GroupDetails = () => {
   };
 
   const renderWishlistedItem = ({ item }) => {
-    console.log("item", item);
     const likeCount = item?.like_count || 0;
     const activityImage = item?.image || "";
 
@@ -785,7 +784,15 @@ const GroupDetails = () => {
 
     return (
       <View style={styles.wishItem}>
-        <ForYouCard item={cardItem} onPress={() => {}} />
+        <ForYouCard
+          item={cardItem}
+          onPress={() =>
+            navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+              eventData: item,
+              selectedTrip: null,
+            })
+          }
+        />
         <TouchableOpacity
           style={styles.likedRow}
           activeOpacity={0.7}
@@ -947,7 +954,7 @@ const GroupDetails = () => {
                     ];
                     const avatarBg =
                       avatarBgColors[
-                        (member?._id?.length || 0) % avatarBgColors.length
+                      (member?._id?.length || 0) % avatarBgColors.length
                       ];
 
                     return (

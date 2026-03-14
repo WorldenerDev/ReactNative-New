@@ -177,15 +177,38 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     const selectedSlot = selectedGroup.slots.find(
       (slot) => slot.time === selectedTime.value,
     );
-    if (!selectedSlot || !selectedSlot.products) return [];
+    if (!selectedSlot) return [];
+    const products = selectedSlot.products || [];
 
-    return selectedSlot.products.map((product) => ({
+    const fallbackPrice = eventData?.price ?? 0;
+    const fallbackFormatted =
+      eventData?.currency === "EUR"
+        ? `€${fallbackPrice}`
+        : `$${fallbackPrice}`;
+
+    // When API returns no products but we have price (e.g. from wishlist), show one fallback ticket
+    if (products.length === 0 && fallbackPrice > 0) {
+      return [
+        {
+          id: "fallback-price",
+          name: "Standard",
+          price: fallbackPrice,
+          formatted_price: fallbackFormatted,
+          max: 10,
+          min: 0,
+        },
+      ];
+    }
+
+    return products.map((product) => ({
       id: product.product_id,
       name: product.name,
-      price: product.retail_price?.value || 0,
+      price: product.retail_price?.value ?? fallbackPrice,
       formatted_price:
         product.retail_price?.formatted_value ||
-        `$${product.retail_price?.value || 0}`,
+        (product.retail_price?.value != null
+          ? `$${product.retail_price.value}`
+          : fallbackFormatted),
       max: product.max_buy,
       min: product.min_buy,
     }));

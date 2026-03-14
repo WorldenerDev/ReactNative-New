@@ -60,8 +60,14 @@ const formatTripLabel = (trip) => {
 const ActivityDetails = ({ navigation, route }) => {
   const { eventData, selectedTrip: selectedTripFromRoute } =
     route?.params || {};
+  console.log("eventData", eventData);
   const dispatch = useDispatch();
   const { tripsByCity } = useSelector((state) => state.cityTrip);
+
+  // Support both getEventsForYou shape (id, city_data) and wishlist shape (activity_id, city_id)
+  const activityId = eventData?.id || eventData?.activity_id;
+  const cityId =
+    eventData?.city_data?.id ?? eventData?.city_id ?? undefined;
 
   const [isLiked, setIsLiked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -75,12 +81,14 @@ const ActivityDetails = ({ navigation, route }) => {
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
 
-  const cityId = eventData?.city_data?.id;
   const currentCityTrips = tripsByCity[cityId] || [];
 
   useEffect(() => {
     if (eventData?.isLiked !== undefined) {
       setIsLiked(eventData.isLiked);
+    }
+    if (eventData?.is_liked_by_current_user !== undefined) {
+      setIsLiked(eventData.is_liked_by_current_user);
     }
   }, [eventData]);
 
@@ -97,10 +105,10 @@ const ActivityDetails = ({ navigation, route }) => {
   }, [cityId]);
 
   useEffect(() => {
-    if (eventData?.id) {
+    if (activityId) {
       fetchEventDetails();
     }
-  }, [eventData]);
+  }, [eventData, activityId]);
 
   const getTripsByCity = async () => {
     try {
@@ -111,9 +119,10 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const fetchEventDetails = async () => {
+    if (!activityId) return;
     try {
       const response = await getEventDetails({
-        activityUuid: eventData?.id,
+        activityUuid: activityId,
       });
       console.log("GetEventDetails response:", response);
       setEventDetail(response?.data);
@@ -150,15 +159,18 @@ const ActivityDetails = ({ navigation, route }) => {
     }
 
     const data = {
-      activityUuid: eventData?.id,
+      activityUuid: activityId,
       pickupPointId: selectedPoint,
       ...(selectedLanguage && { language: selectedLanguage }),
       activityName: eventData?.name,
-      cityId: eventData?.city_data?.id,
+      cityId: cityId,
       instant_confirmation: eventDetail?.bookingPolicies?.maxConfirmationTime,
       free_cancellation: eventDetail?.bookingPolicies?.freeCancellation,
       duration: eventDetail?.tourDetails?.duration?.[0],
       tripId: selectedTrip?.value,
+      // Pass price/currency (wishlist has these; getEventsForYou has price)
+      price: eventData?.price ?? eventDetail?.price,
+      currency: eventData?.currency ?? "USD",
     };
     navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
       eventData: data,
@@ -171,7 +183,7 @@ const ActivityDetails = ({ navigation, route }) => {
     try {
       setIsLoading(true);
       const response = await activityLikeUnlike({
-        activity_id: eventData?.id || eventData?.activity_id,
+        activity_id: activityId,
         is_liked: !isLiked,
       });
 
@@ -187,13 +199,13 @@ const ActivityDetails = ({ navigation, route }) => {
 
   const handleSharePress = async () => {
     setShowShareModal(true);
-    if (groups.length === 0 && eventData?.id) {
+    if (groups.length === 0 && activityId) {
       fetchGroups();
     }
   };
 
   const fetchGroups = async () => {
-    if (!eventData?.id) {
+    if (!activityId) {
       showToast("error", "Activity information not available");
       return;
     }
@@ -201,7 +213,7 @@ const ActivityDetails = ({ navigation, route }) => {
     try {
       setGroupsLoading(true);
       const response = await getGroupList({
-        activityUuid: eventData.id,
+        activityUuid: activityId,
       });
 
       if (response?.success && response?.data) {
@@ -245,7 +257,7 @@ const ActivityDetails = ({ navigation, route }) => {
       return;
     }
 
-    if (!eventData?.id) {
+    if (!activityId) {
       showToast("error", "Activity information not available");
       return;
     }
@@ -253,7 +265,7 @@ const ActivityDetails = ({ navigation, route }) => {
     try {
       setSharing(true);
       const response = await shareActivityWithGroups({
-        activityUuid: eventData?.id,
+        activityUuid: activityId,
         groupIds: selectedGroups,
       });
 
