@@ -94,51 +94,48 @@ const Group = ({ navigation }) => {
     }, [fetchGroups])
   );
 
+  const handleCardPress = (item) => {
+    navigation.navigate(navigationStrings.GROUP_DETAILS, {
+      groupId: item?.id,
+      cityId: item?.cityId,
+    });
+  };
+
   const renderTripItem = ({ item }) => (
     <View style={styles.tripCard}>
-      <Image source={{ uri: item.image }} style={styles.tripImage} />
+      <TouchableOpacity
+        style={styles.cardTouchable}
+        onPress={() => handleCardPress(item)}
+        activeOpacity={0.8}
+      >
+        <Image source={{ uri: item.image }} style={styles.tripImage} />
 
-      <View style={styles.tripDetails}>
-        <Text style={styles.tripTitle}>{item.title}</Text>
+        <View style={styles.tripDetails}>
+          <Text style={styles.tripTitle}>{item.title}</Text>
 
-        <View style={styles.locationRow}>
-          <Image source={imagePath.LOCATION_PIN} style={styles.locationIcon} />
-          <Text style={styles.locationText}>{item?.location}</Text>
-          <Image source={imagePath.CHECK_ICON} style={styles.checkIcon} />
-          <Text style={styles.statusText}>{item?.status}</Text>
+          <View style={styles.locationRow}>
+            <Image source={imagePath.LOCATION_PIN} style={styles.locationIcon} />
+            <Text style={styles.locationText}>{item?.location}</Text>
+            <Image source={imagePath.CHECK_ICON} style={styles.checkIcon} />
+            <Text style={styles.statusText}>{item?.status}</Text>
+          </View>
+
+          <View style={styles.dateRow}>
+            <Image source={imagePath.CALENDER_ICON} style={styles.calendarIcon} />
+            <Text style={styles.dateText}>
+              {item.startDate} - {item.endDate}
+            </Text>
+          </View>
+
+          <View style={styles.peopleRow}>
+            <Text style={styles.peopleText}>{item.people}</Text>
+          </View>
         </View>
-
-        <View style={styles.dateRow}>
-          <Image source={imagePath.CALENDER_ICON} style={styles.calendarIcon} />
-          <Text style={styles.dateText}>
-            {item.startDate} - {item.endDate}
-          </Text>
-        </View>
-
-        <View style={styles.peopleRow}>
-          {/* <View style={styles.peopleIcons}>
-            <View style={[styles.personIcon, styles.personIcon1]} />
-            <View style={[styles.personIcon, styles.personIcon2]} />
-            <View style={[styles.personIcon, styles.personIcon3]} />
-          </View> */}
-          <Text style={styles.peopleText}>{item.people}</Text>
-        </View>
-      </View>
+      </TouchableOpacity>
 
       <View style={styles.actionButtons}>
         <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() =>
-            navigation.navigate(navigationStrings.GROUP_DETAILS, {
-              groupId: item?.id,
-              cityId: item?.cityId,
-            })
-          }
-        >
-          <Text style={styles.actionButtonText}>View</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
+          style={styles.chatButton}
           onPress={() =>
             navigation.navigate(navigationStrings.CHAT, { groupId: item?.id })
           }
@@ -209,6 +206,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 0.5,
     borderColor: colors.border,
+  },
+  cardTouchable: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   tripImage: {
     width: getWidth(80),
@@ -306,12 +308,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: getWidth(16),
   },
-  actionButton: {
+  chatButton: {
     backgroundColor: colors.secondary,
     borderRadius: getRadius(6),
     paddingHorizontal: getWidth(12),
     paddingVertical: getHeight(6),
-    marginBottom: getHeight(6),
     minWidth: getWidth(50),
     alignItems: "center",
   },
