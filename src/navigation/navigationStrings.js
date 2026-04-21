@@ -37,7 +37,7 @@ export default {
   CHAT: "Chat",
   AI_CHAT: "AiChat",
   GROUP_DETAILS: "GroupDetails",
-  SAVED_CARDS: "SavedCards",
+  SAVE_CARD: "SaveCard",
   VIEW_AI_CHAT: "ViewAiChat",
   SURPRISES: "Surprises",
   MEMBER_PROFILE: "MemberProfile",

@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiDelete } from "@api/apiHelpers";
+import { apiDelete, apiGet, apiPost } from "@api/apiHelpers";
 import { endpoints } from "@api/endpoints";
 
 export const getAllCity = (data) => apiPost(endpoints?.main?.getAllCity, data);
@@ -87,3 +87,4 @@ export const updateProfile = (formData) =>
       "Content-Type": "multipart/form-data",
     },
   });
+export const addCard = (data) => apiPost(endpoints?.main?.addCard, data);

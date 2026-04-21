@@ -22,7 +22,7 @@ import {
   Payment,
   PaymentSuccess,
   PrivacyTerms,
-  SavedCards,
+  SaveCard,
   SearchCity,
   Surprises,
   TripDetails,
@@ -110,6 +110,10 @@ const MainNavigator = () => {
           name={navigationStrings.PAYMENT}
           component={Payment}
         />
+        <MainStack.Screen
+          name={navigationStrings.SAVE_CARD}
+          component={SaveCard}
+        />
         <MainStack.Screen name={navigationStrings.CHAT} component={Chat} />
         <MainStack.Screen name={navigationStrings.AI_CHAT} component={AiChat} />
         <MainStack.Screen
@@ -123,10 +127,6 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.BOOKING_DETAILS}
           component={BookingDetails}
-        />
-        <MainStack.Screen
-          name={navigationStrings.SAVED_CARDS}
-          component={SavedCards}
         />
         <MainStack.Screen
           name={navigationStrings.SURPRISES}

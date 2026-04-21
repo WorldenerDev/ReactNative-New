@@ -1,48 +1,47 @@
+import { getImageUrl, URL } from "@api/apiClient";
+import {
+  addUpdateEmoji,
+  blockUser,
+  reportUser,
+} from "@api/services/mainServices";
 import imagePath from "@assets/icons";
+import { showToast } from "@components/AppToast";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import navigationStrings from "@navigation/navigationStrings";
-import { getHeight } from "@utils/responsive";
-import React, {
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-  useMemo,
-} from "react";
 import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  FlatList,
-  Modal,
-  Image,
-  Keyboard,
-  Platform,
-  Dimensions,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GiftedChat, Message, MessageText } from "react-native-gifted-chat";
-import { useSelector, useDispatch } from "react-redux";
-import io from "socket.io-client";
-import {
-  transformServerMessages,
-  processSocketPayload,
-} from "@utils/messageTransform";
-import {
-  fetchGroupMessages,
   addMessage,
+  fetchGroupMessages,
   updateMessage,
 } from "@redux/slices/chatSlice";
 import {
-  reportUser,
-  blockUser,
-  addUpdateEmoji,
-} from "@api/services/mainServices";
-import { showToast } from "@components/AppToast";
-import { getImageUrl, URL } from "@api/apiClient";
+  processSocketPayload,
+  transformServerMessages,
+} from "@utils/messageTransform";
+import { getHeight } from "@utils/responsive";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  FlatList,
+  Image,
+  Keyboard,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { GiftedChat, Message, MessageText } from "react-native-gifted-chat";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import io from "socket.io-client";
 
 const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
 
@@ -179,7 +178,7 @@ const Chat = ({ navigation, route }) => {
       setHasJoinedGroup(false);
     });
 
-    socket.on("connect_error", () => {});
+    socket.on("connect_error", () => { });
 
     return () => {
       socket.off("connect");
@@ -216,9 +215,9 @@ const Chat = ({ navigation, route }) => {
     const keyboardWillChangeFrameListener =
       Platform.OS === "ios"
         ? Keyboard.addListener("keyboardWillChangeFrame", (e) => {
-            const height = e.endCoordinates?.height || 0;
-            setKeyboardHeight(height);
-          })
+          const height = e.endCoordinates?.height || 0;
+          setKeyboardHeight(height);
+        })
         : null;
 
     return () => {
@@ -655,10 +654,10 @@ const Chat = ({ navigation, route }) => {
               bottom:
                 keyboardHeight > 0
                   ? keyboardHeight +
-                    INPUT_TOOLBAR_HEIGHT +
-                    (Platform.OS === "ios" ? insets.bottom : 0)
+                  INPUT_TOOLBAR_HEIGHT +
+                  (Platform.OS === "ios" ? insets.bottom : 0)
                   : INPUT_TOOLBAR_HEIGHT +
-                    (Platform.OS === "ios" ? insets.bottom : 0),
+                  (Platform.OS === "ios" ? insets.bottom : 0),
             },
           ]}
         >

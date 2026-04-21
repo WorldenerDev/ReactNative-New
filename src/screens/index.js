@@ -33,7 +33,7 @@ export { default as NotificationScreen } from "./Main/NotificationScreen";
 export { default as NotificationSettings } from "./Main/NotificationSettings";
 export { default as Payment } from "./Main/Payment";
 export { default as PaymentSuccess } from "./Main/PaymentSuccess";
-export { default as SavedCards } from "./Main/SavedCards";
+export { default as SaveCard } from "./Main/SaveCard";
 export { default as SearchCity } from "./Main/SearchCity";
 export { default as Surprises } from "./Main/Surprises";
 export { default as TripDetails } from "./Main/TripDetails";

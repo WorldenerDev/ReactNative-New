@@ -63,7 +63,7 @@ const Account = ({ navigation }) => {
     ]);
   };
   const handleSavedCards = () => {
-    navigation.navigate(navigationStrings.SAVED_CARDS);
+    navigation.navigate(navigationStrings.PAYMENT);
   };
 
   const handleEditProfile = () => {

@@ -58,6 +58,7 @@ export const endpoints = {
     removeUserFromGroup: "/remove-user-from-group",
     getCityActivities: "/getCityActivities",
     compareUsersInGroup: "/compare-users-in-group",
+    addCard: "/add-card",
     updateProfile: "/updateProfile",
     getGroupWishlisted: "/group",
   },

@@ -79,6 +79,19 @@ target 'WApp' do
         # Optimize Swift compilation
         config.build_settings['SWIFT_COMPILATION_MODE'] = 'incremental' if config.name == 'Debug'
         config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone' if config.name == 'Debug'
+        # Xcode 26.x tightens framework-module checks for generated Pods.
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+
+      # Xcode 26.x + fmt can fail on consteval format checks under some RN dependency graphs.
+      # Force a conservative path for fmt to keep simulator builds stable.
+      if target.name == 'fmt'
+        target.build_configurations.each do |config|
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++17'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FMT_USE_CONSTEVAL=0'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FMT_USE_CONSTEXPR=0'
+        end
       end
     end
   end
