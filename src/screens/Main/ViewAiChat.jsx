@@ -89,6 +89,7 @@ const ViewAiChat = ({ navigation }) => {
             groupId,
             tripId,
             conversation_id: topic?.conversation_id,
+            fromHistoryList: true,
         })
     }, [navigation, groupId, tripId])
 

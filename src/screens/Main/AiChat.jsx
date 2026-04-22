@@ -1,4 +1,4 @@
-import { chatbot, getGroups } from "@api/services/mainServices";
+import { chatbot, getChatbotHistory, getGroups } from "@api/services/mainServices";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import MainContainer from "@components/container/MainContainer";
@@ -43,11 +43,18 @@ const createActivityMessage = (activity, indexOffset) => ({
   user: BOT_USER,
 });
 
+const createTextMessage = ({ id, text, createdAt, user, indexOffset = 0 }) => ({
+  _id: id || `msg-${Date.now()}-${indexOffset}`,
+  text: text || "",
+  createdAt: createdAt ? new Date(createdAt) : new Date(Date.now() - indexOffset * 1000),
+  user,
+});
+
 const ACTIVITY_BUBBLE_WIDTH = 280;
 
 const AiChat = ({ navigation }) => {
   const route = useRoute();
-  const { groupId, tripId } = route?.params || {};
+  const { groupId, tripId, conversation_id, fromHistoryList } = route?.params || {};
   const { user } = useSelector((state) => state.auth);
   const currentUser = useMemo(
     () => ({
@@ -95,10 +102,89 @@ const AiChat = ({ navigation }) => {
     };
   }, [groupId, tripId]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadConversationHistory = async () => {
+      if (!fromHistoryList || !conversation_id || !tripId) return;
+
+      setIsLoading(true);
+      try {
+        const response = await getChatbotHistory(conversation_id, { trip_id: tripId });
+        const historyItems = Array.isArray(response?.data) ? response.data : [];
+
+        let extractedActivities = [];
+        const mappedMessages = [];
+
+        historyItems.forEach((item, index) => {
+          const isUserRole = item?.role === "user";
+          const baseUser = isUserRole ? currentUser : BOT_USER;
+          const messageText = isUserRole
+            ? item?.message
+            : item?.message || "Recommendations generated";
+
+          if (messageText) {
+            mappedMessages.push(
+              createTextMessage({
+                id: item?.message_id,
+                text: messageText,
+                createdAt: item?.createdAt,
+                user: baseUser,
+                indexOffset: index,
+              })
+            );
+          }
+
+          const assistantActivities = item?.payload?.activities?.data;
+          if (!isUserRole && Array.isArray(assistantActivities) && assistantActivities.length > 0) {
+            extractedActivities = assistantActivities;
+          }
+        });
+
+        const firstBatch = extractedActivities.slice(0, 5);
+        const activityMessages = firstBatch.map((activity, index) =>
+          createActivityMessage(activity, index + 1)
+        );
+
+        const combinedMessages = [...mappedMessages, ...activityMessages].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        if (isMounted) {
+          setMessages(combinedMessages);
+          setAllActivities(extractedActivities);
+          setVisibleActivities(firstBatch.length);
+          setHasBotResponse(true);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setMessages([
+            {
+              _id: `ai-history-error-${Date.now()}`,
+              text: error?.message || "Unable to load AI chat history.",
+              createdAt: new Date(),
+              user: BOT_USER,
+            },
+          ]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadConversationHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fromHistoryList, conversation_id, tripId, currentUser]);
+
   const onSend = useCallback(
     async () => {
       const prompt = text.trim();
-      if (!prompt || !tripId || isLoading) return;
+    if (!prompt || !tripId || isLoading || fromHistoryList) return;
 
       const userMessage = {
         _id: `user-${Date.now()}`,
@@ -289,7 +375,7 @@ const AiChat = ({ navigation }) => {
   }, []);
 
   return (
-    <MainContainer loader={false}>
+      <MainContainer loader={isLoading && messages.length === 0}>
       <Header title="Plan with AI" />
 
       {/* Trip Title and Action Buttons */}

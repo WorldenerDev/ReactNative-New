@@ -63,6 +63,7 @@ export const endpoints = {
     getGroupWishlisted: "/group",
     chatbot: "/chatbot",
     chatbotHistoryList: "/chatbot/history-list",
+    chatbotHistory: "/chatbot/history",
   },
 
 };
