@@ -45,8 +45,6 @@ import io from "socket.io-client";
 
 const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
 
-// Calculate input toolbar height: padding (8*2) + input minHeight (40) + buffer
-// Based on styles: paddingVertical: 8, input minHeight: 40, send button: 40
 const INPUT_TOOLBAR_HEIGHT = 60;
 
 // Avatar component to handle image loading errors
@@ -83,7 +81,7 @@ const AvatarComponent = ({ avatar, name, onPress, styles }) => {
 };
 
 const Chat = ({ navigation, route }) => {
-  const { groupId } = route?.params || {};
+  const { groupId, tripId } = route?.params || {};
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const {
@@ -633,7 +631,9 @@ const Chat = ({ navigation, route }) => {
       <Header
         title="Group Chat"
         rightIconImage={imagePath.AI_ICON}
-        onRightIconPress={() => navigation.navigate(navigationStrings.AI_CHAT)}
+        onRightIconPress={() =>
+          navigation.navigate(navigationStrings.AI_CHAT, { tripId })
+        }
       />
 
       <GiftedChat

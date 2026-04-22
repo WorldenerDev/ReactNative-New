@@ -1,287 +1,210 @@
-import imagePath from "@assets/icons";
-import MainContainer from "@components/container/MainContainer";
-import Header from "@components/Header";
-import {
-  getHeight,
-  getWidth,
-  getHoriPadding,
-  getVertiPadding,
-  getFontSize,
-  getRadius,
-} from "@utils/responsive";
+import { chatbot, getGroups } from "@api/services/mainServices";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import MainContainer from "@components/container/MainContainer";
+import Header from "@components/Header";
 import navigationStrings from "@navigation/navigationStrings";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import React, { useState, useCallback, useEffect } from "react";
+import { useRoute } from "@react-navigation/native";
 import {
-  View,
+  getFontSize,
+  getHeight,
+  getHoriPadding,
+  getRadius,
+  getVertiPadding,
+  getWidth,
+} from "@utils/responsive";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
   StyleSheet,
   Text,
-  TouchableOpacity,
   TextInput,
-  Modal,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { GiftedChat, Message, MessageText } from "react-native-gifted-chat";
+import {
+  Avatar,
+  Bubble,
+  GiftedChat,
+  MessageImage,
+  MessageText,
+} from "react-native-gifted-chat";
+import { useSelector } from "react-redux";
 
-const MOCK_USERS = [
-  { _id: 1, name: "John Doe", avatar: "https://i.pravatar.cc/150?u=john" },
-  { _id: 2, name: "Jane Smith", avatar: "https://i.pravatar.cc/150?u=jane" },
-  { _id: 3, name: "Mike Johnson", avatar: "https://i.pravatar.cc/150?u=mike" },
-  { _id: 4, name: "Sarah Wilson", avatar: "https://i.pravatar.cc/150?u=sarah" },
-];
+const BOT_USER = { _id: 2, name: "AI" };
 
-const CURRENT_USER = MOCK_USERS[0];
-const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
+const createActivityMessage = (activity, indexOffset) => ({
+  _id: `activity-${activity?.uuid || indexOffset}-${Date.now()}`,
+  text: `${activity?.title || "Activity"}\n${activity?.description || ""}\nPrice: ${activity?.retail_price_value ?? "N/A"}`,
+  createdAt: new Date(Date.now() - indexOffset * 1000),
+  image: activity?.cover_image_url || undefined,
+  user: BOT_USER,
+});
+
+const ACTIVITY_BUBBLE_WIDTH = 280;
 
 const AiChat = ({ navigation }) => {
-  // const navigation = useNavigation();
   const route = useRoute();
-  const { groupId } = route?.params || {};
+  const { groupId, tripId } = route?.params || {};
+  const { user } = useSelector((state) => state.auth);
+  const currentUser = useMemo(
+    () => ({
+      _id: user?._id || user?.id || 1,
+      name: user?.name || "You",
+    }),
+    [user]
+  );
+
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const [selectedMessage, setSelectedMessage] = useState(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
-  const [isSearchMode, setIsSearchMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filteredMessages, setFilteredMessages] = useState([]);
-  const [showUserActions, setShowUserActions] = useState(false);
+  const [allActivities, setAllActivities] = useState([]);
+  const [visibleActivities, setVisibleActivities] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasBotResponse, setHasBotResponse] = useState(false);
+  const [tripTitle, setTripTitle] = useState("Trip");
 
   useEffect(() => {
-    setMessages([
-      {
-        _id: 1,
-        text: "Hey everyone! Welcome to our group chat! 👋",
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        user: MOCK_USERS[0],
-      },
-      {
-        _id: 2,
-        text: "Thanks @John Doe! Excited to be here.",
-        createdAt: new Date(Date.now() - 1000 * 60 * 110),
-        user: MOCK_USERS[1],
-      },
-    ]);
-  }, []);
+    let isMounted = true;
+
+    const loadGroupTripTitle = async () => {
+      try {
+        const response = await getGroups();
+        const groups = response?.data || [];
+        if (!Array.isArray(groups) || groups.length === 0) return;
+
+        const matchedGroup =
+          groups.find((item) => String(item?._id) === String(groupId)) ||
+          groups.find((item) => String(item?.tripId) === String(tripId)) ||
+          groups.find((item) => String(item?.trip_id) === String(tripId));
+
+        const cityName = matchedGroup?.cityId?.name;
+        if (isMounted && cityName) {
+          setTripTitle(`${cityName} Trip`);
+        }
+      } catch (error) {
+        // Keep fallback title if groups API fails.
+      }
+    };
+
+    loadGroupTripTitle();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [groupId, tripId]);
 
   const onSend = useCallback(
-    (newMessages = []) => {
-      // Handle manual send from custom composer
-      if (text.trim()) {
-        const newMessage = {
-          _id: Math.round(Math.random() * 1000000),
-          text: text,
+    async () => {
+      const prompt = text.trim();
+      if (!prompt || !tripId || isLoading) return;
+
+      const userMessage = {
+        _id: `user-${Date.now()}`,
+        text: prompt,
+        createdAt: new Date(),
+        user: currentUser,
+      };
+      setMessages((prev) => GiftedChat.append(prev, [userMessage]));
+      setText("");
+      setIsLoading(true);
+
+      try {
+        const response = await chatbot({ prompt, trip_id: tripId });
+        const activities = response?.activities?.data || [];
+        const firstBatch = activities.slice(0, 5);
+        const activityMessages = firstBatch.map((item, index) =>
+          createActivityMessage(item, index + 1)
+        );
+        const nextMessages =
+          activityMessages.length > 0
+            ? activityMessages
+            : [
+              {
+                _id: `ai-empty-${Date.now()}`,
+                text: "No activities found for your query.",
+                createdAt: new Date(),
+                user: BOT_USER,
+              },
+            ];
+        setMessages((prev) => GiftedChat.append(prev, nextMessages));
+        setAllActivities(activities);
+        setVisibleActivities(firstBatch.length);
+        setHasBotResponse(true);
+      } catch (error) {
+        const fallbackMessage = {
+          _id: `ai-error-${Date.now()}`,
+          text: error?.message || "Unable to fetch activities right now.",
           createdAt: new Date(),
-          user: CURRENT_USER,
+          user: BOT_USER,
         };
-        setMessages((prev) => GiftedChat.append(prev, [newMessage]));
-        setText("");
-      } else if (newMessages.length > 0) {
-        // Handle send from default composer
-        setMessages((prev) => GiftedChat.append(prev, newMessages));
+        setMessages((prev) => GiftedChat.append(prev, [fallbackMessage]));
+      } finally {
+        setIsLoading(false);
       }
     },
-    [text]
+    [text, tripId, isLoading, currentUser]
   );
 
-  // Handle text input change
-  const handleTextChange = useCallback((newText) => {
-    setText(newText);
-  }, []);
-
-  // Emoji
-  const handleEmojiReaction = useCallback(
-    (emoji, message = selectedMessage) => {
-      if (!message) return;
-      setMessages((prev) =>
-        prev.map((msg) => {
-          if (msg._id === message._id) {
-            const reactions = { ...(msg.reactions || {}) };
-            const emojiUsers = reactions[emoji] || [];
-            const userAlreadyReacted = emojiUsers.some(
-              (u) => u._id === CURRENT_USER._id
-            );
-            if (userAlreadyReacted) {
-              reactions[emoji] = emojiUsers.filter(
-                (u) => u._id !== CURRENT_USER._id
-              );
-            } else {
-              reactions[emoji] = [CURRENT_USER];
-            }
-            Object.keys(reactions).forEach((key) => {
-              if (reactions[key].length === 0) delete reactions[key];
-            });
-            return { ...msg, reactions };
-          }
-          return msg;
-        })
-      );
-      setShowEmojiPicker(false);
-      setSelectedMessage(null);
-    },
-    [selectedMessage]
-  );
-
-  const renderReactions = (currentMessage, position) => {
-    if (!currentMessage.reactions) return null;
-    const containerStyle =
-      position === "right" ? styles.reactionsRight : styles.reactionsLeft;
-
-    return (
-      <View style={containerStyle}>
-        {Object.entries(currentMessage.reactions).map(([emoji, users]) => (
-          <TouchableOpacity
-            key={emoji}
-            style={styles.reactionButton}
-            onPress={() => handleEmojiReaction(emoji, currentMessage)}
-          >
-            <Text style={styles.reactionEmoji}>{emoji}</Text>
-            <Text style={styles.reactionCount}>{users.length}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+  const handleLoadMore = useCallback(() => {
+    if (visibleActivities >= allActivities.length) return;
+    const nextSlice = allActivities.slice(visibleActivities, visibleActivities + 5);
+    const newMessages = nextSlice.map((item, index) =>
+      createActivityMessage(item, index + visibleActivities + 1)
     );
-  };
+    setMessages((prev) => GiftedChat.append(prev, newMessages));
+    setVisibleActivities((prev) => prev + nextSlice.length);
+  }, [allActivities, visibleActivities]);
 
-  const renderEmojiPickerAbove = (currentMessage) => {
-    if (
-      !currentMessage ||
-      currentMessage._id !== selectedMessage?._id ||
-      !showEmojiPicker
-    )
-      return null;
-    return (
-      <View style={styles.emojiPickerAbove}>
-        <View style={styles.emojiGrid}>
-          {EMOJI_REACTIONS.map((emoji) => (
-            <TouchableOpacity
-              key={emoji}
-              style={styles.emojiButton}
-              onPress={() => handleEmojiReaction(emoji)}
-            >
-              <Text style={styles.emojiText}>{emoji}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    );
-  };
-
-  // User actions
-  const onUserAvatarPress = useCallback((user) => {
-    setSelectedMessage({ user });
-    setShowUserActions(true);
-  }, []);
-
-  const handleUserAction = useCallback((action, user) => {
-    if (action === "report") {
-      alert(`Reported ${user.name}`);
-    } else if (action === "block") {
-      alert(`Blocked ${user.name}`);
-    }
-    setShowUserActions(false);
-  }, []);
-
-  // Search
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredMessages([]);
-      setIsSearchMode(false);
-    } else {
-      const filtered = messages.filter((msg) =>
-        msg.text.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredMessages(filtered);
-      setIsSearchMode(true);
-    }
-  };
-
-  const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search messages..."
-        value={searchQuery}
-        onChangeText={handleSearch}
-      />
-      <TouchableOpacity
-        style={styles.searchCloseButton}
-        onPress={() => {
-          setSearchQuery("");
-          setIsSearchMode(false);
-          setFilteredMessages([]);
-        }}
-      >
-        <Text style={styles.searchCloseText}>✕</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  // Render message
-  const renderMessage = (props) => {
-    const { currentMessage, position } = props;
-    const isCurrentUser = currentMessage.user._id === CURRENT_USER._id;
-
-    return (
-      <View style={{ marginVertical: 2 }}>
-        <Message
-          {...props}
-          onLongPress={() =>
-            setSelectedMessage(currentMessage) || setShowEmojiPicker(true)
-          }
-          onPressAvatar={() => onUserAvatarPress(currentMessage.user)}
-          renderMessageText={(msgProps) => <MessageText {...msgProps} />}
-        />
-        {renderReactions(currentMessage, position)}
-        {renderEmojiPickerAbove(currentMessage)}
-      </View>
-    );
-  };
-
-  const renderSend = (props) => {
-    const hasText = text.trim().length > 0;
+  const renderSend = () => {
+    const hasText = text.trim().length > 0 && !isLoading;
     return (
       <TouchableOpacity
         style={[styles.sendButton, !hasText && styles.sendButtonDisabled]}
-        onPress={() => {
-          if (hasText) {
-            onSend();
-          }
-        }}
+        onPress={onSend}
         disabled={!hasText}
       >
-        <Text style={styles.sendButtonIcon}>→</Text>
+        <Text style={styles.sendButtonIcon}>{isLoading ? "..." : "→"}</Text>
       </TouchableOpacity>
     );
   };
 
-  const renderInputToolbar = (props) => (
-    <View style={styles.inputToolbar}>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type you message"
-          placeholderTextColor="#999"
-          value={text}
-          onChangeText={handleTextChange}
-          multiline
-        />
-        {renderSend(props)}
+  const renderInputToolbar = () =>
+    hasBotResponse ? null : (
+      <View style={styles.inputToolbar}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your message"
+            placeholderTextColor="#999"
+            value={text}
+            onChangeText={setText}
+            multiline
+          />
+          {renderSend()}
+        </View>
       </View>
-    </View>
-  );
+    );
+
+  const renderChatFooter = () => {
+    const canLoadMore = hasBotResponse && visibleActivities < allActivities.length;
+    if (!canLoadMore) return <View style={{ height: getHeight(10) }} />;
+
+    return (
+      <View style={styles.loadMoreContainer}>
+        <TouchableOpacity style={styles.loadMoreButton} onPress={handleLoadMore}>
+          <Text style={styles.loadMoreButtonText}>Load More</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const handleViewAiChats = useCallback(() => {
-    navigation.navigate(navigationStrings.VIEW_AI_CHAT);
-  }, [navigation]);
+    navigation.navigate(navigationStrings.VIEW_AI_CHAT, { groupId, tripId });
+  }, [navigation, groupId, tripId]);
 
   const handleViewTrip = useCallback(() => {
-    // TODO: Navigate to trip details with tripId
-    // navigation.navigate(navigationStrings.TRIP_DETAILS, { tripId: 'trip-id' });
-    console.log("Navigate to trip details");
-  }, []);
+    if (!tripId) return;
+    navigation.navigate(navigationStrings.TRIP_DETAILS, { tripId });
+  }, [navigation, tripId]);
 
   const handleGroupChat = useCallback(() => {
     if (!groupId) {
@@ -292,13 +215,52 @@ const AiChat = ({ navigation }) => {
     navigation.navigate(navigationStrings.CHAT, { groupId });
   }, [navigation, groupId]);
 
+  const renderBubble = useCallback((props) => {
+    const hasActivityImage = Boolean(props?.currentMessage?.image);
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          left: [
+            styles.leftBubble,
+            hasActivityImage ? styles.bubbleWithActivity : null,
+          ],
+          right: [styles.rightBubble],
+        }}
+      />
+    );
+  }, []);
+
+  const renderMessageImage = useCallback(
+    (props) => <MessageImage {...props} imageStyle={styles.activityImage} />,
+    []
+  );
+
+  const renderMessageText = useCallback(
+    (props) => <MessageText {...props} textStyle={{ left: styles.activityText, right: styles.activityText }} />,
+    []
+  );
+
+  const renderAvatar = useCallback((props) => {
+    const isBot = String(props?.currentMessage?.user?._id) === String(BOT_USER._id);
+    if (!isBot) {
+      return <Avatar {...props} />;
+    }
+
+    return (
+      <View style={styles.botAvatar}>
+        <Text style={styles.botAvatarText}>AI</Text>
+      </View>
+    );
+  }, []);
+
   return (
     <MainContainer loader={false}>
       <Header title="Plan with AI" />
 
       {/* Trip Title and Action Buttons */}
       <View style={styles.tripSection}>
-        <Text style={styles.tripTitle}>Tokyo Trip</Text>
+        <Text style={styles.tripTitle}>{tripTitle}</Text>
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity
             style={styles.tripActionButton}
@@ -325,55 +287,18 @@ const AiChat = ({ navigation }) => {
       </View>
 
       <GiftedChat
-        messages={isSearchMode ? filteredMessages : messages}
-        onSend={onSend}
-        user={CURRENT_USER}
-        renderMessage={renderMessage}
+        messages={messages}
+        user={currentUser}
         renderInputToolbar={renderInputToolbar}
+        renderChatFooter={renderChatFooter}
+        renderBubble={renderBubble}
+        renderMessageImage={renderMessageImage}
+        renderMessageText={renderMessageText}
+        renderAvatar={renderAvatar}
         showUserAvatar
       />
 
       <View style={{ height: getHeight(20) }} />
-
-      <Modal visible={showUserActions} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.userActionsModal}>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>
-                {selectedMessage?.user?.name || "Unknown User"}
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowUserActions(false)}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() =>
-                selectedMessage?.user &&
-                handleUserAction("report", selectedMessage.user)
-              }
-            >
-              <Text style={styles.actionButtonText}>🚨 Report User</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.blockButton]}
-              onPress={() =>
-                selectedMessage?.user &&
-                handleUserAction("block", selectedMessage.user)
-              }
-            >
-              <Text style={[styles.actionButtonText, styles.blockButtonText]}>
-                🚫 Block User
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </MainContainer>
   );
 };
@@ -413,36 +338,6 @@ const styles = StyleSheet.create({
     color: colors.lightText,
     textAlign: "center",
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "bold" },
-  searchButton: { padding: 8 },
-  searchButtonText: { fontSize: 20 },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-    backgroundColor: "#f9f9f9",
-  },
-  searchInput: {
-    flex: 1,
-    height: 36,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    backgroundColor: "#fff",
-  },
-  searchCloseButton: { marginLeft: 8, padding: 8 },
-  searchCloseText: { fontSize: 18 },
   inputToolbar: {
     backgroundColor: "#fff",
     paddingHorizontal: 10,
@@ -474,62 +369,64 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: { opacity: 0.5 },
   sendButtonIcon: { fontSize: 20, color: "#000", fontWeight: "bold" },
-  sendButtonText: { color: "#fff", fontWeight: "600" },
-  reactionsLeft: { flexDirection: "row", marginTop: 4, marginLeft: 60 },
-  reactionsRight: {
+  loadMoreContainer: {
     flexDirection: "row",
-    marginTop: 4,
-    marginLeft: "auto",
-    marginRight: 60,
+    justifyContent: "flex-end",
+    paddingRight: getHoriPadding(16),
+    paddingVertical: getVertiPadding(8),
   },
-  reactionButton: {
-    flexDirection: "row",
+  loadMoreButton: {
+    minWidth: getWidth(90),
+    borderRadius: getRadius(16),
     alignItems: "center",
-    marginRight: 4,
+    justifyContent: "center",
+    paddingVertical: getVertiPadding(8),
+    paddingHorizontal: getHoriPadding(16),
+    backgroundColor: "#87CEEB",
   },
-  reactionEmoji: { fontSize: 12, marginRight: 2 },
-  reactionCount: { fontSize: 10, color: "#666" },
-  emojiPickerAbove: { marginBottom: 10, alignItems: "center" },
-  emojiGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
+  loadMoreButtonText: {
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.black,
   },
-  emojiButton: {
+  // Keep activity cards consistent so image spans same width as text bubble.
+  bubbleWithActivity: {
+    width: ACTIVITY_BUBBLE_WIDTH,
+  },
+  leftBubble: {
+    backgroundColor: "#f4f4f4",
+    overflow: "hidden",
+  },
+  rightBubble: {
+    backgroundColor: "#87CEEB",
+    overflow: "hidden",
+  },
+  activityImage: {
+    width: "100%",
+    height: 160,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+  },
+  activityText: {
+    paddingHorizontal: getHoriPadding(10),
+    paddingVertical: getVertiPadding(8),
+    fontSize: getFontSize(13),
+    color: colors.black,
+    lineHeight: getFontSize(18),
+  },
+  botAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#2ecc71",
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 4,
   },
-  emojiText: { fontSize: 20 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+  botAvatarText: {
+    color: "#fff",
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoMedium,
   },
-  userActionsModal: {
-    width: 250,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 16,
-  },
-  userInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  userName: { fontWeight: "bold", fontSize: 16 },
-  closeButton: { padding: 4 },
-  closeButtonText: { fontSize: 16 },
-  actionButton: { paddingVertical: 8 },
-  actionButtonText: { fontSize: 16 },
-  blockButton: { marginTop: 4 },
-  blockButtonText: { color: "red" },
 });
 
 export default AiChat;

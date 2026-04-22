@@ -34,7 +34,6 @@ const Group = ({ navigation }) => {
 
   // Transform API data to match UI structure
   const transformGroupData = (groupsData) => {
-    console.log("groupsData", groupsData);
     return groupsData.map((group) => {
       const peopleCount = group.addedUsers?.length || 0;
       const totalPeople = peopleCount + 1; // +1 for creator
@@ -46,6 +45,7 @@ const Group = ({ navigation }) => {
 
       return {
         id: group._id,
+        tripId: group.trip_id || group.tripId || "",
         cityId: group?.cityId?.city_id,
         title: group.groupName || group.cityId?.name || "Trip",
         location: group.cityId?.name || "",
@@ -137,7 +137,10 @@ const Group = ({ navigation }) => {
         <TouchableOpacity
           style={styles.chatButton}
           onPress={() =>
-            navigation.navigate(navigationStrings.CHAT, { groupId: item?.id })
+            navigation.navigate(navigationStrings.CHAT, {
+              groupId: item?.id,
+              tripId: item?.tripId,
+            })
           }
         >
           <Text style={styles.actionButtonText}>Chat</Text>

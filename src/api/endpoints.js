@@ -61,6 +61,8 @@ export const endpoints = {
     addCard: "/add-card",
     updateProfile: "/updateProfile",
     getGroupWishlisted: "/group",
+    chatbot: "/chatbot",
+    chatbotHistoryList: "/chatbot/history-list",
   },
 
 };

@@ -88,3 +88,6 @@ export const updateProfile = (formData) =>
     },
   });
 export const addCard = (data) => apiPost(endpoints?.main?.addCard, data);
+export const chatbot = (data) => apiPost(endpoints?.main?.chatbot, data);
+export const getChatbotHistoryList = (params) =>
+  apiGet(endpoints?.main?.chatbotHistoryList, params);
