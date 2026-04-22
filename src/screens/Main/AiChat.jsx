@@ -37,6 +37,9 @@ const createActivityMessage = (activity, indexOffset) => ({
   text: `${activity?.title || "Activity"}\n${activity?.description || ""}\nPrice: ${activity?.retail_price_value ?? "N/A"}`,
   createdAt: new Date(Date.now() - indexOffset * 1000),
   image: activity?.cover_image_url || undefined,
+  activityUuid: activity?.uuid || null,
+  activityName: activity?.title || "Activity",
+  activityImage: activity?.cover_image_url || null,
   user: BOT_USER,
 });
 
@@ -215,11 +218,42 @@ const AiChat = ({ navigation }) => {
     navigation.navigate(navigationStrings.CHAT, { groupId });
   }, [navigation, groupId]);
 
+  const handleActivityPress = useCallback(
+    (activityUuid, activityName, activityImage) => {
+      if (!activityUuid) return;
+
+      const eventData = {
+        id: activityUuid,
+        name: activityName,
+        image: activityImage,
+        cover_image_url: activityImage,
+      };
+
+      navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+        eventData,
+      });
+    },
+    [navigation]
+  );
+
   const renderBubble = useCallback((props) => {
-    const hasActivityImage = Boolean(props?.currentMessage?.image);
+    const currentMessage = props?.currentMessage;
+    const hasActivityImage = Boolean(currentMessage?.image);
+    const canOpenActivity =
+      String(currentMessage?.user?._id) === String(BOT_USER._id) &&
+      Boolean(currentMessage?.activityUuid);
+
     return (
       <Bubble
         {...props}
+        onPress={() => {
+          if (!canOpenActivity) return;
+          handleActivityPress(
+            currentMessage?.activityUuid,
+            currentMessage?.activityName,
+            currentMessage?.activityImage
+          );
+        }}
         wrapperStyle={{
           left: [
             styles.leftBubble,
@@ -229,7 +263,7 @@ const AiChat = ({ navigation }) => {
         }}
       />
     );
-  }, []);
+  }, [handleActivityPress]);
 
   const renderMessageImage = useCallback(
     (props) => <MessageImage {...props} imageStyle={styles.activityImage} />,
