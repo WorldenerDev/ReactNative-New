@@ -13,11 +13,15 @@ import navigationStrings from '@navigation/navigationStrings'
 
 const PaymentSuccess = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
-  const { orderUuid } = route.params;
+  const { orderUuid } = route?.params || {};
 
   const createDownloadApi = async () => {
     try {
       setLoading(true);
+      if (!orderUuid) {
+        showToast("error", "Missing order reference.");
+        return;
+      }
       const downloadResponse = await downloadVoucher({
         orderUuid: orderUuid,
       });

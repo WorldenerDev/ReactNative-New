@@ -9,7 +9,8 @@
     "start": "react-native start",
     "test": "jest",
     "postinstall": "patch-package",
-    "androidapk": "cd android && ./gradlew clean && ./gradlew assembleRelease && cd .."
+    "androidapk": "cd android && ./gradlew clean && ./gradlew assembleRelease && cd ..",
+    "stripe-server": "node scripts/stripe-dev-server.js"
   },
   "dependencies": {
     "@invertase/react-native-apple-authentication": "^2.4.1",
@@ -22,7 +23,7 @@
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.25",
     "@reduxjs/toolkit": "^2.8.2",
-    "@stripe/stripe-react-native": "^0.59.2",
+    "@stripe/stripe-react-native": "^0.65.1",
     "axios": "^1.11.0",
     "lottie-react-native": "^7.3.2",
     "react": "19.1.0",
@@ -59,12 +60,14 @@
     "@types/jest": "^29.5.13",
     "@types/react": "^19.1.0",
     "@types/react-test-renderer": "^19.1.0",
+    "babel-plugin-inline-dotenv": "^1.7.0",
     "babel-plugin-module-resolver": "^5.0.2",
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
     "patch-package": "^8.0.1",
     "prettier": "2.8.8",
     "react-test-renderer": "19.1.0",
+    "stripe": "^18.0.0",
     "typescript": "^5.8.3"
   },
   "engines": {

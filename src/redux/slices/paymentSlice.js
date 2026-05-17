@@ -1,0 +1,124 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import * as paymentApi from "../../services/payment";
+
+export const fetchPaymentMethods = createAsyncThunk(
+  "payment/fetchPaymentMethods",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await paymentApi.runPaymentApi(() =>
+        paymentApi.listPaymentMethods()
+      );
+      return res;
+    } catch (e) {
+      return rejectWithValue(e?.message || "Failed to load cards");
+    }
+  }
+);
+
+export const removePaymentMethod = createAsyncThunk(
+  "payment/removePaymentMethod",
+  async (paymentMethodId, { rejectWithValue }) => {
+    try {
+      await paymentApi.runPaymentApi(() =>
+        paymentApi.deletePaymentMethod({ paymentMethodId })
+      );
+      return paymentMethodId;
+    } catch (e) {
+      return rejectWithValue(e?.message || "Failed to delete card");
+    }
+  }
+);
+
+const initialState = {
+  items: [],
+  selectedId: null,
+  status: "idle",
+  error: null,
+  cartId: null,
+  tripId: null,
+  amountMinor: null,
+  currency: "usd",
+  lastClientSecret: null,
+};
+
+const paymentSlice = createSlice({
+  name: "payment",
+  initialState,
+  reducers: {
+    setSelectedCard: (state, action) => {
+      state.selectedId = action.payload;
+    },
+    setCheckoutContext: (state, action) => {
+      const p = action.payload || {};
+      if (p.cartId !== undefined) {
+        state.cartId = p.cartId;
+      }
+      if (p.tripId !== undefined) {
+        state.tripId = p.tripId;
+      }
+      if (p.amountMinor !== undefined) {
+        state.amountMinor = p.amountMinor;
+      }
+      if (p.currency !== undefined) {
+        state.currency = p.currency || "usd";
+      }
+    },
+    addLocalCard: (state, action) => {
+      const card = action.payload;
+      state.items.push(card);
+      state.selectedId = card.id;
+    },
+    clearPaymentError: (state) => {
+      state.error = null;
+    },
+    setLastClientSecret: (state, action) => {
+      state.lastClientSecret = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchPaymentMethods.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchPaymentMethods.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.items = action.payload?.items || [];
+        if (
+          state.selectedId &&
+          !state.items.some((i) => i.id === state.selectedId)
+        ) {
+          state.selectedId = null;
+        }
+        if (!state.selectedId && state.items.length > 0) {
+          const def =
+            state.items.find((i) => i.isDefault) || state.items[0];
+          state.selectedId = def.id;
+        }
+      })
+      .addCase(fetchPaymentMethods.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload || "Failed";
+      })
+      .addCase(removePaymentMethod.fulfilled, (state, action) => {
+        const id = action.payload;
+        state.items = state.items.filter((i) => i.id !== id);
+        if (state.selectedId === id) {
+          state.selectedId = state.items[0]?.id ?? null;
+        }
+      })
+      .addCase(removePaymentMethod.rejected, (state, action) => {
+        state.error = action.payload || "Delete failed";
+      });
+  },
+});
+
+export const {
+  setSelectedCard,
+  setCheckoutContext,
+  addLocalCard,
+  clearPaymentError,
+  setLastClientSecret,
+} = paymentSlice.actions;
+
+export default paymentSlice.reducer;

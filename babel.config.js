@@ -16,7 +16,14 @@ module.exports = {
           "@api": "./src/api",
           "@redux": "./src/redux",
           "@hooks": "./src/hooks",
+          "@services": "./src/services",
         },
+      },
+    ],
+    [
+      "module:babel-plugin-inline-dotenv",
+      {
+        path: ".env",
       },
     ],
     'react-native-worklets/plugin',

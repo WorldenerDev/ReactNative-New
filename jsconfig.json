@@ -10,6 +10,7 @@
       "@hooks/*": ["hooks/*"],
       "@navigation/*": ["navigation/*"],
       "@redux/*": ["redux/*"],
+      "@services/*": ["services/*"],
       "@screens/*": ["screens/*"],
       "@utils/*": ["utils/*"]
     }

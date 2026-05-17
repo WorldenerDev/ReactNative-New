@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   ActivityDetails,
   ActivityDetailsCheckAvability,
+  AddCard,
   AddToTrip,
   AiChat,
   BookingDetails,
@@ -20,6 +21,7 @@ import {
   NotificationScreen,
   NotificationSettings,
   Payment,
+  PaymentMethods,
   PaymentSuccess,
   PrivacyTerms,
   SaveCard,
@@ -109,6 +111,14 @@ const MainNavigator = () => {
         <MainStack.Screen
           name={navigationStrings.PAYMENT}
           component={Payment}
+        />
+        <MainStack.Screen
+          name={navigationStrings.PAYMENT_METHODS}
+          component={PaymentMethods}
+        />
+        <MainStack.Screen
+          name={navigationStrings.ADD_CARD}
+          component={AddCard}
         />
         <MainStack.Screen
           name={navigationStrings.SAVE_CARD}

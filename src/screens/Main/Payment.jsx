@@ -5,9 +5,14 @@ import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
+import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
+import { usePayments } from "@hooks/usePayments";
 import navigationStrings from "@navigation/navigationStrings";
+import { setCheckoutContext } from "@redux/slices/paymentSlice";
 import { getHeight, getHoriPadding } from "@utils/responsive";
-import { useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   FlatList,
   Image,
@@ -18,33 +23,30 @@ import {
 } from "react-native";
 
 const Payment = ({ navigation, route }) => {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  const [selectedCardId, setSelectedCardId] = useState("2");
-  const { trip_id } = route?.params || {};
-  const createOrderApi = async () => {
-    try {
-      setLoading(true);
-      const orderResponse = await createOrder({
-        trip_id: trip_id,
-        email_notification: "NONE",
+  const { items, selectedId } = useSelector((s) => s.payment);
+  const { trip_id, cart_id, amount_minor, currency } = route?.params || {};
+  const { getCards, selectCard, pay, addDevelopmentCard } = usePayments();
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(
+        setCheckoutContext({
+          cartId: cart_id,
+          tripId: trip_id,
+          amountMinor: amount_minor,
+          currency: currency || "usd",
+        })
+      );
+      getCards().catch(() => {
+        showToast("error", "Could not load payment methods.");
       });
-      if (orderResponse?.success === true) {
-        // setOrderUuid(orderResponse?.data?.order_id);
-        createNoPaymentApi(orderResponse?.data?.order_id);
-      } else {
-        showToast("error", orderResponse?.data?.message);
-      }
-      console.log("orderResponse", orderResponse);
-    } catch (error) {
-      console.log("error", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, [dispatch, getCards, trip_id, cart_id, amount_minor, currency])
+  );
 
   const createNoPaymentApi = async (orderUuid) => {
     try {
-      setLoading(true);
       const noPaymentResponse = await createNoPayment({
         orderUuid: orderUuid,
       });
@@ -52,13 +54,42 @@ const Payment = ({ navigation, route }) => {
         navigation.navigate(navigationStrings.PAYMENT_SUCCESS, {
           orderUuid: orderUuid,
         });
-
       } else {
         showToast("error", noPaymentResponse?.data?.message);
       }
-      console.log("noPaymentResponse", noPaymentResponse);
     } catch (error) {
       console.log("error", error);
+      showToast("error", "Could not finalize booking.");
+    }
+  };
+
+  const createOrderAfterPay = async () => {
+    const orderResponse = await createOrder({
+      trip_id: trip_id,
+      email_notification: "NONE",
+    });
+    if (orderResponse?.success === true) {
+      await createNoPaymentApi(orderResponse?.data?.order_id);
+    } else {
+      showToast("error", orderResponse?.data?.message);
+    }
+  };
+
+  const handlePayNow = async () => {
+    if (!selectedId) {
+      showToast("error", "Select a payment method.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const paid = await pay();
+      if (!paid?.ok) {
+        return;
+      }
+      await createOrderAfterPay();
+    } catch (error) {
+      console.log("handlePayNow error", error);
+      showToast("error", "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -69,43 +100,55 @@ const Payment = ({ navigation, route }) => {
       <Header title="Payment" />
 
       <View style={styles.screen}>
-        <Text style={styles.sectionTitle}>Select A Payment Method</Text>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.manageRow}
+          onPress={() => navigation.navigate(navigationStrings.PAYMENT_METHODS)}
+        >
+          <Text style={styles.manageText}>Manage payment methods</Text>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Select a payment method</Text>
 
         <FlatList
           style={styles.cardList}
-          data={[
-            { id: "1", last4: "4187" },
-            { id: "2", last4: "9387" },
-          ]}
+          data={items}
           keyExtractor={(item) => item.id}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyText}>No saved cards yet.</Text>
+              {!STRIPE_PUBLISHABLE_KEY ? (
+                <ButtonComp
+                  title="Add mock test card"
+                  onPress={() => addDevelopmentCard()}
+                  containerStyle={styles.mockBtn}
+                />
+              ) : null}
+            </View>
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               activeOpacity={0.8}
               style={[
                 styles.cardRow,
-                selectedCardId === item.id && styles.cardRowSelected,
+                selectedId === item.id && styles.cardRowSelected,
               ]}
-              onPress={() => setSelectedCardId(item.id)}
+              onPress={() => selectCard(item.id)}
             >
               <View style={styles.cardInfo}>
-                <Text style={styles.cardNumber}>{`**** ${item.last4}`}</Text>
-                <View style={styles.cardBrands}>
-                  <Image
-                    source={imagePath.MASTER_CARD}
-                    style={styles.brandIcon}
-                    resizeMode="contain"
-                  />
-                  <Image
-                    source={imagePath.MASTER_CARD}
-                    style={[styles.brandIcon, styles.brandIconOverlap]}
-                    resizeMode="contain"
-                  />
+                <View style={styles.cardTextCol}>
+                  <Text style={styles.cardNumber}>{`•••• ${item.last4}`}</Text>
+                  <Text style={styles.brandSmall}>{item.brand || "Card"}</Text>
                 </View>
+                <Image
+                  source={imagePath.CARD_ICON}
+                  style={styles.brandIcon}
+                  resizeMode="contain"
+                />
               </View>
               <View style={styles.radioOuter}>
-                {selectedCardId === item.id && (
-                  <View style={styles.radioInner} />
-                )}
+                {selectedId === item.id && <View style={styles.radioInner} />}
               </View>
             </TouchableOpacity>
           )}
@@ -116,13 +159,9 @@ const Payment = ({ navigation, route }) => {
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.addCardRow}
-              onPress={() =>
-                navigation.navigate(navigationStrings.SAVE_CARD, {
-                  trip_id,
-                })
-              }
+              onPress={() => navigation.navigate(navigationStrings.ADD_CARD)}
             >
-              <Text style={styles.addCardText}>Add Credit Card</Text>
+              <Text style={styles.addCardText}>Add credit card</Text>
               <Text style={styles.addCardPlus}>+</Text>
             </TouchableOpacity>
           }
@@ -131,26 +170,12 @@ const Payment = ({ navigation, route }) => {
 
         <View style={styles.footer}>
           <ButtonComp
-            disabled={false}
-            title="Pay Now"
-            onPress={() => console.log("Pay Now")}
+            disabled={!selectedId || loading}
+            title="Pay now"
+            onPress={handlePayNow}
           />
         </View>
       </View>
-
-      {/* Old design kept (commented)
-      <View style={styles.container}>
-        <Image
-          source={imagePath.CARD_ICON}
-          style={styles.cardIcon}
-          resizeMode="contain"
-        />
-        <ButtonComp
-          disabled={false}
-          title="Pay Now"
-          onPress={createOrderApi}
-        />
-      </View> */}
     </MainContainer>
   );
 };
@@ -165,6 +190,23 @@ const styles = StyleSheet.create({
     paddingTop: getHeight(16),
     paddingBottom: getHeight(24),
   },
+  manageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: getHeight(12),
+    marginBottom: getHeight(8),
+  },
+  manageText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.black,
+  },
+  chevron: {
+    fontSize: 22,
+    color: colors.black,
+    opacity: 0.45,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
@@ -172,7 +214,20 @@ const styles = StyleSheet.create({
     marginBottom: getHeight(16),
   },
   cardList: {
-    gap: getHeight(12),
+    flexGrow: 0,
+  },
+  emptyWrap: {
+    paddingVertical: getHeight(24),
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.black,
+    opacity: 0.55,
+    marginBottom: getHeight(12),
+  },
+  mockBtn: {
+    marginTop: getHeight(4),
   },
   cardRow: {
     flexDirection: "row",
@@ -191,22 +246,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: getHoriPadding(12),
+    flex: 1,
+  },
+  cardTextCol: {
+    flex: 1,
   },
   cardNumber: {
     fontSize: 14,
     fontWeight: "500",
     color: colors.black,
   },
-  cardBrands: {
-    flexDirection: "row",
-    alignItems: "center",
+  brandSmall: {
+    fontSize: 11,
+    opacity: 0.55,
+    marginTop: 4,
   },
   brandIcon: {
     width: 22,
     height: 22,
-  },
-  brandIconOverlap: {
-    marginLeft: -8,
   },
   radioOuter: {
     width: 22,
@@ -246,33 +303,5 @@ const styles = StyleSheet.create({
   footer: {
     flex: 1,
     justifyContent: "flex-end",
-  },
-  continueButton: {
-    backgroundColor: colors.black,
-    borderRadius: 999,
-    paddingVertical: getHeight(14),
-    alignItems: "center",
-  },
-  continueButtonText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  // old styles kept in case needed again
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-    justifyContent: "space-evenly",
-  },
-  cardIcon: {
-    height: getHeight(200),
-    width: "100%",
-    alignSelf: "center",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: getHoriPadding(10),
-    height: getHeight(100),
   },
 });

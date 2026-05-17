@@ -4,6 +4,7 @@ import authReducer from "./slices/authSlice";
 import cityTripReducer from "./slices/cityTripSlice";
 import chatReducer from "./slices/chatSlice";
 import onlineStatusReducer from "./slices/onlineStatusSlice";
+import paymentReducer from "./slices/paymentSlice";
 import { updateUserOnlineStatus } from "./slices/onlineStatusSlice";
 
 const onlineStatusMiddleware = (store) => (next) => (action) => {
@@ -34,6 +35,7 @@ export const store = configureStore({
     cityTrip: cityTripReducer,
     chat: chatReducer,
     onlineStatus: onlineStatusReducer,
+    payment: paymentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(onlineStatusMiddleware),

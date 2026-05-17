@@ -43,7 +43,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   console.log("user", user);
-  const { cart_id, trip_id } = route.params;
+  const { cart_id, trip_id, amount_minor, currency } = route.params || {};
   const [userData, setUserData] = useState({});
   const [formFields, setFormFields] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -522,7 +522,10 @@ const CartCustomerInfo = ({ navigation, route }) => {
                   "Participant information submitted successfully!"
                 );
                 navigation.navigate(navigationStrings.PAYMENT, {
-                  trip_id: trip_id,
+                  trip_id,
+                  cart_id,
+                  amount_minor,
+                  currency: currency || "usd",
                 });
               } else {
                 showToast(
@@ -534,7 +537,10 @@ const CartCustomerInfo = ({ navigation, route }) => {
             } else {
               // No participant data to send, navigate to payment
               navigation.navigate(navigationStrings.PAYMENT, {
-                trip_id: trip_id,
+                trip_id,
+                cart_id,
+                amount_minor,
+                currency: currency || "usd",
               });
             }
           } catch (participantError) {
@@ -551,7 +557,10 @@ const CartCustomerInfo = ({ navigation, route }) => {
         } else {
           // No participant schema, navigate directly to payment
           navigation.navigate(navigationStrings.PAYMENT, {
-            trip_id: trip_id,
+            trip_id,
+            cart_id,
+            amount_minor,
+            currency: currency || "usd",
           });
         }
       } else {

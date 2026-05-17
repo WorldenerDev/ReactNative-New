@@ -7,10 +7,7 @@ import { store } from "@redux/store";
 import messaging from "@react-native-firebase/messaging";
 import { Platform } from "react-native";
 import AppStateHandler from "@components/AppStateHandler";
-import { StripeProvider } from "@stripe/stripe-react-native";
-
-const STRIPE_PUBLISHABLE_KEY =
-  process.env.STRIPE_PUBLISHABLE_KEY;
+import StripeAppBridge from "@components/StripeAppBridge";
 
 const App = () => {
   useEffect(() => {
@@ -42,13 +39,13 @@ const App = () => {
 
   return (
     <Provider store={store}>
-      <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
+      <StripeAppBridge>
         <SafeAreaProvider>
           <AppStateHandler />
           <Routes />
           <AppToast />
         </SafeAreaProvider>
-      </StripeProvider>
+      </StripeAppBridge>
     </Provider>
   );
 };

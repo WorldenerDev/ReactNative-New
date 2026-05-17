@@ -1,3 +1,8 @@
+const path = require('path');
+const { loadEnvFile } = require('./scripts/loadEnvFile');
+
+loadEnvFile(path.join(__dirname, '.env'));
+
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 /**

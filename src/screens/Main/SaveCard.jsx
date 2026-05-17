@@ -4,19 +4,21 @@ import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
+import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
+import navigationStrings from "@navigation/navigationStrings";
 import { CardField, useStripe } from "@stripe/stripe-react-native";
 import { getHeight, getHoriPadding } from "@utils/responsive";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
-const SaveCard = ({ navigation, route }) => {
+/** Legacy flow: raw card → backend `addCard`. Prefer {@link AddCard} + SetupIntent for new work. */
+function SaveCardWithStripe({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [cardDetails, setCardDetails] = useState(null);
   const [savingCard, setSavingCard] = useState(false);
   const { createPaymentMethod } = useStripe();
 
   const handleContinue = async () => {
-    console.log("cardDetails", cardDetails);
     if (!cardDetails?.complete) {
       showToast("error", "Please enter complete card details.");
       return;
@@ -25,7 +27,7 @@ const SaveCard = ({ navigation, route }) => {
     try {
       setSavingCard(true);
       setLoading(true);
-      const { error, paymentMethod } = await createPaymentMethod({
+      const { error } = await createPaymentMethod({
         paymentMethodType: "Card",
         card: cardDetails,
       });
@@ -85,6 +87,31 @@ const SaveCard = ({ navigation, route }) => {
       </View>
     </MainContainer>
   );
+}
+
+const SaveCard = ({ navigation }) => {
+  if (!STRIPE_PUBLISHABLE_KEY) {
+    return (
+      <MainContainer>
+        <Header title="Add Credit Card" />
+        <View style={styles.screen}>
+          <Text style={styles.fallbackText}>
+            Stripe is not configured. Use checkout &quot;Add credit card&quot;
+            for the mock card flow, or set STRIPE_PUBLISHABLE_KEY and restart
+            the app.
+          </Text>
+          <ButtonComp
+            title="Go to new add card"
+            onPress={() =>
+              navigation.replace(navigationStrings.ADD_CARD)
+            }
+          />
+        </View>
+      </MainContainer>
+    );
+  }
+
+  return <SaveCardWithStripe navigation={navigation} />;
 };
 
 export default SaveCard;
@@ -96,6 +123,12 @@ const styles = StyleSheet.create({
     paddingTop: getHeight(16),
     paddingBottom: getHeight(24),
     backgroundColor: colors.white,
+  },
+  fallbackText: {
+    fontSize: 14,
+    color: colors.black,
+    marginBottom: getHeight(20),
+    lineHeight: 20,
   },
   cardFieldContainer: {
     marginBottom: getHeight(24),

@@ -10,6 +10,7 @@ export { default as SplashScreen } from "./Auth/SplashScreen";
 //================MAin Screens ============
 
 export { default as Account } from "./Main/Account";
+export { default as AddCard } from "./Main/AddCard";
 export { default as ActivityDetails } from "./Main/ActivityDetails";
 export { default as ActivityDetailsCheckAvability } from "./Main/ActivityDetailsCheckAvability";
 export { default as AddToTrip } from "./Main/AddToTrip";
@@ -32,6 +33,7 @@ export { default as MemberProfile } from "./Main/MemberProfile";
 export { default as NotificationScreen } from "./Main/NotificationScreen";
 export { default as NotificationSettings } from "./Main/NotificationSettings";
 export { default as Payment } from "./Main/Payment";
+export { default as PaymentMethods } from "./Main/PaymentMethods";
 export { default as PaymentSuccess } from "./Main/PaymentSuccess";
 export { default as SaveCard } from "./Main/SaveCard";
 export { default as SearchCity } from "./Main/SearchCity";

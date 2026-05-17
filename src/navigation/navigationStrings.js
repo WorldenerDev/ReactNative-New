@@ -33,6 +33,8 @@ export default {
   NOTIFICATION_SETTINGS: "NotificationSettings",
   EDIT_PROFILE: "EditProfile",
   PAYMENT: "Payment",
+  PAYMENT_METHODS: "PaymentMethods",
+  ADD_CARD: "AddCard",
   PAYMENT_SUCCESS: "PaymentSuccess",
   CHAT: "Chat",
   AI_CHAT: "AiChat",
