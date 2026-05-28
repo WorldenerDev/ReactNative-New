@@ -59,6 +59,7 @@ export const endpoints = {
     getCityActivities: "/getCityActivities",
     compareUsersInGroup: "/compare-users-in-group",
     addCard: "/add-card",
+    getStripeCardList: "/get-stripe-card-list",
     updateProfile: "/updateProfile",
     getGroupWishlisted: "/group",
     chatbot: "/chatbot",

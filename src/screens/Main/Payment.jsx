@@ -25,7 +25,7 @@ import {
 const Payment = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-  const { items, selectedId } = useSelector((s) => s.payment);
+  const { items, selectedId, status } = useSelector((s) => s.payment);
   const { trip_id, cart_id, amount_minor, currency } = route?.params || {};
   const { getCards, selectCard, pay, addDevelopmentCard } = usePayments();
 
@@ -96,7 +96,7 @@ const Payment = ({ navigation, route }) => {
   };
 
   return (
-    <MainContainer loader={loading}>
+    <MainContainer loader={loading || status === "loading"}>
       <Header title="Payment" />
 
       <View style={styles.screen}>

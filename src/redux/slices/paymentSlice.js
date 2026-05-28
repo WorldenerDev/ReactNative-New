@@ -1,14 +1,25 @@
+import { getStripeCardList } from "@api/services/mainServices";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import * as paymentApi from "../../services/payment";
+
+const mapStripeCardList = (cards) =>
+  (Array.isArray(cards) ? cards : []).map((card) => ({
+    id: card.id,
+    brand: card.brand,
+    last4: card.last4,
+    expMonth: card.expMonth,
+    expYear: card.expYear,
+  }));
 
 export const fetchPaymentMethods = createAsyncThunk(
   "payment/fetchPaymentMethods",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await paymentApi.runPaymentApi(() =>
-        paymentApi.listPaymentMethods()
-      );
-      return res;
+      const res = await getStripeCardList();
+      if (res?.success !== true) {
+        return rejectWithValue(res?.message || "Failed to load cards");
+      }
+      return { items: mapStripeCardList(res.data) };
     } catch (e) {
       return rejectWithValue(e?.message || "Failed to load cards");
     }

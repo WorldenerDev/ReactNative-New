@@ -4,9 +4,18 @@
  * Values come from the project root `.env` via `babel-plugin-inline-dotenv`
  * (see `babel.config.js`). Metro also loads `.env` in `metro.config.js` for tooling.
  */
-export const STRIPE_PUBLISHABLE_KEY = String(
+const STRIPE_PUBLISHABLE_KEY_FROM_ENV = String(
   process.env.STRIPE_PUBLISHABLE_KEY || ""
 ).trim();
+
+const isPublishableStripeKey = (key) =>
+  key.startsWith("pk_test_") || key.startsWith("pk_live_");
+
+export const STRIPE_PUBLISHABLE_KEY = isPublishableStripeKey(
+  STRIPE_PUBLISHABLE_KEY_FROM_ENV
+)
+  ? STRIPE_PUBLISHABLE_KEY_FROM_ENV
+  : "";
 
 /** Test Customer id (`cus_...`) for SetupIntent / PaymentIntent when using the dev backend. */
 export const STRIPE_TEST_CUSTOMER_ID = String(

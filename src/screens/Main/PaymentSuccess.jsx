@@ -1,15 +1,15 @@
-import { Image, StyleSheet, Text, View, Linking, Alert } from 'react-native'
-import React, { useState } from 'react'
-import MainContainer from '@components/container/MainContainer'
-import Header from '@components/Header'
-import ButtonComp from '@components/ButtonComp'
-import { getHeight, getWidth, getFontSize } from '@utils/responsive'
-import imagePath from '@assets/icons'
+import { downloadVoucher } from '@api/services/mainServices'
 import colors from '@assets/colors'
 import fonts from '@assets/fonts'
-import { downloadVoucher } from '@api/services/mainServices'
+import imagePath from '@assets/icons'
 import { showToast } from '@components/AppToast'
+import ButtonComp from '@components/ButtonComp'
+import MainContainer from '@components/container/MainContainer'
+import Header from '@components/Header'
 import navigationStrings from '@navigation/navigationStrings'
+import { getFontSize, getHeight, getWidth } from '@utils/responsive'
+import { useState } from 'react'
+import { Alert, Image, Linking, StyleSheet, Text, View } from 'react-native'
 
 const PaymentSuccess = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
@@ -62,25 +62,17 @@ const PaymentSuccess = ({ navigation, route }) => {
             const product = item.product;
             const customer = data.customer;
 
-            const alertMessage = `Title: ${
-              product?.title || "N/A"
-            }\nTicket Type: ${
-              product?.price_tag?.price_feature || "N/A"
-            }\nTicket Holder: ${
-              product?.price_tag?.ticket_holder || "N/A"
-            }\nDate: ${product?.date || "N/A"}\n\nTransaction Code: ${
-              item?.transaction_code || "N/A"
-            }\nOrder By: ${
-              customer
-                ? `${customer?.firstname || ""} ${
-                    customer?.lastname || ""
+            const alertMessage = `Title: ${product?.title || "N/A"
+              }\nTicket Type: ${product?.price_tag?.price_feature || "N/A"
+              }\nTicket Holder: ${product?.price_tag?.ticket_holder || "N/A"
+              }\nDate: ${product?.date || "N/A"}\n\nTransaction Code: ${item?.transaction_code || "N/A"
+              }\nOrder By: ${customer
+                ? `${customer?.firstname || ""} ${customer?.lastname || ""
                   }`.trim()
                 : "N/A"
-            }\nPurchase Date: ${data?.date || "N/A"}\n\nReference No: ${
-              data?.identifier || "N/A"
-            }\nMeeting Point: ${
-              product?.meeting_point || "N/A"
-            }\nTotal Price: ${data?.total_price?.formatted_value || "N/A"}`;
+              }\nPurchase Date: ${data?.date || "N/A"}\n\nReference No: ${data?.identifier || "N/A"
+              }\nMeeting Point: ${product?.meeting_point || "N/A"
+              }\nTotal Price: ${data?.total_price?.formatted_value || "N/A"}`;
 
             Alert.alert("Booking Details", alertMessage, [
               {
@@ -126,8 +118,8 @@ const PaymentSuccess = ({ navigation, route }) => {
   };
 
   return (
-    <MainContainer loader={loading}>
-      <Header title="Payment Success" />
+    <MainContainer loader={loading} >
+      <Header title="Payment Success" showBack={false} />
       <View style={styles.successContainer}>
         <Image source={imagePath.SUCCESS_ICON} style={styles.successIcon} />
         <Text style={styles.successTitle}>Success!</Text>

@@ -11,6 +11,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 const AddCard = ({ navigation }) => {
+  console.log("STRIPE_PUBLISHABLE_KEY", STRIPE_PUBLISHABLE_KEY);
   const [loading, setLoading] = useState(false);
   const [cardDetails, setCardDetails] = useState(null);
   const { addCard, addDevelopmentCard } = usePayments();
