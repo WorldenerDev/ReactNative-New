@@ -32,6 +32,7 @@ export const endpoints = {
     getParticipantSchema: "/get-participant-schema",
     cartCustomerInfo: "/cart-customer",
     createOrder: "/create-order",
+    createStripePaymentIntent: "/create-stripe-payment-intent",
     createNoPayment: "/create-no-payment",
     downloadVoucher: "/download-voucher",
     removeItemFromCart: "/remove-item-from-cart",

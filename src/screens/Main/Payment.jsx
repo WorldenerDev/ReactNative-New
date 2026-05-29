@@ -1,4 +1,4 @@
-import { createNoPayment, createOrder } from "@api/services/mainServices";
+import { createStripePaymentIntent } from "@api/services/mainServices";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
@@ -26,8 +26,9 @@ const Payment = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const { items, selectedId, status } = useSelector((s) => s.payment);
-  const { trip_id, cart_id, amount_minor, currency } = route?.params || {};
-  const { getCards, selectCard, pay, addDevelopmentCard } = usePayments();
+  const { trip_id, cart_id, orderUuid, amount_minor, currency } =
+    route?.params || {};
+  const { getCards, selectCard, addDevelopmentCard } = usePayments();
 
   useFocusEffect(
     useCallback(() => {
@@ -45,51 +46,41 @@ const Payment = ({ navigation, route }) => {
     }, [dispatch, getCards, trip_id, cart_id, amount_minor, currency])
   );
 
-  const createNoPaymentApi = async (orderUuid) => {
-    try {
-      const noPaymentResponse = await createNoPayment({
-        orderUuid: orderUuid,
-      });
-      if (noPaymentResponse?.success === true) {
-        navigation.navigate(navigationStrings.PAYMENT_SUCCESS, {
-          orderUuid: orderUuid,
-        });
-      } else {
-        showToast("error", noPaymentResponse?.data?.message);
-      }
-    } catch (error) {
-      console.log("error", error);
-      showToast("error", "Could not finalize booking.");
-    }
-  };
-
-  const createOrderAfterPay = async () => {
-    const orderResponse = await createOrder({
-      trip_id: trip_id,
-      email_notification: "NONE",
-    });
-    if (orderResponse?.success === true) {
-      await createNoPaymentApi(orderResponse?.data?.order_id);
-    } else {
-      showToast("error", orderResponse?.data?.message);
-    }
-  };
-
   const handlePayNow = async () => {
     if (!selectedId) {
       showToast("error", "Select a payment method.");
       return;
     }
+    if (!orderUuid) {
+      showToast("error", "Order not found. Please retry checkout.");
+      return;
+    }
     try {
       setLoading(true);
-      const paid = await pay();
-      if (!paid?.ok) {
-        return;
+      const paymentIntentResponse = await createStripePaymentIntent({
+        amount: amount_minor,
+        currency: currency || "usd",
+        paymentMethodId: selectedId,
+        orderUuid,
+        description: "Musement booking payment",
+      });
+
+      if (paymentIntentResponse?.success === true) {
+        showToast("success", "Payment initiated successfully.");
+        navigation.navigate(navigationStrings.PAYMENT_SUCCESS, {
+          orderUuid,
+        });
+      } else {
+        showToast(
+          "error",
+          paymentIntentResponse?.message ||
+            paymentIntentResponse?.data?.message ||
+            "Payment failed."
+        );
       }
-      await createOrderAfterPay();
     } catch (error) {
       console.log("handlePayNow error", error);
-      showToast("error", "Something went wrong.");
+      showToast("error", error?.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }

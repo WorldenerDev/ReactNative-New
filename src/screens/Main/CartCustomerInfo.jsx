@@ -24,6 +24,7 @@ import {
   getParticipantSchema,
   cartCustomerInfo,
   updateParticipants,
+  createOrder,
 } from "@api/services/mainServices";
 import {
   validateForm,
@@ -42,7 +43,6 @@ const CartCustomerInfo = ({ navigation, route }) => {
   // Get user data from Redux store
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  console.log("user", user);
   const { cart_id, trip_id, amount_minor, currency } = route.params || {};
   const [userData, setUserData] = useState({});
   const [formFields, setFormFields] = useState([]);
@@ -137,7 +137,6 @@ const CartCustomerInfo = ({ navigation, route }) => {
             const participantResponse = await getParticipantSchema({
               cart_uuid: cart_id,
             });
-            console.log("Participant Schema API Success:", participantResponse);
             setParticipantSchemaData(participantResponse?.data);
           } catch (participantError) {
             console.error("Participant Schema API Error:", participantError);
@@ -368,9 +367,8 @@ const CartCustomerInfo = ({ navigation, route }) => {
           const value = participantData[fieldPath];
 
           if (isRequired && (!value || value.trim() === "")) {
-            newParticipantErrors[fieldPath] = `${
-              field.title || fieldKey
-            } is required`;
+            newParticipantErrors[fieldPath] = `${field.title || fieldKey
+              } is required`;
             hasErrors = true;
           } else if (value && fieldKey === "date_of_birth") {
             // Special validation for date_of_birth field
@@ -462,6 +460,27 @@ const CartCustomerInfo = ({ navigation, route }) => {
 
       if (response?.success) {
         showToast("success", "Customer information submitted successfully!");
+        const orderResponse = await createOrder({
+          trip_id: trip_id,
+          email_notification: "NONE",
+        });
+
+        if (!orderResponse?.success || !orderResponse?.data?.order_id) {
+          showToast(
+            "error",
+            orderResponse?.message ||
+              orderResponse?.data?.message ||
+              "Failed to create order"
+          );
+          return;
+        }
+        const orderUuid = orderResponse.data.order_id;
+        const orderAmountMajor = Number(orderResponse?.data?.total_amount);
+        const orderCurrency =
+          String(orderResponse?.data?.currency || currency || "usd").toLowerCase();
+        const orderAmountMinor = Number.isFinite(orderAmountMajor)
+          ? Math.round(orderAmountMajor * 100)
+          : amount_minor;
 
         // If participant schema exists, call update participants API
         if (
@@ -524,14 +543,15 @@ const CartCustomerInfo = ({ navigation, route }) => {
                 navigation.navigate(navigationStrings.PAYMENT, {
                   trip_id,
                   cart_id,
-                  amount_minor,
-                  currency: currency || "usd",
+                  orderUuid,
+                  amount_minor: orderAmountMinor,
+                  currency: orderCurrency,
                 });
               } else {
                 showToast(
                   "error",
                   participantResponse?.message ||
-                    "Failed to submit participant information"
+                  "Failed to submit participant information"
                 );
               }
             } else {
@@ -539,8 +559,9 @@ const CartCustomerInfo = ({ navigation, route }) => {
               navigation.navigate(navigationStrings.PAYMENT, {
                 trip_id,
                 cart_id,
-                amount_minor,
-                currency: currency || "usd",
+                orderUuid,
+                amount_minor: orderAmountMinor,
+                currency: orderCurrency,
               });
             }
           } catch (participantError) {
@@ -551,7 +572,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
             showToast(
               "error",
               participantError?.message ||
-                "Failed to submit participant information"
+              "Failed to submit participant information"
             );
           }
         } else {
@@ -559,8 +580,9 @@ const CartCustomerInfo = ({ navigation, route }) => {
           navigation.navigate(navigationStrings.PAYMENT, {
             trip_id,
             cart_id,
-            amount_minor,
-            currency: currency || "usd",
+            orderUuid,
+            amount_minor: orderAmountMinor,
+            currency: orderCurrency,
           });
         }
       } else {

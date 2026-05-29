@@ -42,6 +42,8 @@ export const cartCustomerInfo = (data) =>
   apiPost(endpoints?.main?.cartCustomerInfo, data);
 export const createOrder = (data) =>
   apiPost(endpoints?.main?.createOrder, data);
+export const createStripePaymentIntent = (data) =>
+  apiPost(endpoints?.main?.createStripePaymentIntent, data);
 export const createNoPayment = (data) =>
   apiPost(endpoints?.main?.createNoPayment, data);
 export const downloadVoucher = (data) =>
