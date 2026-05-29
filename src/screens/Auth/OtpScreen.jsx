@@ -26,6 +26,7 @@ import { useDispatch } from "react-redux";
 import { loginUser, onOtp, requestOtp, setUser } from "@redux/slices/authSlice";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { setItem } from "@utils/storage";
+import { logAuthToken } from "@utils/devAuthTokenLog";
 
 const OtpScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -99,6 +100,7 @@ const OtpScreen = ({ navigation, route }) => {
       };
       const result = await dispatch(onOtp(sendData));
       console.log("signup Otp Verify result ", result);
+      logAuthToken("OTP verifyOtp", result?.payload?.data ?? result?.payload);
       if (result?.payload?.success && fromScreen === "signin") {
         if (result?.payload?.data?.isPreference) {
           await setItem(STORAGE_KEYS?.USER_DATA, result?.payload?.data);

@@ -21,6 +21,7 @@ import { googleAppleSignIn, loginUser, setUser } from "@redux/slices/authSlice";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 import { getDeviceId, getDeviceType } from "@utils/uiUtils";
+import { logAuthToken } from "@utils/devAuthTokenLog";
 import messaging from "@react-native-firebase/messaging";
 
 const SignInScreen = ({ navigation }) => {
@@ -86,7 +87,11 @@ const SignInScreen = ({ navigation }) => {
       };
       const result = await dispatch(loginUser(sendData));
       console.log("Login result:", result);
+      logAuthToken("SignIn /login", result?.payload);
       if (result?.payload?.success) {
+        console.log(
+          "[SignIn] OTP sent — complete verification on the next screen; token logs as API_AUTH_TOKEN after OTP."
+        );
         navigation.navigate(navigationStrings.OTPSCREEN, {
           fromScreen: "signin",
           phoneNumber: data?.countryCode + data?.phoneNumber,
@@ -121,6 +126,7 @@ const SignInScreen = ({ navigation }) => {
         };
         const loginResult = await dispatch(googleAppleSignIn(data));
         console.log("Google login result in signin", loginResult);
+        logAuthToken("SignIn Google", loginResult?.payload);
         const userInfo = {
           ...loginResult?.payload,
           token: loginResult?.payload?.accessToken,
@@ -138,6 +144,7 @@ const SignInScreen = ({ navigation }) => {
         };
         const loginResult = await dispatch(googleAppleSignIn(data));
         console.log("Google login result in signin", loginResult);
+        logAuthToken("SignIn Apple", loginResult?.payload);
         const userInfo = {
           ...loginResult?.payload,
           token: loginResult?.payload?.accessToken,
