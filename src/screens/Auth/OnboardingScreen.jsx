@@ -28,21 +28,21 @@ const slides = [
     id: "1",
     title: "Travel Booking",
     description:
-      "Discover and book amazing trips, and experiences in one place.",
+      "Discover and book amazing trips, and experiences in one place. Invite your friends to plan your trip together.",
     image: imagePath.ONBOARDING1,
   },
   {
     id: "2",
     title: "Group Planning",
     description:
-      "Plan trips together—chat, vote, and decide with your travel group easily.",
+      "Plan trips together—chat, vote, and decide with your travel group easily. Leverage the AI powered chatbot to get the best out of your trip.",
     image: imagePath.ONBOARDING2,
   },
   {
     id: "3",
     title: "AI Recommendations",
     description:
-      "Get smart activity picks tailored to your interests and travel style.",
+      "Get smart activity picks tailored to your interests and travel style. Worldener is your ultimate travel companion.",
     image: imagePath.ONBOARDING3,
   },
 ];
@@ -243,13 +243,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.white,
     paddingHorizontal: getHoriPadding(15),
-    paddingVertical: getVertiPadding(2),
+    paddingVertical: getVertiPadding(8),
     borderRadius: getRadius(30),
     width: getWidth(300),
     justifyContent: "space-between",
     alignSelf: "center",
     marginTop: getHeight(20),
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.black,
   },
   getStartedText: {

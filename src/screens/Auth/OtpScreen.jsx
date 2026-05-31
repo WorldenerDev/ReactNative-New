@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import ButtonComp from "@components/ButtonComp";
-import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import {
@@ -23,20 +22,20 @@ import {
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch } from "react-redux";
-import { loginUser, onOtp, requestOtp, setUser } from "@redux/slices/authSlice";
+import { loginUser, onOtp, setUser } from "@redux/slices/authSlice";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { setItem } from "@utils/storage";
 import { logAuthToken } from "@utils/devAuthTokenLog";
 
+const OTP_LENGTH = 6;
+
 const OtpScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
-  const { fromScreen, phoneNumber ,fcm_Token} = route?.params || {};
-  console.log('fcmToken in otp screen', fcm_Token);
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const { fromScreen, phoneNumber, fcm_Token } = route?.params || {};
+  const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
-
-  const inputs = {};
+  const inputRef = useRef(null);
 
   useEffect(() => {
     let interval;
@@ -55,16 +54,17 @@ const OtpScreen = ({ navigation, route }) => {
     return () => clearInterval(interval);
   }, [canResend, timer]);
 
-  const handleChange = (text, index) => {
-    if (text.length > 1) return;
-    const newCode = [...code];
-    newCode[index] = text;
-    setCode(newCode);
+  useEffect(() => {
+    const focusTimer = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(focusTimer);
+  }, []);
 
-    if (text && index < 5) {
-      const nextInput = `input_${index + 1}`;
-      inputs[nextInput]?.focus();
-    }
+  const handleOtpChange = (text) => {
+    setOtp(text.replace(/\D/g, "").slice(0, OTP_LENGTH));
+  };
+
+  const focusInput = () => {
+    inputRef.current?.focus();
   };
 
   const handleResend = async () => {
@@ -72,30 +72,29 @@ const OtpScreen = ({ navigation, route }) => {
       if (!canResend) return;
       setCanResend(false);
       setTimer(60);
+      setOtp("");
+      focusInput();
+
       const sendData = {
         phone_number: phoneNumber,
         device_type: Platform.OS,
       };
       const result = await dispatch(loginUser(sendData));
-
       console.log("Resend OTP result:", result);
     } catch (error) {
       console.log("Error resending OTP:", error);
     }
-
-    // Implement resend logic here
   };
 
   const verifyCode = async () => {
     try {
-      const codeString = code.join("");
-      if (codeString.length !== 6) {
+      if (otp.length !== OTP_LENGTH) {
         return;
       }
 
       const sendData = {
         phone_number: phoneNumber,
-        otp: codeString,
+        otp,
         fcm_token: fcm_Token || "not_available",
       };
       const result = await dispatch(onOtp(sendData));
@@ -127,7 +126,6 @@ const OtpScreen = ({ navigation, route }) => {
 
   const formatPhoneNumber = (phone) => {
     if (!phone) return "";
-    // Format phone number as +91 921 898 4456
     const cleaned = phone.replace(/\D/g, "");
     if (cleaned.length >= 10) {
       const countryCode = cleaned.substring(0, cleaned.length - 10);
@@ -140,6 +138,15 @@ const OtpScreen = ({ navigation, route }) => {
     return phone;
   };
 
+  const formatTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins > 0) {
+      return `${mins}:${String(secs).padStart(2, "0")}`;
+    }
+    return `${secs}s`;
+  };
+
   const getScreenTitle = () => {
     if (fromScreen === "signup") {
       return "Confirm your phone number";
@@ -147,58 +154,104 @@ const OtpScreen = ({ navigation, route }) => {
     return "Verify your phone number";
   };
 
-  const getScreenSubtitle = () => {
-    const formattedPhone = formatPhoneNumber(phoneNumber);
-    if (fromScreen === "signup") {
-      return `We've sent a 6-digit verification code to your phone number : ${formattedPhone}`;
-    }
-    return `We've sent a 6-digit verification code to ${formattedPhone}`;
-  };
+  const formattedPhone = formatPhoneNumber(phoneNumber);
+  const isCodeComplete = otp.length === OTP_LENGTH;
+  const cells = Array.from({ length: OTP_LENGTH }, (_, index) => otp[index] || "");
 
   return (
     <ResponsiveContainer>
-      <Header />
-      <StepTitle title={getScreenTitle()} subtitle={getScreenSubtitle()} />
+      <View style={styles.screen}>
+        <View style={styles.topSection}>
+          <StepTitle
+            title={getScreenTitle()}
+            subtitle={`Enter the 6-digit code sent to ${formattedPhone}`}
+            containerStyle={styles.titleContainer}
+          />
 
-      <View style={styles.formContainer}>
-        <View style={styles.codeContainer}>
-          {code.map((digit, index) => (
+          <View style={styles.codeWrapper}>
+            <View style={styles.codeContainer} pointerEvents="none">
+              {cells.map((digit, index) => {
+                const isActive = index === otp.length && otp.length < OTP_LENGTH;
+                const isFilled = digit !== "";
+
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.codeCell,
+                      isFilled && styles.codeCellFilled,
+                      isActive && styles.codeCellActive,
+                    ]}
+                  >
+                    <Text style={styles.codeDigit}>{digit}</Text>
+                  </View>
+                );
+              })}
+            </View>
             <TextInput
-              key={index}
-              ref={(ref) => (inputs[`input_${index}`] = ref)}
-              style={styles.codeInput}
-              value={digit}
-              onChangeText={(text) => handleChange(text, index)}
+              ref={inputRef}
+              value={otp}
+              onChangeText={handleOtpChange}
               keyboardType="number-pad"
-              maxLength={1}
-              autoFocus={index === 0}
+              maxLength={OTP_LENGTH}
+              textContentType="oneTimeCode"
+              autoComplete={
+                Platform.OS === "android" ? "sms-otp" : "one-time-code"
+              }
+              importantForAutofill="yes"
+              autoFocus
+              caretHidden
+              style={styles.hiddenInput}
             />
-          ))}
+          </View>
+
+          <ButtonComp
+            title="Continue"
+            disabled={!isCodeComplete}
+            onPress={verifyCode}
+            containerStyle={styles.continueBtn}
+          />
         </View>
 
-        <Text style={styles.resendTimer}>
-          Resend code in : {Math.floor(timer / 60)} min{" "}
-          {timer % 60 > 0 ? `${timer % 60}s` : ""}
-        </Text>
+        <View style={styles.middleSection}>
+          {!canResend ? (
+            <Text style={styles.resendTimer}>
+              Resend code in {formatTimer(timer)}
+            </Text>
+          ) : (
+            <View style={styles.resendRow}>
+              <Text style={styles.resendPrompt}>Didn't receive the code? </Text>
+              <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
+                <Text style={styles.resendLink}>Resend</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
-        <ButtonComp
-          title="Continue"
-          disabled={code.some((digit) => digit === "")}
-          onPress={verifyCode}
-          containerStyle={styles.continueButton}
-        />
-
-        <TouchableOpacity
-          style={styles.resendContainer}
-          onPress={handleResend}
-          disabled={!canResend}
-        >
+        <Text style={styles.termsFooter}>
+          By continuing, you agree to our{" "}
           <Text
-            style={[styles.resendText, canResend && styles.resendTextActive]}
+            style={styles.termsLink}
+            onPress={() =>
+              navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                type: "term-condition",
+              })
+            }
           >
-            {canResend ? "Resend Code" : "Resend Code"}
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() =>
+              navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                type: "privacy-policy",
+              })
+            }
+          >
+            Privacy Policy
           </Text>
-        </TouchableOpacity>
+        </Text>
       </View>
     </ResponsiveContainer>
   );
@@ -207,56 +260,105 @@ const OtpScreen = ({ navigation, route }) => {
 export default OtpScreen;
 
 const styles = StyleSheet.create({
-  formContainer: {
+  screen: {
     flex: 1,
-    marginTop: getVertiPadding(40),
-    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: getVertiPadding(8),
+  },
+  topSection: {
+    paddingTop: getVertiPadding(24),
+  },
+  titleContainer: {
+    marginTop: getVertiPadding(16),
+    marginBottom: getVertiPadding(36),
+  },
+  codeWrapper: {
+    width: "100%",
+    height: getHeight(52),
+    marginBottom: getVertiPadding(8),
+    position: "relative",
+  },
+  hiddenInput: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0,
+    color: "transparent",
+    fontSize: 1,
+    zIndex: 2,
   },
   codeContainer: {
+    ...StyleSheet.absoluteFillObject,
     flexDirection: "row",
-    justifyContent: "center",
-    flexWrap: "nowrap",
-    marginBottom: getVertiPadding(40),
-    width: "100%",
-    paddingHorizontal: getHoriPadding(10),
-    gap: getWidth(6),
+    justifyContent: "space-between",
+    gap: getWidth(8),
+    zIndex: 1,
   },
-  codeInput: {
-    width: getWidth(45),
-    height: getHeight(50),
-    borderRadius: getRadius(8),
+  codeCell: {
+    flex: 1,
+    height: getHeight(52),
+    borderRadius: getRadius(12),
     backgroundColor: colors.white,
-    textAlign: "center",
-    fontSize: getFontSize(16),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.darkText,
     borderWidth: 1,
     borderColor: colors.border,
-    minWidth: getWidth(40),
-    maxWidth: getWidth(50),
+    maxWidth: getWidth(52),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  codeCellFilled: {
+    borderColor: colors.black,
+  },
+  codeCellActive: {
+    borderColor: colors.black,
+    borderWidth: 1.5,
+  },
+  codeDigit: {
+    fontSize: getFontSize(18),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.black,
+    textAlign: "center",
+  },
+  continueBtn: {
+    marginTop: getVertiPadding(28),
+    width: "100%",
+  },
+  middleSection: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: getVertiPadding(32),
   },
   resendTimer: {
     fontSize: getFontSize(14),
-    color: colors.placeholderText,
+    color: colors.lightText,
     fontFamily: fonts.RobotoRegular,
     textAlign: "center",
-    marginBottom: getVertiPadding(40),
   },
-  continueButton: {
-    marginBottom: getVertiPadding(30),
-    width: "100%",
-  },
-  resendContainer: {
+  resendRow: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: getVertiPadding(10),
+    justifyContent: "center",
   },
-  resendText: {
+  resendPrompt: {
     fontSize: getFontSize(14),
-    color: colors.secondary,
+    color: colors.lightText,
     fontFamily: fonts.RobotoRegular,
   },
-  resendTextActive: {
+  resendLink: {
+    fontSize: getFontSize(14),
+    color: colors.black,
+    fontFamily: fonts.RobotoBold,
+  },
+  termsFooter: {
+    textAlign: "center",
+    fontSize: getFontSize(12),
+    lineHeight: getHeight(18),
+    color: colors.lightText,
+    fontFamily: fonts.RobotoRegular,
+    paddingHorizontal: getHoriPadding(12),
+    paddingTop: getVertiPadding(16),
+  },
+  termsLink: {
     color: colors.black,
     fontFamily: fonts.RobotoMedium,
+    fontSize: getFontSize(12),
   },
 });

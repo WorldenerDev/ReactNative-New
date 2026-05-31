@@ -35,12 +35,19 @@ const CustomInput = ({
   const isTextarea = variant === "textarea";
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View
+      style={[
+        styles.container,
+        variant === "bordered" && styles.borderedContainer,
+        containerStyle,
+      ]}
+    >
       {!!label && <Text style={styles.label}>{label}</Text>}
 
       <View
         style={[
           styles.inputWrapper,
+          variant === "bordered" && styles.borderedWrapper,
           isTextarea && styles.textareaWrapper,
           error && styles.inputWrapperError,
         ]}
@@ -82,6 +89,9 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: getVertiPadding(15),
   },
+  borderedContainer: {
+    paddingVertical: getVertiPadding(8),
+  },
   label: {
     fontSize: getFontSize(14),
     fontFamily: fonts.RobotoMedium,
@@ -89,13 +99,20 @@ const styles = StyleSheet.create({
     marginBottom: getVertiPadding(6),
   },
   inputWrapper: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.input,
     borderRadius: getRadius(10),
     paddingHorizontal: getHoriPadding(16),
     flexDirection: "row",
     alignItems: "center",
     height: getHeight(48),
     borderWidth: 0,
+  },
+  borderedWrapper: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: getRadius(12),
+    height: getHeight(52),
   },
   inputWrapperError: {
     borderWidth: 1,

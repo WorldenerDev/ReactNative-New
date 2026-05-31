@@ -2,15 +2,14 @@
 import fonts from "@assets/fonts";
 import colors from "@assets/colors";
 import ButtonComp from "@components/ButtonComp";
-import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, TouchableOpacity } from "react-native";
 import {
   getFontSize,
   getHeight,
+  getHoriPadding,
   getVertiPadding,
-  getWidth,
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
@@ -40,12 +39,10 @@ const SignInScreen = ({ navigation }) => {
 
   const getFCMToken = async () => {
     try {
-      // Ensure device is registered for remote messages on iOS
       if (Platform.OS === "ios") {
         await messaging().registerDeviceForRemoteMessages();
       }
 
-      // Ensure permissions are granted
       const authStatus = await messaging().hasPermission();
       if (!authStatus) {
         const requestStatus = await messaging().requestPermission();
@@ -133,7 +130,6 @@ const SignInScreen = ({ navigation }) => {
         };
         dispatch(setUser(userInfo));
       } else {
-        ///This one is pending sometimes email not received
         const data = {
           name: result?.userData?.givenName,
           email: result?.userData?.email,
@@ -167,45 +163,73 @@ const SignInScreen = ({ navigation }) => {
 
   return (
     <ResponsiveContainer>
-      {/* <Header /> */}
-      <StepTitle
-        title="Welcome Back"
-        subtitle="Enter the phone number associated with your account"
-      />
+      <View style={styles.screen}>
+        <View style={styles.topSection}>
+          <StepTitle
+            title="Welcome"
+            subtitle="Sign in or create an account using your mobile number"
+            containerStyle={styles.titleContainer}
+          />
 
-      <View style={styles.formContainer}>
-        <PhoneInput
-          placeholder="Enter Your Number"
-          value={data.phoneNumber}
-          onChangeText={handlePhoneNumberChange}
-          countryCode={data.countryCode}
-          onCountryCodeChange={handleCountryCodeChange}
-        />
-      </View>
+          <PhoneInput
+            placeholder="Enter mobile number"
+            value={data.phoneNumber}
+            onChangeText={handlePhoneNumberChange}
+            countryCode={data.countryCode}
+            onCountryCodeChange={handleCountryCodeChange}
+          />
 
-      <View style={styles.SignupBtn}>
-        <Text style={styles.SignupText}>Don't have an account?</Text>
-        <Text
-          onPress={() => navigation.navigate(navigationStrings.SIGNUPSCREEN)}
-          style={{ color: colors.black, fontFamily: fonts.RobotoMedium }}
-        >
-          SignUp
+          <ButtonComp
+            title="Continue"
+            disabled={false}
+            onPress={onPressSignin}
+            containerStyle={styles.continueBtn}
+          />
+
+          <View style={styles.signUpRow}>
+            <Text style={styles.signUpPrompt}>New here? </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(navigationStrings.SIGNUPSCREEN)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.signUpLink}>Create Account</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.middleSection}>
+          <SocialLoginButtons
+            variant="stacked"
+            onLoginSuccess={handleSocialLoginSuccess}
+            onLoginError={handleSocialLoginError}
+            onGuestPress={handleGuestPress}
+          />
+        </View>
+
+        <Text style={styles.termsFooter}>
+          By continuing, you agree to our{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() =>
+              navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                type: "term-condition",
+              })
+            }
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() =>
+              navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                type: "privacy-policy",
+              })
+            }
+          >
+            Privacy Policy
+          </Text>
         </Text>
-      </View>
-
-      <View style={styles.bottomActions}>
-        <ButtonComp
-          title="Continue"
-          disabled={false}
-          onPress={onPressSignin}
-          containerStyle={styles.signInBtn}
-        />
-
-        <SocialLoginButtons
-          onLoginSuccess={handleSocialLoginSuccess}
-          onLoginError={handleSocialLoginError}
-          onGuestPress={handleGuestPress}
-        />
       </View>
     </ResponsiveContainer>
   );
@@ -214,26 +238,55 @@ const SignInScreen = ({ navigation }) => {
 export default SignInScreen;
 
 const styles = StyleSheet.create({
-  formContainer: {
-    marginTop: getVertiPadding(20),
+  screen: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingBottom: getVertiPadding(8),
   },
-  SignupBtn: {
-    alignSelf: "flex-end",
-    marginTop: getVertiPadding(10),
-    marginBottom: getVertiPadding(20),
+  topSection: {
+    paddingTop: getVertiPadding(24),
+  },
+  titleContainer: {
+    marginTop: getVertiPadding(16),
+    marginBottom: getVertiPadding(36),
+  },
+  continueBtn: {
+    marginTop: getVertiPadding(28),
+    width: "100%",
+  },
+  signUpRow: {
     flexDirection: "row",
-    gap: getWidth(5),
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: getVertiPadding(28),
   },
-  SignupText: {
+  middleSection: {
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: getVertiPadding(32),
+  },
+  signUpPrompt: {
     color: colors.lightText,
     fontSize: getFontSize(14),
     fontFamily: fonts.RobotoRegular,
   },
-  bottomActions: {
-    marginTop: "auto",
-    paddingBottom: getVertiPadding(30),
+  signUpLink: {
+    color: colors.black,
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoBold,
   },
-  signInBtn: {
-    marginBottom: getVertiPadding(100),
+  termsFooter: {
+    textAlign: "center",
+    fontSize: getFontSize(12),
+    lineHeight: getHeight(18),
+    color: colors.lightText,
+    fontFamily: fonts.RobotoRegular,
+    paddingHorizontal: getHoriPadding(12),
+    paddingTop: getVertiPadding(16),
+  },
+  termsLink: {
+    color: colors.black,
+    fontFamily: fonts.RobotoMedium,
+    fontSize: getFontSize(12),
   },
 });

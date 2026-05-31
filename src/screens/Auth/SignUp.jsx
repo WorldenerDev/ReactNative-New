@@ -3,12 +3,10 @@ import {
   Text,
   View,
   TouchableOpacity,
-  Image,
   Platform,
 } from "react-native";
 import React, { useState } from "react";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
-import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
 import CustomInput from "@components/CustomInput";
 import PhoneInput from "@components/PhoneInput";
@@ -16,9 +14,7 @@ import {
   getFontSize,
   getHeight,
   getHoriPadding,
-  getRadius,
   getVertiPadding,
-  getWidth,
 } from "@utils/responsive";
 import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
@@ -29,7 +25,6 @@ import { useDispatch } from "react-redux";
 import {
   signupUser,
   setUser,
-  loginUser,
   googleAppleSignIn,
 } from "@redux/slices/authSlice";
 import SocialLoginButtons from "@components/SocialLoginButtons";
@@ -45,10 +40,9 @@ const SignUp = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const [data, setData] = useState({
-    name: "Gaurav",
-    phoneNumber: "9891678848",
+    name: "",
+    phoneNumber: "",
     countryCode: "+91",
-    agree: false,
   });
 
   const handlePhoneNumberChange = (text) => {
@@ -70,10 +64,8 @@ const SignUp = ({ navigation }) => {
       if (error) {
         showToast("error", error);
         return;
-      } else if (!data.agree) {
-        showToast("error", "Please accept the terms and conditions");
-        return;
       }
+
       const newData = {
         name: data?.name,
         phone_number: data?.countryCode + data?.phoneNumber,
@@ -101,7 +93,7 @@ const SignUp = ({ navigation }) => {
     try {
       if (result?.provider === "google") {
         console.log("google provider result ", result);
-        const data = {
+        const payload = {
           name: result?.userData?.givenName,
           email: result?.userData?.email,
           device_type: getDeviceType(),
@@ -109,7 +101,7 @@ const SignUp = ({ navigation }) => {
           device_id: deviceId,
           fcm_token: "not given",
         };
-        const loginResult = await dispatch(googleAppleSignIn(data));
+        const loginResult = await dispatch(googleAppleSignIn(payload));
         console.log("Google login result in signup", loginResult);
         const userInfo = {
           ...loginResult?.payload,
@@ -117,8 +109,7 @@ const SignUp = ({ navigation }) => {
         };
         dispatch(setUser(userInfo));
       } else {
-        ///This one is pending sometimes email not received
-        const data = {
+        const payload = {
           name: result?.userData?.givenName,
           email: result?.userData?.email,
           device_type: getDeviceType(),
@@ -126,7 +117,7 @@ const SignUp = ({ navigation }) => {
           device_id: deviceId,
           fcm_token: "not given",
         };
-        const loginResult = await dispatch(googleAppleSignIn(data));
+        const loginResult = await dispatch(googleAppleSignIn(payload));
         console.log("Google login result in signin", loginResult);
         const userInfo = {
           ...loginResult?.payload,
@@ -145,90 +136,85 @@ const SignUp = ({ navigation }) => {
   };
 
   const handleGuestPress = () => {
-    // Handle guest mode - navigate to main screen or show appropriate message
     showToast("info", "Continuing as guest");
-    // You can navigate to main screen or handle guest mode as needed
-    // navigation.navigate(navigationStrings.MAIN_NAVIGATOR);
   };
 
   return (
     <ResponsiveContainer>
-      <Header />
-      <StepTitle
-        title="Create Account"
-        subtitle="Enter your name and phone number to get started"
-      />
+      <View style={styles.screen}>
+        <View style={styles.topSection}>
+          <StepTitle
+            title="Create Account"
+            subtitle="Enter your name and phone number to get started"
+            containerStyle={styles.titleContainer}
+          />
 
-      <View style={styles.formContainer}>
-        <CustomInput
-          placeholder="Enter Your Name"
-          value={data.name}
-          onChangeText={(txt) => setData({ ...data, name: txt })}
-        />
+          <CustomInput
+            variant="bordered"
+            placeholder="Enter your name"
+            value={data.name}
+            onChangeText={(txt) => setData((prev) => ({ ...prev, name: txt }))}
+          />
 
-        <PhoneInput
-          placeholder="Enter Your Number"
-          value={data.phoneNumber}
-          onChangeText={handlePhoneNumberChange}
-          countryCode={data.countryCode}
-          onCountryCodeChange={handleCountryCodeChange}
-        />
+          <PhoneInput
+            placeholder="Enter mobile number"
+            value={data.phoneNumber}
+            onChangeText={handlePhoneNumberChange}
+            countryCode={data.countryCode}
+            onCountryCodeChange={handleCountryCodeChange}
+          />
 
-        <TouchableOpacity
-          style={styles.signinContainer}
-          onPress={() => navigation.navigate(navigationStrings.SIGNINSCREEN)}
-        >
-          <Text style={styles.signinText}>
-            Have an account? <Text style={styles.signinLink}>Sign in</Text>
-          </Text>
-        </TouchableOpacity>
+          <ButtonComp
+            title="Continue"
+            disabled={false}
+            onPress={onClickContinue}
+            containerStyle={styles.continueBtn}
+          />
 
-        <View style={styles.checkboxContainer}>
-          <TouchableOpacity
-            style={[styles.checkbox, data.agree && styles.checkboxChecked]}
-            onPress={() => setData({ ...data, agree: !data.agree })}
-          >
-            {data.agree && <Text style={styles.checkmark}>✓</Text>}
-          </TouchableOpacity>
-          <Text style={styles.termsText}>
-            I accept the{" "}
-            <Text
-              onPress={() =>
-                navigation.navigate(navigationStrings.PRIVACYTERMS, {
-                  type: "term-condition",
-                })
-              }
-              style={styles.link}
+          <View style={styles.signInRow}>
+            <Text style={styles.signInPrompt}>Have an account? </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(navigationStrings.SIGNINSCREEN)}
+              activeOpacity={0.7}
             >
-              Terms and Conditions
-            </Text>{" "}
-            &{" "}
-            <Text
-              onPress={() =>
-                navigation.navigate(navigationStrings.PRIVACYTERMS, {
-                  type: "privacy-policy",
-                })
-              }
-              style={styles.link}
-            >
-              Privacy Policy
-            </Text>
-            .
-          </Text>
+              <Text style={styles.signInLink}>Sign in</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <ButtonComp
-          title="Continue"
-          disabled={false}
-          onPress={onClickContinue}
-          containerStyle={styles.continueBtn}
-        />
+        <View style={styles.middleSection}>
+          <SocialLoginButtons
+            variant="stacked"
+            onLoginSuccess={handleSocialLoginSuccess}
+            onLoginError={handleSocialLoginError}
+            onGuestPress={handleGuestPress}
+          />
+        </View>
 
-        <SocialLoginButtons
-          onLoginSuccess={handleSocialLoginSuccess}
-          onLoginError={handleSocialLoginError}
-          onGuestPress={handleGuestPress}
-        />
+        <Text style={styles.termsFooter}>
+          By continuing, you agree to our{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() =>
+              navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                type: "term-condition",
+              })
+            }
+          >
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text
+            style={styles.termsLink}
+            onPress={() =>
+              navigation.navigate(navigationStrings.PRIVACYTERMS, {
+                type: "privacy-policy",
+              })
+            }
+          >
+            Privacy Policy
+          </Text>
+        </Text>
       </View>
     </ResponsiveContainer>
   );
@@ -237,63 +223,55 @@ const SignUp = ({ navigation }) => {
 export default SignUp;
 
 const styles = StyleSheet.create({
-  formContainer: {
+  screen: {
     flex: 1,
-    marginTop: getVertiPadding(20),
+    justifyContent: "space-between",
+    paddingBottom: getVertiPadding(8),
   },
-  signinContainer: {
-    alignItems: "flex-end",
-    marginTop: getVertiPadding(10),
-    marginBottom: getVertiPadding(20),
+  topSection: {
+    paddingTop: getVertiPadding(24),
   },
-  signinText: {
-    fontSize: getFontSize(14),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
-  },
-  signinLink: {
-    color: colors.black,
-    fontFamily: fonts.RobotoMedium,
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: getVertiPadding(30),
-    paddingRight: getHoriPadding(20),
-  },
-  checkbox: {
-    width: getWidth(20),
-    height: getHeight(20),
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: getRadius(4),
-    marginRight: getHoriPadding(12),
-    marginTop: getVertiPadding(2),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkboxChecked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  checkmark: {
-    color: colors.white,
-    fontSize: getFontSize(12),
-    fontWeight: "bold",
-  },
-  termsText: {
-    flex: 1,
-    fontSize: getFontSize(14),
-    color: colors.lightText,
-    lineHeight: getHeight(20),
-    fontFamily: fonts.RobotoRegular,
-  },
-  link: {
-    color: colors.black,
-    fontFamily: fonts.RobotoMedium,
-    fontSize: getFontSize(14),
+  titleContainer: {
+    marginTop: getVertiPadding(16),
+    marginBottom: getVertiPadding(28),
   },
   continueBtn: {
-    marginBottom: getVertiPadding(30),
+    marginTop: getVertiPadding(24),
+    width: "100%",
+  },
+  signInRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: getVertiPadding(24),
+  },
+  middleSection: {
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: getVertiPadding(24),
+  },
+  signInPrompt: {
+    color: colors.lightText,
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+  },
+  signInLink: {
+    color: colors.black,
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoBold,
+  },
+  termsFooter: {
+    textAlign: "center",
+    fontSize: getFontSize(12),
+    lineHeight: getHeight(18),
+    color: colors.lightText,
+    fontFamily: fonts.RobotoRegular,
+    paddingHorizontal: getHoriPadding(12),
+    paddingTop: getVertiPadding(16),
+  },
+  termsLink: {
+    color: colors.black,
+    fontFamily: fonts.RobotoMedium,
+    fontSize: getFontSize(12),
   },
 });

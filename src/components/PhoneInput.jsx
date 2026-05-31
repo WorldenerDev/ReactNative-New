@@ -68,6 +68,7 @@ const PhoneInput = ({
         <TouchableOpacity
           style={styles.countryCodeButton}
           onPress={() => setIsModalVisible(true)}
+          activeOpacity={0.7}
         >
           <Text style={styles.flagText}>{selectedCountry.flag}</Text>
           <Text style={styles.countryCodeText}>{selectedCountry.code}</Text>
@@ -78,7 +79,7 @@ const PhoneInput = ({
         <TextInput
           style={[styles.input, inputStyle]}
           placeholder={placeholder}
-          placeholderTextColor={colors.placeholderText}
+          placeholderTextColor={colors.lightText}
           value={value}
           onChangeText={onChangeText}
           keyboardType="phone-pad"
@@ -134,7 +135,7 @@ export default PhoneInput;
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: getVertiPadding(15),
+    paddingVertical: getVertiPadding(8),
   },
   label: {
     fontSize: getFontSize(14),
@@ -146,19 +147,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: getHeight(52),
-  },
-  countryCodeButton: {
-    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: getRadius(8),
+    borderRadius: getRadius(12),
+    backgroundColor: colors.white,
+    paddingHorizontal: getHoriPadding(14),
+  },
+  countryCodeButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: getHoriPadding(12),
     paddingVertical: getVertiPadding(8),
-    marginRight: getHoriPadding(8),
-    minWidth: getWidth(80),
-    height: getHeight(36),
   },
   flagText: {
     fontSize: getFontSize(20),
@@ -170,21 +168,18 @@ const styles = StyleSheet.create({
     color: colors.darkText,
   },
   separator: {
-    width: getWidth(1),
+    width: 1,
     height: getHeight(24),
     backgroundColor: colors.border,
     marginHorizontal: getHoriPadding(12),
   },
   input: {
     flex: 1,
-    backgroundColor: colors.input,
-    borderRadius: getRadius(8),
-    paddingHorizontal: getHoriPadding(16),
     paddingVertical: getVertiPadding(8),
     fontSize: getFontSize(14),
-    color: colors.bodyText,
+    color: colors.black,
     fontFamily: fonts.RobotoRegular,
-    height: getHeight(36),
+    height: getHeight(52),
   },
   modalOverlay: {
     flex: 1,

@@ -10,10 +10,23 @@ import {
 } from "react-native";
 import socialLoginService from "../api/services/socialLoginService";
 import colors from "@assets/colors";
+import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
-import { getFontSize, getHeight, getWidth } from "@utils/responsive";
+import {
+  getFontSize,
+  getHeight,
+  getHoriPadding,
+  getRadius,
+  getVertiPadding,
+  getWidth,
+} from "@utils/responsive";
 
-const SocialLoginButtons = ({ onLoginSuccess, onLoginError, onGuestPress }) => {
+const SocialLoginButtons = ({
+  onLoginSuccess,
+  onLoginError,
+  onGuestPress,
+  variant = "circular",
+}) => {
   const [availableProviders, setAvailableProviders] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -50,6 +63,42 @@ const SocialLoginButtons = ({ onLoginSuccess, onLoginError, onGuestPress }) => {
 
   const handleGoogleLogin = () => handleSocialLogin("google");
   const handleAppleLogin = () => handleSocialLogin("apple");
+
+  if (variant === "stacked") {
+    return (
+      <View style={styles.stackedContainer}>
+        <View style={styles.separatorWrapper}>
+          <View style={styles.separator} />
+          <Text style={styles.orTextStacked}>OR</Text>
+          <View style={styles.separator} />
+        </View>
+
+        {availableProviders.google && (
+          <TouchableOpacity
+            style={styles.googleFullButton}
+            onPress={handleGoogleLogin}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={imagePath.GOOGLE_ICON}
+              style={styles.googleFullIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.googleFullText}>Continue with Google</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={styles.guestButtonStacked}
+          onPress={onGuestPress}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.guestTextStacked}>Continue as Guest</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -108,6 +157,48 @@ const SocialLoginButtons = ({ onLoginSuccess, onLoginError, onGuestPress }) => {
 };
 
 const styles = StyleSheet.create({
+  stackedContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  googleFullButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: getHeight(52),
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: getRadius(12),
+    backgroundColor: colors.white,
+    marginBottom: getVertiPadding(16),
+  },
+  googleFullIcon: {
+    width: getWidth(22),
+    height: getWidth(22),
+    marginRight: getHoriPadding(10),
+  },
+  googleFullText: {
+    fontSize: getFontSize(16),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.black,
+  },
+  orTextStacked: {
+    marginHorizontal: getWidth(16),
+    fontSize: getFontSize(13),
+    color: colors.lightText,
+    fontFamily: fonts.RobotoRegular,
+    letterSpacing: 0.5,
+  },
+  guestButtonStacked: {
+    alignItems: "center",
+    paddingVertical: getVertiPadding(8),
+  },
+  guestTextStacked: {
+    fontSize: getFontSize(15),
+    color: colors.lightText,
+    fontFamily: fonts.RobotoRegular,
+  },
   container: {
     padding: getWidth(20),
     alignItems: "center",
