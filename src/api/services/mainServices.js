@@ -90,6 +90,10 @@ export const updateProfile = (formData) =>
     },
   });
 export const addCard = (data) => apiPost(endpoints?.main?.addCard, data);
+export const saveStripePaymentMethod = (data) =>
+  apiPost(endpoints?.main?.addCard, data);
+export const getClientSecret = () =>
+  apiGet(endpoints?.main?.getClientSecret);
 export const getStripeCardList = () =>
   apiGet(endpoints?.main?.getStripeCardList);
 export const chatbot = (data) => apiPost(endpoints?.main?.chatbot, data);

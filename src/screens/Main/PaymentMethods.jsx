@@ -9,7 +9,7 @@ import { usePayments } from "@hooks/usePayments";
 import navigationStrings from "@navigation/navigationStrings";
 import { getHeight, getHoriPadding } from "@utils/responsive";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -21,7 +21,8 @@ import {
 } from "react-native";
 
 const PaymentMethods = ({ navigation }) => {
-  const { payment, getCards, selectCard, deleteCard, addDevelopmentCard } =
+  const [addingCard, setAddingCard] = useState(false);
+  const { payment, getCards, selectCard, deleteCard, addDevelopmentCard, prepareAddCard } =
     usePayments();
 
   useFocusEffect(
@@ -54,8 +55,25 @@ const PaymentMethods = ({ navigation }) => {
     navigation.goBack();
   };
 
+  const handleAddCard = async () => {
+    if (!STRIPE_PUBLISHABLE_KEY) {
+      navigation.navigate(navigationStrings.ADD_CARD);
+      return;
+    }
+
+    try {
+      setAddingCard(true);
+      const res = await prepareAddCard();
+      if (res?.ok) {
+        navigation.navigate(navigationStrings.ADD_CARD);
+      }
+    } finally {
+      setAddingCard(false);
+    }
+  };
+
   return (
-    <MainContainer loader={payment.status === "loading"}>
+    <MainContainer loader={payment.status === "loading" || addingCard}>
       <Header title="Payment methods" />
 
       <View style={styles.screen}>
@@ -115,9 +133,7 @@ const PaymentMethods = ({ navigation }) => {
             <View style={styles.footerBlock}>
               <ButtonComp
                 title="Add new card"
-                onPress={() =>
-                  navigation.navigate(navigationStrings.ADD_CARD)
-                }
+                onPress={handleAddCard}
               />
               {!STRIPE_PUBLISHABLE_KEY ? (
                 <View style={{ marginTop: getHeight(12) }}>

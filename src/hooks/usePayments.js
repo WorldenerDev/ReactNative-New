@@ -1,10 +1,13 @@
 import { showToast } from "@components/AppToast";
 import { usePaymentStripe } from "@context/PaymentStripeContext";
 import {
+  clearSetupClientSecret,
   fetchPaymentMethods,
   removePaymentMethod,
   setLastClientSecret,
   setSelectedCard,
+  setSetupClientSecret,
+  setStripeCustomerId,
 } from "@redux/slices/paymentSlice";
 import * as paymentApi from "../services/payment";
 import { useCallback, useRef } from "react";
@@ -17,7 +20,33 @@ export function usePayments() {
   const dispatch = useDispatch();
   const stripe = usePaymentStripe();
   const payment = useSelector((s) => s.payment);
+  const user = useSelector((s) => s.auth.user);
   const busyRef = useRef(false);
+
+  const fetchSetupIntent = useCallback(async () => {
+    const setupResult = await paymentApi.runPaymentApi(() =>
+      paymentApi.createSetupIntent({
+        customerId: payment.stripeCustomerId,
+        tripId: payment.tripId,
+        user,
+      })
+    );
+    const { clientSecret, customerId } = setupResult;
+
+    if (customerId) {
+      dispatch(setStripeCustomerId(customerId));
+    }
+    if (clientSecret) {
+      dispatch(setSetupClientSecret(clientSecret));
+    }
+
+    return setupResult;
+  }, [
+    dispatch,
+    payment.stripeCustomerId,
+    payment.tripId,
+    user,
+  ]);
 
   const getCards = useCallback(() => {
     return dispatch(fetchPaymentMethods());
@@ -50,6 +79,27 @@ export function usePayments() {
     [dispatch]
   );
 
+  /** Calls `/get-client-secret` (via createSetupIntent) before opening the add-card screen. */
+  const prepareAddCard = useCallback(async () => {
+    if (busyRef.current) {
+      return { ok: false };
+    }
+    busyRef.current = true;
+    try {
+      const { clientSecret } = await fetchSetupIntent();
+      if (!clientSecret) {
+        showToast("error", "Could not initialize card setup.");
+        return { ok: false };
+      }
+      return { ok: true, clientSecret };
+    } catch (e) {
+      showToast("error", e?.message || "Could not initialize card setup.");
+      return { ok: false };
+    } finally {
+      busyRef.current = false;
+    }
+  }, [fetchSetupIntent]);
+
   const addCard = useCallback(
     async (cardDetails) => {
       if (busyRef.current) {
@@ -61,14 +111,25 @@ export function usePayments() {
       }
       busyRef.current = true;
       try {
-        const { clientSecret } = await paymentApi.runPaymentApi(() =>
-          paymentApi.createSetupIntent({})
-        );
+        let clientSecret = payment.setupClientSecret;
+
+        if (!clientSecret) {
+          const setupResult = await fetchSetupIntent();
+          clientSecret = setupResult.clientSecret;
+        }
+
+        if (!clientSecret) {
+          showToast("error", "Missing setup secret. Go back and try again.");
+          return { ok: false };
+        }
 
         if (paymentApi.isMockClientSecret(clientSecret)) {
           await new Promise((r) => setTimeout(r, 450));
           const rawLast4 = cardDetails?.last4 || "4242";
-          const last4 = String(rawLast4).replace(/\s/g, "").slice(-4).padStart(4, "0");
+          const last4 = String(rawLast4)
+            .replace(/\s/g, "")
+            .slice(-4)
+            .padStart(4, "0");
           paymentApi.appendMockSavedCard({
             id: `mock_pm_${Date.now()}`,
             brand: cardDetails?.brand || "Card",
@@ -76,11 +137,12 @@ export function usePayments() {
             isDefault: false,
           });
           await dispatch(fetchPaymentMethods()).unwrap();
+          dispatch(clearSetupClientSecret());
           showToast("success", "Card added.");
           return { ok: true };
         }
 
-        if (!stripe?.confirmSetupIntent) {
+        if (!stripe?.createPaymentMethod || !stripe?.confirmSetupIntent) {
           showToast(
             "error",
             "Stripe is not configured. Set STRIPE_PUBLISHABLE_KEY to add a real card."
@@ -88,10 +150,23 @@ export function usePayments() {
           return { ok: false };
         }
 
+        const { error: pmError, paymentMethod } =
+          await stripe.createPaymentMethod({
+            paymentMethodType: "Card",
+          });
+
+        if (pmError || !paymentMethod?.id) {
+          showToast("error", pmError?.message || "Invalid card details.");
+          return { ok: false };
+        }
+
         const { error, setupIntent } = await stripe.confirmSetupIntent(
           clientSecret,
           {
             paymentMethodType: "Card",
+            paymentMethodData: {
+              paymentMethodId: paymentMethod.id,
+            },
           }
         );
 
@@ -100,28 +175,17 @@ export function usePayments() {
           return { ok: false };
         }
 
-        const rawPm = setupIntent?.paymentMethod;
-        const pm =
-          typeof rawPm === "object" && rawPm !== null ? rawPm : null;
-        const card =
-          pm?.Card ||
-          pm?.card ||
-          pm?.PaymentMethod?.card ||
-          pm?.paymentMethod?.card;
-        const pmId =
-          pm?.id ||
-          setupIntent?.paymentMethodId ||
-          (typeof rawPm === "string" ? rawPm : null);
-
-        if (pmId && !paymentApi.isPaymentBackendConfigured()) {
-          paymentApi.appendMockSavedCard({
-            id: pmId,
-            brand: card?.brand || card?.displayBrand || "Card",
-            last4: card?.last4 || "0000",
-            isDefault: false,
-          });
+        const status = String(setupIntent?.status || "").toLowerCase();
+        if (status !== "succeeded") {
+          showToast(
+            "error",
+            `Card setup incomplete (${setupIntent?.status || "unknown"}).`
+          );
+          return { ok: false };
         }
+
         await dispatch(fetchPaymentMethods()).unwrap();
+        dispatch(clearSetupClientSecret());
         showToast("success", "Card added.");
         return { ok: true };
       } catch (e) {
@@ -131,7 +195,7 @@ export function usePayments() {
         busyRef.current = false;
       }
     },
-    [dispatch, stripe]
+    [dispatch, fetchSetupIntent, payment.setupClientSecret, stripe]
   );
 
   const addDevelopmentCard = useCallback(async () => {
@@ -240,6 +304,7 @@ export function usePayments() {
     getCards,
     selectCard,
     deleteCard,
+    prepareAddCard,
     addCard,
     pay,
     addDevelopmentCard,

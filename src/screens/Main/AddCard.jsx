@@ -1,3 +1,4 @@
+import { saveStripePaymentMethod } from "@api/services/mainServices";
 import colors from "@assets/colors";
 import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
@@ -5,28 +6,101 @@ import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
 import { usePayments } from "@hooks/usePayments";
-import { CardField } from "@stripe/stripe-react-native";
+import { clearSetupClientSecret } from "@redux/slices/paymentSlice";
+import { CardField, useStripe } from "@stripe/stripe-react-native";
 import { getHeight, getHoriPadding } from "@utils/responsive";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { StyleSheet, Text, View } from "react-native";
 
 const AddCard = ({ navigation }) => {
-  console.log("STRIPE_PUBLISHABLE_KEY", STRIPE_PUBLISHABLE_KEY);
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [cardDetails, setCardDetails] = useState(null);
-  const { addCard, addDevelopmentCard } = usePayments();
+  const { addDevelopmentCard, prepareAddCard, getCards, payment } =
+    usePayments();
+  const { createPaymentMethod, confirmSetupIntent } = useStripe();
+  const stripeCustomerId = useSelector((s) => s.payment.stripeCustomerId);
+
+  useEffect(() => {
+    if (!STRIPE_PUBLISHABLE_KEY || payment.setupClientSecret) {
+      return;
+    }
+    prepareAddCard().catch(() => {});
+  }, [payment.setupClientSecret, prepareAddCard]);
+
+  const resolveClientSecret = async () => {
+    if (payment.setupClientSecret) {
+      return payment.setupClientSecret;
+    }
+    const res = await prepareAddCard();
+    if (!res?.ok || !res.clientSecret) {
+      throw new Error("Could not initialize card setup.");
+    }
+    return res.clientSecret;
+  };
+
+  const persistPaymentMethod = async (paymentMethodId) => {
+    try {
+      await saveStripePaymentMethod({
+        paymentMethodId,
+        payment_method_id: paymentMethodId,
+        stripeCustomerId,
+        customerId: stripeCustomerId,
+      });
+    } catch (error) {
+      console.log("saveStripePaymentMethod error", error);
+    }
+  };
 
   const handleContinue = async () => {
     if (!cardDetails?.complete) {
       showToast("error", "Please enter complete card details.");
       return;
     }
+
     try {
       setLoading(true);
-      const res = await addCard(cardDetails);
-      if (res?.ok) {
-        navigation.goBack();
+      const clientSecret = await resolveClientSecret();
+
+      const { error: pmError, paymentMethod } = await createPaymentMethod({
+        paymentMethodType: "Card",
+      });
+
+      if (pmError || !paymentMethod?.id) {
+        showToast("error", pmError?.message || "Invalid card details.");
+        return;
       }
+
+      const { error, setupIntent } = await confirmSetupIntent(clientSecret, {
+        paymentMethodType: "Card",
+        paymentMethodData: {
+          paymentMethodId: paymentMethod.id,
+        },
+      });
+
+      if (error) {
+        showToast("error", error.message || "Could not add card.");
+        return;
+      }
+
+      const status = String(setupIntent?.status || "").toLowerCase();
+      if (status !== "succeeded") {
+        showToast(
+          "error",
+          `Card setup incomplete (${setupIntent?.status || "unknown"}).`
+        );
+        return;
+      }
+
+      await persistPaymentMethod(paymentMethod.id);
+      await getCards();
+      dispatch(clearSetupClientSecret());
+      showToast("success", "Card added.");
+      navigation.goBack();
+    } catch (err) {
+      console.log("AddCard handleContinue error", err);
+      showToast("error", err?.message || "Failed to add card.");
     } finally {
       setLoading(false);
     }
@@ -46,7 +120,7 @@ const AddCard = ({ navigation }) => {
 
   if (!STRIPE_PUBLISHABLE_KEY) {
     return (
-      <MainContainer loader={loading}>
+      <MainContainer>
         <Header title="Add card" />
         <View style={styles.screen}>
           <Text style={styles.infoText}>
@@ -61,7 +135,7 @@ const AddCard = ({ navigation }) => {
   }
 
   return (
-    <MainContainer loader={loading}>
+    <MainContainer>
       <Header title="Add cards" />
 
       <View style={styles.screen}>

@@ -25,10 +25,12 @@ import {
 const Payment = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const [addingCard, setAddingCard] = useState(false);
   const { items, selectedId, status } = useSelector((s) => s.payment);
   const { trip_id, cart_id, orderUuid, amount_minor, currency } =
     route?.params || {};
-  const { getCards, selectCard, addDevelopmentCard } = usePayments();
+  const { getCards, selectCard, addDevelopmentCard, prepareAddCard } =
+    usePayments();
 
   useFocusEffect(
     useCallback(() => {
@@ -86,8 +88,25 @@ const Payment = ({ navigation, route }) => {
     }
   };
 
+  const handleAddCard = async () => {
+    if (!STRIPE_PUBLISHABLE_KEY) {
+      navigation.navigate(navigationStrings.ADD_CARD);
+      return;
+    }
+
+    try {
+      setAddingCard(true);
+      const res = await prepareAddCard();
+      if (res?.ok) {
+        navigation.navigate(navigationStrings.ADD_CARD);
+      }
+    } finally {
+      setAddingCard(false);
+    }
+  };
+
   return (
-    <MainContainer loader={loading || status === "loading"}>
+    <MainContainer loader={loading || status === "loading" || addingCard}>
       <Header title="Payment" />
 
       <View style={styles.screen}>
@@ -150,7 +169,7 @@ const Payment = ({ navigation, route }) => {
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.addCardRow}
-              onPress={() => navigation.navigate(navigationStrings.ADD_CARD)}
+              onPress={handleAddCard}
             >
               <Text style={styles.addCardText}>Add credit card</Text>
               <Text style={styles.addCardPlus}>+</Text>

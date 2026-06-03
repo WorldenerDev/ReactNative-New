@@ -35,6 +35,7 @@ import {
 import { showToast } from "@components/AppToast";
 import ParticipantAccordion from "@components/ParticipantAccordion";
 import navigationStrings from "@navigation/navigationStrings";
+import { setStripeCustomerId } from "@redux/slices/paymentSlice";
 import { setUser } from "@redux/slices/authSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
@@ -459,6 +460,10 @@ const CartCustomerInfo = ({ navigation, route }) => {
       const response = await cartCustomerInfo(apiPayload);
 
       if (response?.success) {
+        const stripeCustomerId = response?.data?.stripeCustomerId;
+        if (stripeCustomerId) {
+          dispatch(setStripeCustomerId(stripeCustomerId));
+        }
         showToast("success", "Customer information submitted successfully!");
         const orderResponse = await createOrder({
           trip_id: trip_id,

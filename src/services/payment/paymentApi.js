@@ -1,5 +1,6 @@
 const MOCK_DELAY_MS = 450;
 
+import { getClientSecret as fetchClientSecretFromApi } from "@api/services/mainServices";
 import {
   STRIPE_PAYMENT_BACKEND_URL,
   STRIPE_TEST_CUSTOMER_ID,
@@ -94,40 +95,117 @@ export function isPaymentBackendConfigured() {
 }
 
 /**
- * When `STRIPE_PAYMENT_BACKEND_URL` is set, calls the dev/proxy server (see `scripts/stripe-dev-server.js`).
- * Otherwise returns mock client secrets.
+ * Parses `/get-client-secret` (and similar) responses into a SetupIntent client secret.
  *
- * @param {import('./contracts').CreateSetupIntentRequest} [request]
+ * @param {unknown} res
+ * @returns {import('./contracts').CreateSetupIntentResponse}
+ */
+function findClientSecretDeep(value) {
+  if (typeof value === "string") {
+    if (value.startsWith("seti_") || value.includes("_secret_")) {
+      return value;
+    }
+    return null;
+  }
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  for (const nested of Object.values(value)) {
+    const found = findClientSecretDeep(nested);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+
+function parseSetupIntentResponse(res) {
+  if (!res || typeof res !== "object") {
+    throw new Error("Invalid setup intent response");
+  }
+  if (res.success === false) {
+    throw new Error(res.message || "Failed to create setup intent");
+  }
+
+  const payload = res.data ?? res;
+  const nested = payload?.data ?? payload;
+
+  if (typeof nested === "string" && nested.includes("_secret_")) {
+    return {
+      clientSecret: nested,
+      customerId: undefined,
+      ephemeralKey: undefined,
+    };
+  }
+
+  const secret =
+    nested?.clientSecret ??
+    nested?.client_secret ??
+    nested?.setupIntentClientSecret ??
+    nested?.setup_intent_client_secret ??
+    nested?.secret ??
+    payload?.clientSecret ??
+    payload?.client_secret ??
+    findClientSecretDeep(res);
+
+  if (!secret || typeof secret !== "string") {
+    throw new Error(res.message || "Client secret not found in response");
+  }
+
+  const customerId =
+    nested?.stripeCustomerId ??
+    nested?.customerId ??
+    nested?.customer_id ??
+    nested?.customer ??
+    payload?.stripeCustomerId ??
+    payload?.customerId ??
+    payload?.customer;
+
+  return {
+    clientSecret: secret,
+    customerId: customerId ? String(customerId) : undefined,
+    ephemeralKey: undefined,
+  };
+}
+
+/**
+ * Fetches a SetupIntent client secret from the production backend (`/get-client-secret`).
+ *
+ * @param {{ customerId?: string, tripId?: string, user?: object }} [request]
+ * @returns {Promise<import('./contracts').CreateSetupIntentResponse>}
+ */
+async function createSetupIntentFromProductionApi(request = {}) {
+  const res = await fetchClientSecretFromApi();
+  const parsed = parseSetupIntentResponse(res);
+  const customerId =
+    parsed.customerId ||
+    (request.customerId ? String(request.customerId).trim() : undefined) ||
+    (res?.data?.customer ? String(res.data.customer) : undefined);
+  return {
+    ...parsed,
+    customerId,
+  };
+}
+
+/**
+ * Creates a SetupIntent client secret via production `/get-client-secret`.
+ * Dev server (`STRIPE_PAYMENT_BACKEND_URL`) is not used here so saved cards
+ * stay on the same Stripe customer as `/get-stripe-card-list`.
+ *
+ * @param {import('./contracts').CreateSetupIntentRequest & { tripId?: string, user?: object }} [request]
  * @returns {Promise<import('./contracts').CreateSetupIntentResponse>}
  */
 export async function createSetupIntent(request = {}) {
-  if (STRIPE_PAYMENT_BACKEND_URL) {
-    const customerId = defaultCustomerId(request);
-    if (!customerId) {
-      await delay(MOCK_DELAY_MS);
-      return {
-        clientSecret: `${MOCK_CLIENT_SECRET_PREFIX}seti_1_no_customer_id`,
-        customerId: undefined,
-        ephemeralKey: undefined,
-      };
-    }
-    try {
-      return await postPaymentBackend("/create-setup-intent", { customerId });
-    } catch {
-      await delay(MOCK_DELAY_MS);
-      return {
-        clientSecret: `${MOCK_CLIENT_SECRET_PREFIX}seti_1_fallback_after_backend_error`,
-        customerId: undefined,
-        ephemeralKey: undefined,
-      };
-    }
+  try {
+    return await createSetupIntentFromProductionApi(request);
+  } catch (productionError) {
+    const message =
+      productionError?.message ||
+      (typeof productionError === "string"
+        ? productionError
+        : "Failed to initialize card setup");
+    throw new Error(message);
   }
-  await delay(MOCK_DELAY_MS);
-  return {
-    clientSecret: `${MOCK_CLIENT_SECRET_PREFIX}seti_1_replace_with_backend_secret`,
-    customerId: undefined,
-    ephemeralKey: undefined,
-  };
 }
 
 /**

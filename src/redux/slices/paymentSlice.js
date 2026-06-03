@@ -3,13 +3,28 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import * as paymentApi from "../../services/payment";
 
 const mapStripeCardList = (cards) =>
-  (Array.isArray(cards) ? cards : []).map((card) => ({
-    id: card.id,
-    brand: card.brand,
-    last4: card.last4,
-    expMonth: card.expMonth,
-    expYear: card.expYear,
-  }));
+  (Array.isArray(cards) ? cards : [])
+    .map((card) => ({
+      id:
+        card.id ||
+        card.paymentMethodId ||
+        card.payment_method_id ||
+        card.pm_id,
+      brand:
+        card.brand ||
+        card.card_brand ||
+        card.card?.brand ||
+        card.card?.displayBrand ||
+        "Card",
+      last4:
+        card.last4 ||
+        card.last_four ||
+        card.card?.last4 ||
+        "0000",
+      expMonth: card.expMonth ?? card.exp_month ?? card.card?.expMonth,
+      expYear: card.expYear ?? card.exp_year ?? card.card?.expYear,
+    }))
+    .filter((card) => Boolean(card.id));
 
 export const fetchPaymentMethods = createAsyncThunk(
   "payment/fetchPaymentMethods",
@@ -49,6 +64,8 @@ const initialState = {
   tripId: null,
   amountMinor: null,
   currency: "usd",
+  stripeCustomerId: null,
+  setupClientSecret: null,
   lastClientSecret: null,
 };
 
@@ -73,6 +90,12 @@ const paymentSlice = createSlice({
       if (p.currency !== undefined) {
         state.currency = p.currency || "usd";
       }
+      if (p.stripeCustomerId !== undefined) {
+        state.stripeCustomerId = p.stripeCustomerId;
+      }
+    },
+    setStripeCustomerId: (state, action) => {
+      state.stripeCustomerId = action.payload || null;
     },
     addLocalCard: (state, action) => {
       const card = action.payload;
@@ -84,6 +107,12 @@ const paymentSlice = createSlice({
     },
     setLastClientSecret: (state, action) => {
       state.lastClientSecret = action.payload;
+    },
+    setSetupClientSecret: (state, action) => {
+      state.setupClientSecret = action.payload || null;
+    },
+    clearSetupClientSecret: (state) => {
+      state.setupClientSecret = null;
     },
   },
   extraReducers: (builder) => {
@@ -127,9 +156,12 @@ const paymentSlice = createSlice({
 export const {
   setSelectedCard,
   setCheckoutContext,
+  setStripeCustomerId,
   addLocalCard,
   clearPaymentError,
   setLastClientSecret,
+  setSetupClientSecret,
+  clearSetupClientSecret,
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;
