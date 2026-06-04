@@ -28,7 +28,7 @@ const slides = [
     id: "1",
     title: "Travel Booking",
     description:
-      "Discover and book amazing trips, and experiences in one place. Invite your friends to plan your trip together.",
+      "Discover and book amazing trips, and experiences in one place. Invite your friends to plan  your trip together.",
     image: imagePath.ONBOARDING1,
   },
   {
