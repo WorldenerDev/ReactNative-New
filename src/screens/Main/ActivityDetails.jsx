@@ -132,6 +132,11 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleCheckAvailability = () => {
+    if (!selectedTrip?.value) {
+      showToast("error", "Please select a trip before adding activities");
+      return;
+    }
+
     if (
       eventDetail?.pickupPointsIsExist &&
       eventDetail?.pickup_points?.length > 0 &&

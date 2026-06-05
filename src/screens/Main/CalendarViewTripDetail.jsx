@@ -15,6 +15,7 @@ import fonts from "@assets/fonts";
 import { getHeight, getWidth, getRadius } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { getTripDetails } from "@api/services/mainServices";
+import { getTripId, normalizeTripDetails } from "@utils/tripHelpers";
 
 const CalendarViewTripDetail = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
@@ -27,11 +28,12 @@ const CalendarViewTripDetail = ({ navigation, route }) => {
     []
   );
 
-  const currentTripId = tripId || trip?.id || trip?._id;
+  const currentTripId = tripId || getTripId(trip);
 
   useEffect(() => {
-    if (trip && trip.start_at && trip.end_at) {
-      setTripData(trip);
+    const normalized = trip ? normalizeTripDetails(trip) : null;
+    if (normalized?.start_at && normalized?.end_at) {
+      setTripData(normalized);
       setLoading(false);
     } else if (currentTripId) {
       fetchTripDetails();
@@ -126,8 +128,9 @@ const CalendarViewTripDetail = ({ navigation, route }) => {
       setLoading(true);
       setError(null);
       const response = await getTripDetails(currentTripId);
-      if (response?.success) {
-        setTripData(response?.data);
+      const normalized = normalizeTripDetails(response);
+      if (normalized) {
+        setTripData(normalized);
       } else {
         setError(response?.message || "Failed to fetch trip details");
       }

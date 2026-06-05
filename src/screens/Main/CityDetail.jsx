@@ -31,6 +31,7 @@ import {
   View
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import { toSelectedTripOption } from "@utils/tripHelpers";
 
 // Helper function to get city name only
 const getCityName = (trip) => {
@@ -51,7 +52,8 @@ const formatTripLabel = (trip) => {
 
 /** --- screen --- */
 const CityDetail = ({ route, navigation }) => {
-  const { cityData } = route.params || {};
+  const { cityData, selectedTripId, selectedTrip: selectedTripFromRoute } =
+    route.params || {};
   const dispatch = useDispatch();
   const { categories } = useSelector((state) => state.auth);
   const { tripsByCity } = useSelector((state) => state.cityTrip);
@@ -64,14 +66,29 @@ const CityDetail = ({ route, navigation }) => {
   // console.log("City Data on city detail screen ", cityData);
 
   useEffect(() => {
-    // Reset selected trip when city changes
-    setSelectedTrip(null);
+    if (!selectedTripFromRoute?.value && !selectedTripId) {
+      setSelectedTrip(null);
+    }
     PopularEvents();
     getEvent_by_city();
     getTripsByCity();
-  }, [route]);
+  }, [cityData?.city_id, selectedTripFromRoute, selectedTripId]);
 
-  // Removed auto-selection - dropdown will show "Trip Name" placeholder by default
+  useEffect(() => {
+    if (selectedTripFromRoute?.value) {
+      setSelectedTrip(selectedTripFromRoute);
+      return;
+    }
+
+    if (selectedTripId && currentCityTrips.length > 0) {
+      const trip = currentCityTrips.find(
+        (item) => String(item._id) === String(selectedTripId)
+      );
+      if (trip) {
+        setSelectedTrip(toSelectedTripOption(trip));
+      }
+    }
+  }, [selectedTripFromRoute, selectedTripId, currentCityTrips]);
 
   const getTripsByCity = async () => {
     try {

@@ -14,7 +14,15 @@ import {
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
-import { useEffect, useState } from "react";
+import {
+  getActivityDateKey,
+  getTripCityId,
+  getTripId,
+  normalizeTripDetails,
+  toSelectedTripOption,
+} from "@utils/tripHelpers";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
 import {
   FlatList,
   Image,
@@ -32,49 +40,49 @@ const EXTRA_SCROLL_PADDING = 10;
 
 const TripDetails = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
-  const [tripData, setTripData] = useState(null);
+  const [tripData, setTripData] = useState(() =>
+    trip ? normalizeTripDetails(trip) : null
+  );
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { requestContactsPermission } = usePermissions();
   const insets = useSafeAreaInsets();
   const scrollContentBottomPadding =
     insets.bottom + getHeight(BOTTOM_MARGIN) + CHECKOUT_BUTTON_HEIGHT + getHeight(EXTRA_SCROLL_PADDING);
 
-  // Get trip ID from route params or trip object
-  const currentTripId = tripId || trip?.id || trip?._id;
+  const currentTripId = tripId || getTripId(trip);
 
-  useEffect(() => {
-    if (currentTripId) {
-      fetchTripDetails();
-    } else {
-      setError("Trip ID not found");
+  const fetchTripDetails = useCallback(async () => {
+    if (!currentTripId) {
+      showToast("error", "Trip ID not found");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await getTripDetails(currentTripId);
+      const normalized = normalizeTripDetails(response);
+
+      if (normalized) {
+        setTripData(normalized);
+      } else if (response?.success === false) {
+        showToast("error", response?.message || "Failed to fetch trip details");
+      } else {
+        showToast("error", "Failed to fetch trip details");
+      }
+    } catch (err) {
+      console.error("Error fetching trip details:", err);
+      showToast("error", err?.message || "Something went wrong");
+    } finally {
       setLoading(false);
     }
   }, [currentTripId]);
 
-  useEffect(() => {
-    if (error) {
-      navigation.goBack();
-    }
-  }, [error, navigation]);
-
-  const fetchTripDetails = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getTripDetails(currentTripId);
-      if (response?.success) {
-        setTripData(response?.data);
-      } else {
-        setError(response?.message || "Failed to fetch trip details");
-      }
-    } catch (err) {
-      console.error("Error fetching trip details:", err);
-      setError(err?.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      fetchTripDetails();
+    }, [fetchTripDetails])
+  );
 
   const handleEditPress = () => {
     navigation.navigate(navigationStrings.EDIT_TRIP, { trip: tripData });
@@ -87,16 +95,22 @@ const TripDetails = ({ navigation, route }) => {
   const handleExploreMore = () => {
     if (!tripData) return;
 
-    // Get city ID - check both direct city_id and nested city object
-    const cityId = tripData?.city_id || tripData?.city?.city_id || tripData?.city?._id;
+    const cityId = getTripCityId(tripData);
+    const selectedTrip = toSelectedTripOption(tripData);
 
-    if (cityId) {
+    if (cityId && selectedTrip) {
       navigation.navigate(navigationStrings.CITY_DETAIL, {
         cityData: {
           city_id: cityId,
-          name: tripData?.city?.name || tripData?.destination || "City",
-          image: tripData?.city?.image || tripData?.image || null,
+          name:
+            tripData?.city?.name ||
+            tripData?.name ||
+            tripData?.destination ||
+            "City",
+          image: tripData?.image || tripData?.city?.image || null,
         },
+        selectedTripId: currentTripId,
+        selectedTrip,
       });
     } else {
       showToast("error", "City information not available");
@@ -212,7 +226,7 @@ const TripDetails = ({ navigation, route }) => {
     const grouped = {};
 
     activities.forEach((activity) => {
-      const activityDate = activity.date || "Unknown Date";
+      const activityDate = getActivityDateKey(activity);
       if (!grouped[activityDate]) {
         grouped[activityDate] = [];
       }
@@ -263,7 +277,9 @@ const TripDetails = ({ navigation, route }) => {
                     />
                     <Text style={styles.destinationText}>
                       {tripData?.destination ||
+                        tripData?.name ||
                         tripData?.city?.name ||
+                        tripData?.city_id?.name ||
                         "Unknown Destination"}
                     </Text>
                   </View>

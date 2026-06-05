@@ -14,6 +14,7 @@ import CustomDropdown from "@components/CustomDropdown";
 import Header from "@components/Header";
 import navigationStrings from "@navigation/navigationStrings";
 import { getFontSize, getHeight, getRadius, getWidth } from "@utils/responsive";
+import { getTripId, normalizeTripDetails } from "@utils/tripHelpers";
 import { useEffect, useState } from "react";
 import {
   FlatList,
@@ -393,6 +394,12 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           routes: [{ name: navigationStrings.CART }],
         });
       } else {
+        if (!eventData?.tripId) {
+          showToast("error", "Trip not selected. Please choose a trip first.");
+          setIsLoading(false);
+          return;
+        }
+
         // Add to trip when coming from normal flow
         const requestData = {
           city_id: String(eventData?.cityId || ""), // Ensure city_id is a string
@@ -402,7 +409,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           instant_confirmation: eventData?.instant_confirmation,
           free_cancellation: eventData?.free_cancellation ? true : false,
           duration: eventData?.duration,
-          trip_id: eventData?.tripId,
+          trip_id: String(eventData.tripId),
           ...(eventData?.pickupPointId && { pickup_point: eventData.pickupPointId }),
           ...(eventData?.language && { language: eventData.language }),
         };
@@ -410,9 +417,11 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         console.log("addEventInTrip requestData", requestData);
         const response = await addEventInTrip(requestData);
         showToast("success", response?.message);
+        const addedTrip = normalizeTripDetails(response?.data ?? response);
+        const addedTripId = getTripId(addedTrip) || String(eventData.tripId);
         navigation.navigate(navigationStrings.TRIP_DETAILS, {
-          trip: response?.data,
-          tripId: response?.data?.id || response?.data?._id,
+          trip: addedTrip,
+          tripId: addedTripId,
         });
       }
     } catch (error) {

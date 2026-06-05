@@ -25,6 +25,7 @@ import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
 import { updateTrip } from "@api/services/mainServices";
+import { getTripCityId } from "@utils/tripHelpers";
 import { useDispatch } from "react-redux";
 import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import navigationStrings from "@navigation/navigationStrings";
@@ -33,7 +34,9 @@ const EditTrip = ({ navigation, route }) => {
   const { trip } = route?.params || {};
   const dispatch = useDispatch();
   // Form state
-  const [tripName, setTripName] = useState(trip?.city?.name || "Tokyo Trip");
+  const [tripName, setTripName] = useState(
+    trip?.name || trip?.city?.name || trip?.destination || "Trip"
+  );
   const [fromDate, setFromDate] = useState(trip?.start_at?.slice(0, 10) || "");
   const [toDate, setToDate] = useState(trip?.end_at?.slice(0, 10) || "");
   const [coverPhoto, setCoverPhoto] = useState(trip?.city?.image || "");
@@ -57,7 +60,7 @@ const EditTrip = ({ navigation, route }) => {
       // Prepare FormData for API call
       const formData = new FormData();
       formData.append("name", tripName);
-      formData.append("city_id", String(trip?.city_id));
+      formData.append("city_id", String(getTripCityId(trip) || ""));
       formData.append("start_at", fromDate);
       formData.append("end_at", toDate);
 

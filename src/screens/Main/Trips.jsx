@@ -100,6 +100,7 @@ const Trips = ({ navigation }) => {
             onItineraryPress={() =>
               navigation.navigate(navigationStrings.TRIP_DETAILS, {
                 tripId: item?._id,
+                trip: item,
               })
             }
             onGroupPress={() => {
@@ -113,6 +114,7 @@ const Trips = ({ navigation }) => {
             onPressCard={() =>
               navigation.navigate(navigationStrings.TRIP_DETAILS, {
                 tripId: item?._id,
+                trip: item,
               })
             }
           />
