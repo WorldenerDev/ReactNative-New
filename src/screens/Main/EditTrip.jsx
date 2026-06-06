@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  ScrollView,
 } from "react-native";
 import React, { useState } from "react";
 import { Calendar } from "react-native-calendars";
@@ -29,10 +30,12 @@ import { getTripCityId } from "@utils/tripHelpers";
 import { useDispatch } from "react-redux";
 import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import navigationStrings from "@navigation/navigationStrings";
+import useStickyBottomInset from "@hooks/useStickyBottomInset";
 
 const EditTrip = ({ navigation, route }) => {
   const { trip } = route?.params || {};
   const dispatch = useDispatch();
+  const bottomInset = useStickyBottomInset();
   // Form state
   const [tripName, setTripName] = useState(
     trip?.name || trip?.city?.name || trip?.destination || "Trip"
@@ -69,6 +72,7 @@ const EditTrip = ({ navigation, route }) => {
       showToast("success", "Trip updated successfully!");
       navigation.navigate(navigationStrings.BOTTOM_TAB, {
         screen: navigationStrings.TRIPS,
+        params: { screen: navigationStrings.TRIPS },
       });
     } catch (error) {
       console.error("Error updating trip:", error);
@@ -99,6 +103,7 @@ const EditTrip = ({ navigation, route }) => {
               showToast("success", "Trip deleted successfully!");
               navigation.navigate(navigationStrings.BOTTOM_TAB, {
                 screen: navigationStrings.TRIPS,
+                params: { screen: navigationStrings.TRIPS },
               });
             } catch (error) {
               console.error("Error deleting trip:", error);
@@ -140,7 +145,15 @@ const EditTrip = ({ navigation, route }) => {
     <MainContainer loader={isLoading || deleteLoading}>
       <Header title="Edit Trip" showBack={true} />
 
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomInset + getHeight(24) },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Trip Name Section */}
         <View style={styles.section}>
           <Text style={styles.label}>Trip Name</Text>
@@ -223,7 +236,7 @@ const EditTrip = ({ navigation, route }) => {
             onPress={handleSave}
           />
         </View>
-      </View>
+      </ScrollView>
 
       {/* Calendar Modal */}
       <Modal visible={showCalendar} transparent animationType="fade">
@@ -252,8 +265,10 @@ const EditTrip = ({ navigation, route }) => {
 export default EditTrip;
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     paddingTop: getHeight(20),
   },
   section: {
@@ -318,9 +333,8 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   buttonsContainer: {
-    marginTop: getHeight(40),
+    marginTop: getHeight(32),
     gap: getHeight(12),
-    marginTop: getVertiPadding(150),
   },
   deleteButton: {
     backgroundColor: "transparent",

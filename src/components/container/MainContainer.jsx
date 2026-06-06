@@ -50,5 +50,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
     paddingHorizontal: getHoriPadding(15),
+    position: "relative",
   },
 });

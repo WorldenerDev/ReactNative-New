@@ -2,13 +2,15 @@ import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import {
   getHeight,
-  getHoriPadding,
   getRadius,
+  getVertiPadding,
   getWidth,
 } from "@utils/responsive";
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+
+const SIDE_SLOT_WIDTH = getWidth(50);
 
 const Header = ({
   showBack = true,
@@ -21,44 +23,45 @@ const Header = ({
 
   return (
     <View style={styles.container}>
-      {showBack ? (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.iconBtn}
-        >
-          <Image
-            tintColor={colors.black}
-            source={imagePath.BACK_ICON}
-            style={styles.iconStyle}
-          />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.iconBtnr} />
-      )}
+      <View style={styles.sideSlot}>
+        {showBack ? (
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.iconBtn}
+          >
+            <Image
+              tintColor={colors.black}
+              source={imagePath.BACK_ICON}
+              style={styles.iconStyle}
+            />
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
       <Text numberOfLines={1} style={styles.title}>
         {title}
       </Text>
 
-      {rightIconImage ? (
-        <TouchableOpacity
-          onPress={onRightIconPress}
-          style={[, { backgroundColor: colors.white }]}
-        >
-          <Image
-            source={rightIconImage}
-            style={[
-              styles.rightIconStyle,
-              rightIconSize != null && {
-                width: getWidth(rightIconSize),
-                height: getHeight(rightIconSize),
-              },
-            ]}
-          />
-        </TouchableOpacity>
-      ) : (
-        <View style={[styles.iconStyle, { backgroundColor: colors.white }]} />
-      )}
+      <View style={styles.sideSlot}>
+        {rightIconImage ? (
+          <TouchableOpacity
+            onPress={onRightIconPress}
+            style={styles.rightIconBtn}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={rightIconImage}
+              style={[
+                styles.rightIconStyle,
+                rightIconSize != null && {
+                  width: getWidth(rightIconSize),
+                  height: getHeight(rightIconSize),
+                },
+              ]}
+            />
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </View>
   );
 };
@@ -69,34 +72,31 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     backgroundColor: colors.white,
+    paddingTop: getVertiPadding(16),
+    paddingBottom: getVertiPadding(20),
+  },
+  sideSlot: {
+    width: SIDE_SLOT_WIDTH,
+    alignItems: "center",
+    justifyContent: "center",
   },
   iconBtn: {
     width: getWidth(32),
     height: getHeight(32),
-    borderRadius: getRadius(16), // rounded
+    borderRadius: getRadius(16),
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.border, // round background for back button
-  },
-  iconBtnr: {
-    width: getWidth(1),
-    height: getHeight(1),
-    // round background for back button
-  },
-  iconBtnNoBorder: {
-    width: getWidth(32),
-    height: getHeight(32),
-    alignItems: "center",
-    justifyContent: "center",
-    // No background color or border for three dots
+    backgroundColor: colors.border,
   },
   iconStyle: {
     height: getHeight(20),
     width: getWidth(20),
     resizeMode: "contain",
-    // tintColor: colors.black, // make back icon black
+  },
+  rightIconBtn: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   rightIconStyle: {
     height: getHeight(25),
@@ -104,14 +104,10 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   title: {
+    flex: 1,
+    textAlign: "center",
     fontSize: getHeight(18),
     fontWeight: "600",
     color: colors.black,
-    paddingHorizontal: getHoriPadding(10),
-  },
-  threeDotsText: {
-    fontSize: getHeight(20),
-    color: colors.black,
-    fontWeight: "bold",
   },
 });

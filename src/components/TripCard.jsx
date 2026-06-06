@@ -1,131 +1,230 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
+import { formatCompactDateRange } from "@utils/formatDate";
 import imagePath from "@assets/icons";
 import OptimizedImage from "@components/OptimizedImage";
+
+const cardColors = {
+  dateText: "#667085",
+  metaText: "#475467",
+  primaryBtn: "#111111",
+  secondaryBtnBg: "#EEF6FF",
+  secondaryBtnText: "#0F5EA8",
+  deleteBtnBg: "#FFF0F3",
+  deleteBtnText: "#D92D20",
+};
 
 const TripCard = ({
   image,
   city,
   startDate,
   endDate,
+  memberCount,
+  activityCount,
   onItineraryPress,
   onGroupPress,
   onDeletePress,
   onPressCard,
 }) => {
+  const dateLabel = formatCompactDateRange(startDate, endDate);
+  const metaParts = [];
+
+  if (memberCount != null && memberCount > 0) {
+    metaParts.push(
+      `${memberCount} ${memberCount === 1 ? "Member" : "Members"}`
+    );
+  }
+
+  if (activityCount != null && activityCount > 0) {
+    metaParts.push(
+      `${activityCount} ${activityCount === 1 ? "Activity" : "Activities"} Planned`
+    );
+  }
+
+  const metaLabel = metaParts.join(" • ");
+
   return (
-    <TouchableOpacity onPress={onPressCard} style={styles.card}>
-      <OptimizedImage
-        source={{ uri: image }}
-        style={styles.cardImage}
-        resizeMode="cover"
-      />
-
-      <View style={styles.cardContent}>
-        <Text style={styles.cityName}>{city}</Text>
-        <Text style={styles.dates}>
-          {startDate} to {endDate}
-        </Text>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={onItineraryPress}
-          >
-            <Text style={styles.actionButtonText}>Itinerary</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={onGroupPress}>
-            <Text style={styles.actionButtonText}>Group</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={onDeletePress} style={styles.deleteButton}>
-            <Image source={imagePath.DELETE_ICON} style={styles.deleteIcon} />
-          </TouchableOpacity>
+    <View style={styles.cardContainer}>
+      <TouchableOpacity
+        onPress={onPressCard}
+        style={styles.cardInner}
+        activeOpacity={0.92}
+      >
+        <View style={styles.hero}>
+          <OptimizedImage
+            source={{ uri: image }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
         </View>
-      </View>
-    </TouchableOpacity>
+
+        <View style={styles.content}>
+          <Text style={styles.tripName} numberOfLines={1}>
+            {city}
+          </Text>
+          {dateLabel ? (
+            <Text style={styles.dates} numberOfLines={1}>
+              {dateLabel}
+            </Text>
+          ) : null}
+          {metaLabel ? (
+            <Text style={styles.meta} numberOfLines={1}>
+              {metaLabel}
+            </Text>
+          ) : null}
+
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.btn, styles.primaryBtn]}
+              onPress={onItineraryPress}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.primaryBtnText} numberOfLines={1}>
+                View Itinerary
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btn, styles.secondaryBtn]}
+              onPress={onGroupPress}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.secondaryBtnText} numberOfLines={1}>
+                Group
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.btn, styles.deleteBtn]}
+              onPress={onDeletePress}
+              activeOpacity={0.85}
+            >
+              <Image source={imagePath.DELETE_ICON} style={styles.deleteIcon} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+      <View style={styles.bottomShadow} pointerEvents="none" />
+    </View>
   );
 };
 
 export default TripCard;
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: getRadius(12),
-    marginBottom: getHeight(20),
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+  cardContainer: {
+    marginBottom: getHeight(12),
+    position: "relative",
+  },
+  cardInner: {
+    borderRadius: getRadius(16),
     overflow: "hidden",
-    marginHorizontal: getWidth(1),
-    width: "48%",
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "rgba(0, 0, 0, 0.06)",
   },
-  cardImage: {
+  bottomShadow: {
+    position: "absolute",
+    left: getWidth(10),
+    right: getWidth(10),
+    bottom: -getHeight(4),
+    height: getHeight(1),
+    backgroundColor: colors.white,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.14,
+        shadowRadius: 2,
+      },
+      android: {
+        height: getHeight(4),
+        backgroundColor: "rgba(0, 0, 0, 0.1)",
+        borderBottomLeftRadius: getRadius(2),
+        borderBottomRightRadius: getRadius(2),
+      },
+    }),
+  },
+  hero: {
+    height: getHeight(96),
+  },
+  heroImage: {
     width: "100%",
-    height: getHeight(120), // Fixed height for image
-    resizeMode: "cover",
+    height: "100%",
   },
-  cardContent: {
-    padding: getHeight(12),
-    flex: 1,
-    justifyContent: "space-between",
+  content: {
+    paddingHorizontal: getWidth(12),
+    paddingVertical: getHeight(10),
   },
-  cityName: {
+  tripName: {
     fontSize: getHeight(16),
     fontFamily: fonts.RobotoBold,
+    fontWeight: "700",
     color: colors.black,
-    marginBottom: getHeight(4),
+    lineHeight: getHeight(20),
   },
   dates: {
+    marginTop: getHeight(2),
+    fontSize: getHeight(12),
+    fontFamily: fonts.RobotoRegular,
+    color: cardColors.dateText,
+  },
+  meta: {
+    marginTop: getHeight(4),
     fontSize: getHeight(11),
     fontFamily: fonts.RobotoRegular,
-    color: colors.black,
-    marginBottom: getHeight(8),
+    color: cardColors.metaText,
+    lineHeight: getHeight(14),
   },
-  actionButtons: {
+  actions: {
+    marginTop: getHeight(8),
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: "auto",
-    marginBottom: getHeight(8),
+    gap: getWidth(6),
   },
-  actionButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.secondary,
-    borderRadius: getRadius(6),
-    paddingHorizontal: getWidth(5),
-    paddingVertical: getHeight(6),
-    marginRight: getWidth(4),
-    minWidth: getWidth(50),
+  btn: {
+    borderRadius: getRadius(10),
     alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
+    minHeight: getHeight(36),
   },
-  actionButtonText: {
+  primaryBtn: {
+    flex: 1,
+    backgroundColor: cardColors.primaryBtn,
+    paddingHorizontal: getWidth(8),
+    paddingVertical: getHeight(8),
+  },
+  primaryBtnText: {
     fontSize: getHeight(11),
     fontFamily: fonts.RobotoMedium,
-    color: colors.black,
+    fontWeight: "600",
+    color: colors.white,
+    textAlign: "center",
   },
-  deleteButton: {
-    backgroundColor: "transparent",
-
-    paddingVertical: getHeight(6),
+  secondaryBtn: {
+    flex: 1,
+    backgroundColor: cardColors.secondaryBtnBg,
+    paddingHorizontal: getWidth(8),
+    paddingVertical: getHeight(8),
+  },
+  secondaryBtnText: {
+    fontSize: getHeight(11),
+    fontFamily: fonts.RobotoMedium,
+    fontWeight: "600",
+    color: cardColors.secondaryBtnText,
+    textAlign: "center",
+  },
+  deleteBtn: {
+    width: getWidth(40),
+    backgroundColor: cardColors.deleteBtnBg,
+    paddingVertical: getHeight(8),
   },
   deleteIcon: {
     width: getWidth(16),
     height: getHeight(16),
-    tintColor: colors.red,
+    tintColor: cardColors.deleteBtnText,
   },
 });

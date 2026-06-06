@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getWidth, getHeight, getFontSize } from "@utils/responsive";
+import { typography } from "@utils/theme";
 
 const EmptyBookingState = ({ type = "All" }) => {
   const getEmptyContent = () => {
@@ -59,18 +59,18 @@ const styles = StyleSheet.create({
     marginBottom: getHeight(16),
   },
   title: {
-    fontSize: getFontSize(20),
+    ...typography.emptyTitle,
+    fontSize: getFontSize(18),
     fontFamily: fonts.RobotoBold,
-    color: colors.primary,
-    marginBottom: getHeight(12),
+    marginBottom: getHeight(8),
     textAlign: "center",
   },
   subtitle: {
-    fontSize: getFontSize(16),
+    ...typography.emptySubtitle,
+    fontSize: getFontSize(14),
     fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
     textAlign: "center",
-    lineHeight: getHeight(24),
+    lineHeight: getHeight(20),
   },
 });
 

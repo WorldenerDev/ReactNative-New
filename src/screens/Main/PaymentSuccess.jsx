@@ -87,8 +87,13 @@ const PaymentSuccess = ({ navigation, route }) => {
                           routes: [
                             {
                               name: navigationStrings.HOME,
+                              state: {
+                                routes: [{ name: navigationStrings.HOME }],
+                                index: 0,
+                              },
                             },
                           ],
+                          index: 0,
                         },
                       },
                     ],

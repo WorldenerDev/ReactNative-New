@@ -12,7 +12,9 @@ import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TripCard from "@components/TripCard";
 import { getHeight, getWidth } from "@utils/responsive";
+import { typography } from "@utils/theme";
 import colors from "@assets/colors";
+import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch, useSelector } from "react-redux";
@@ -80,6 +82,22 @@ const Trips = ({ navigation }) => {
     ]);
   };
 
+  const getTripMeta = (item) => {
+    const members =
+      typeof item?.participants === "number"
+        ? item.participants
+        : item?.participantsList?.length ?? item?.addedUsers?.length ?? null;
+
+    const activities =
+      typeof item?.totalActivities === "number"
+        ? item.totalActivities
+        : Array.isArray(item?.activities)
+          ? item.activities.length
+          : null;
+
+    return { members, activities };
+  };
+
   return (
     <MainContainer loader={deleteLoading}>
       <Header
@@ -91,37 +109,41 @@ const Trips = ({ navigation }) => {
 
       <FlatList
         data={trip || []}
-        renderItem={({ item }) => (
-          <TripCard
-            image={item?.city?.image}
-            city={item?.name || item?.city?.name}
-            startDate={item?.start_at.slice(0, 10)}
-            endDate={item?.end_at.slice(0, 10)}
-            onItineraryPress={() =>
-              navigation.navigate(navigationStrings.TRIP_DETAILS, {
-                tripId: item?._id,
-                trip: item,
-              })
-            }
-            onGroupPress={() => {
-              item?.groupId
-                ? navigation.navigate(navigationStrings.GROUP_DETAILS, {
-                    groupId: item?.groupId,
-                  })
-                : Alert.alert("Group not available");
-            }}
-            onDeletePress={() => handleDelete(item._id)}
-            onPressCard={() =>
-              navigation.navigate(navigationStrings.TRIP_DETAILS, {
-                tripId: item?._id,
-                trip: item,
-              })
-            }
-          />
-        )}
+        renderItem={({ item }) => {
+          const { members, activities } = getTripMeta(item);
+
+          return (
+            <TripCard
+              image={item?.city?.image}
+              city={item?.name || item?.city?.name}
+              startDate={item?.start_at}
+              endDate={item?.end_at}
+              memberCount={members}
+              activityCount={activities}
+              onItineraryPress={() =>
+                navigation.navigate(navigationStrings.TRIP_DETAILS, {
+                  tripId: item?._id,
+                  trip: item,
+                })
+              }
+              onGroupPress={() => {
+                item?.groupId
+                  ? navigation.navigate(navigationStrings.GROUP_DETAILS, {
+                      groupId: item?.groupId,
+                    })
+                  : Alert.alert("Group not available");
+              }}
+              onDeletePress={() => handleDelete(item._id)}
+              onPressCard={() =>
+                navigation.navigate(navigationStrings.TRIP_DETAILS, {
+                  tripId: item?._id,
+                  trip: item,
+                })
+              }
+            />
+          );
+        }}
         keyExtractor={(item) => item?._id.toString()}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
         contentContainerStyle={styles.flatListContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -151,12 +173,8 @@ export default Trips;
 
 const styles = StyleSheet.create({
   flatListContent: {
-    paddingTop: getHeight(16),
-    paddingBottom: getHeight(20),
-  },
-  row: {
-    justifyContent: "space-between",
-    paddingHorizontal: getWidth(2),
+    paddingTop: getHeight(4),
+    paddingBottom: getHeight(16),
   },
   emptyContainer: {
     flex: 1,
@@ -166,16 +184,14 @@ const styles = StyleSheet.create({
     paddingTop: getHeight(100),
   },
   emptyText: {
-    fontSize: getHeight(20),
-    fontWeight: "600",
-    color: colors.black,
+    ...typography.emptyTitle,
     textAlign: "center",
     marginBottom: getHeight(8),
   },
   emptySubText: {
-    fontSize: getHeight(16),
-    color: colors.lightText,
+    ...typography.emptySubtitle,
+    fontFamily: fonts.RobotoRegular,
     textAlign: "center",
-    lineHeight: getHeight(22),
+    lineHeight: getHeight(20),
   },
 });

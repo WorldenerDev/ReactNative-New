@@ -12,8 +12,13 @@ import {
   getVertiPadding,
   getRadius,
 } from "@utils/responsive";
+import useStickyBottomInset, {
+  useStickyScrollPadding,
+} from "@hooks/useStickyBottomInset";
 
 const NotificationSettings = () => {
+  const bottomInset = useStickyBottomInset();
+  const scrollPadding = useStickyScrollPadding();
   const [eventReminders, setEventReminders] = useState(true);
   const [newsAndAlerts, setNewsAndAlerts] = useState(true);
 
@@ -27,42 +32,43 @@ const NotificationSettings = () => {
     <MainContainer>
       <Header title="Notification Settings" />
 
-      <Text style={styles.headerTitle}>
-        Choose what updates you want to receive.
-      </Text>
+      <View style={[styles.wrapper, { paddingBottom: scrollPadding }]}>
+        <Text style={styles.headerTitle}>
+          Choose what updates you want to receive.
+        </Text>
 
-      <View style={styles.settingsContainer}>
-        {/* Event Reminders Card */}
-        <View style={styles.settingCard}>
-          <View style={styles.settingContent}>
-            <Text style={styles.settingTitle}>Event Reminders</Text>
-            <Text style={styles.settingDescription}>
-              Daily reminders of upcoming booked events
-            </Text>
+        <View style={styles.settingsContainer}>
+          {/* Event Reminders Card */}
+          <View style={styles.settingCard}>
+            <View style={styles.settingContent}>
+              <Text style={styles.settingTitle}>Event Reminders</Text>
+              <Text style={styles.settingDescription}>
+                Daily reminders of upcoming booked events
+              </Text>
+            </View>
+            <ToggleSwitch
+              isEnabled={eventReminders}
+              onToggle={() => setEventReminders(!eventReminders)}
+            />
           </View>
-          <ToggleSwitch
-            isEnabled={eventReminders}
-            onToggle={() => setEventReminders(!eventReminders)}
-          />
-        </View>
 
-        {/* News and Alerts Card */}
-        <View style={styles.settingCard}>
-          <View style={styles.settingContent}>
-            <Text style={styles.settingTitle}>News and Alerts</Text>
-            <Text style={styles.settingDescription}>
-              Alerts from our special team
-            </Text>
+          {/* News and Alerts Card */}
+          <View style={styles.settingCard}>
+            <View style={styles.settingContent}>
+              <Text style={styles.settingTitle}>News and Alerts</Text>
+              <Text style={styles.settingDescription}>
+                Alerts from our special team
+              </Text>
+            </View>
+            <ToggleSwitch
+              isEnabled={newsAndAlerts}
+              onToggle={() => setNewsAndAlerts(!newsAndAlerts)}
+            />
           </View>
-          <ToggleSwitch
-            isEnabled={newsAndAlerts}
-            onToggle={() => setNewsAndAlerts(!newsAndAlerts)}
-          />
         </View>
       </View>
 
-      {/* Save Changes Button */}
-      <View style={styles.buttonContainer}>
+      <View style={[styles.buttonContainer, { bottom: bottomInset }]}>
         <ButtonComp
           title="Save Changes"
           onPress={handleSaveChanges}
@@ -76,10 +82,9 @@ const NotificationSettings = () => {
 export default NotificationSettings;
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
     backgroundColor: colors.white,
-    paddingBottom: getVertiPadding(100), // Add padding to prevent content from being hidden behind fixed button
   },
   headerTitle: {
     fontSize: getFontSize(12),
@@ -128,11 +133,10 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: "absolute",
-    bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: getHoriPadding(20),
-    paddingVertical: getVertiPadding(50),
+    paddingVertical: getVertiPadding(16),
     backgroundColor: colors.white,
   },
 });

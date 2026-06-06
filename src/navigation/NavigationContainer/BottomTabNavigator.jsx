@@ -10,13 +10,18 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Svg, { Path } from "react-native-svg";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
+import { TAB_BAR_HEIGHT } from "@navigation/constants/tabBar";
 import {
   getHeight,
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
 import navigationStrings from "@navigation/navigationStrings";
-import { Account, Booking, Group, Home, Trips } from "@screens/index";
+import AccountStack from "./stacks/AccountStack";
+import BookingStack from "./stacks/BookingStack";
+import GroupStack from "./stacks/GroupStack";
+import HomeStack from "./stacks/HomeStack";
+import TripsStack from "./stacks/TripsStack";
 
 const Tab = createBottomTabNavigator();
 
@@ -36,8 +41,8 @@ const CustomTabBar = ({ state, navigation }) => {
   const activeX = tabWidth * activeIndex;
 
   return (
-    <View style={{ width, height: 70, backgroundColor: colors.white }}>
-      <Svg width={width} height={70} style={StyleSheet.absoluteFill}>
+    <View style={{ width, height: TAB_BAR_HEIGHT, backgroundColor: colors.white }}>
+      <Svg width={width} height={TAB_BAR_HEIGHT} style={StyleSheet.absoluteFill}>
         <Path
           fill={colors.secondary}
           d={`
@@ -48,7 +53,7 @@ const CustomTabBar = ({ state, navigation }) => {
             C${activeX + tabWidth * 0.75} 0, ${activeX + tabWidth * 0.75} 0, ${activeX + tabWidth
             } 0
             H${width}
-            V70
+            V${TAB_BAR_HEIGHT}
             H0
             Z
           `}
@@ -88,16 +93,19 @@ const CustomTabBar = ({ state, navigation }) => {
 const BottomTabNavigator = () => {
   return (
     <Tab.Navigator
-      initialRouteName="Home"
+      initialRouteName={navigationStrings.HOME}
       detachInactiveScreens={false}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { height: TAB_BAR_HEIGHT },
+      }}
       tabBar={(props) => <CustomTabBar {...props} />}
     >
-      <Tab.Screen name={navigationStrings.HOME} component={Home} />
-      <Tab.Screen name={navigationStrings.GROUP} component={Group} />
-      <Tab.Screen name={navigationStrings.TRIPS} component={Trips} />
-      <Tab.Screen name={navigationStrings.BOOKING} component={Booking} />
-      <Tab.Screen name={navigationStrings.ACCOUNT} component={Account} />
+      <Tab.Screen name={navigationStrings.HOME} component={HomeStack} />
+      <Tab.Screen name={navigationStrings.GROUP} component={GroupStack} />
+      <Tab.Screen name={navigationStrings.TRIPS} component={TripsStack} />
+      <Tab.Screen name={navigationStrings.BOOKING} component={BookingStack} />
+      <Tab.Screen name={navigationStrings.ACCOUNT} component={AccountStack} />
     </Tab.Navigator>
   );
 };

@@ -26,12 +26,17 @@ import useImagePicker from "@hooks/useImagePicker";
 import { updateProfile } from "@api/services/mainServices";
 import { setUser } from "@redux/slices/authSlice";
 import { showToast } from "@components/AppToast";
+import useStickyBottomInset, {
+  useStickyScrollPadding,
+} from "@hooks/useStickyBottomInset";
 import OptimizedImage from "@components/OptimizedImage";
 import { URL } from "@api/apiClient";
 import navigationStrings from "@navigation/navigationStrings";
 
 const EditProfile = ({ navigation }) => {
   const dispatch = useDispatch();
+  const bottomInset = useStickyBottomInset();
+  const scrollPadding = useStickyScrollPadding();
   const { user } = useSelector((state) => state.auth);
   const { pickImage } = useImagePicker();
 
@@ -140,7 +145,7 @@ const EditProfile = ({ navigation }) => {
   return (
     <ResponsiveContainer>
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingBottom: scrollPadding }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -226,7 +231,7 @@ const EditProfile = ({ navigation }) => {
         </View>
 
         {/* Save Changes Button */}
-        <View style={styles.buttonContainer}>
+        <View style={[styles.buttonContainer, { bottom: bottomInset }]}>
           <ButtonComp
             title={loading ? "Saving..." : "Save Changes"}
             onPress={handleSaveChanges}
@@ -244,7 +249,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
-    paddingBottom: getVertiPadding(100), // Add padding to prevent content from being hidden behind fixed button
   },
   header: {
     flexDirection: "row",
@@ -339,10 +343,10 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: "absolute",
-    bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: getVertiPadding(50),
+    paddingHorizontal: getHoriPadding(20),
+    paddingVertical: getVertiPadding(16),
     backgroundColor: colors.white,
   },
 });

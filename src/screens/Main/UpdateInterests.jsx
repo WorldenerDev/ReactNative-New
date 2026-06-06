@@ -2,6 +2,9 @@ import { SelectCategory } from "@api/services/authService";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import ButtonComp from "@components/ButtonComp";
+import useStickyBottomInset, {
+  useStickyScrollPadding,
+} from "@hooks/useStickyBottomInset";
 import MainContainer from "@components/container/MainContainer";
 import StepTitle from "@components/StepTitle";
 import { category } from "@redux/slices/authSlice";
@@ -26,7 +29,8 @@ import { useDispatch } from "react-redux";
 
 
 const UpdateInterests = ({ navigation }) => {
-
+  const bottomInset = useStickyBottomInset();
+  const scrollPadding = useStickyScrollPadding();
   const dispatch = useDispatch();
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [interests, setInterests] = useState([]);
@@ -124,13 +128,16 @@ const UpdateInterests = ({ navigation }) => {
           numColumns={2}
           columnWrapperStyle={styles.row}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[
+            styles.listContainer,
+            { paddingBottom: scrollPadding },
+          ]}
         />
       </View>
 
       {/* Floating Continue Button */}
       {selectedInterests.length > 0 && (
-        <View style={styles.floatingButton}>
+        <View style={[styles.floatingButton, { bottom: bottomInset }]}>
           <ButtonComp
             disabled={false}
             title="Continue"
@@ -215,7 +222,6 @@ const styles = StyleSheet.create({
   },
   floatingButton: {
     position: "absolute",
-    bottom: getVertiPadding(30),
     left: getHoriPadding(20),
     right: getHoriPadding(20),
     zIndex: 1000,

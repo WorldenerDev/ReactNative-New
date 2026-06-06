@@ -16,6 +16,7 @@ import ImagePlaceholder from "@components/ImagePlaceholder";
 import OptimizedImage from "@components/OptimizedImage";
 import RadioCheckbox from "@components/RadioCheckbox";
 import navigationStrings from "@navigation/navigationStrings";
+import useStickyBottomInset from "@hooks/useStickyBottomInset";
 import { fetchTripByCity } from "@redux/slices/cityTripSlice";
 import {
   getFontSize,
@@ -58,6 +59,7 @@ const formatTripLabel = (trip) => {
 };
 
 const ActivityDetails = ({ navigation, route }) => {
+  const bottomInset = useStickyBottomInset();
   const { eventData, selectedTrip: selectedTripFromRoute } =
     route?.params || {};
   console.log("eventData", eventData);
@@ -497,7 +499,7 @@ const ActivityDetails = ({ navigation, route }) => {
         )}
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { marginBottom: bottomInset }]}>
         <Text style={styles.priceText}>
           from{" "}
           <Text style={styles.price}>
@@ -769,7 +771,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.lightGray,
     backgroundColor: colors.white,
-    bottom: getHeight(20),
   },
   priceText: {
     fontSize: getFontSize(13),

@@ -9,11 +9,13 @@ import { usePayments } from "@hooks/usePayments";
 import { clearSetupClientSecret } from "@redux/slices/paymentSlice";
 import { CardField, useStripe } from "@stripe/stripe-react-native";
 import { getHeight, getHoriPadding } from "@utils/responsive";
+import useStickyBottomInset from "@hooks/useStickyBottomInset";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { StyleSheet, Text, View } from "react-native";
 
 const AddCard = ({ navigation }) => {
+  const bottomInset = useStickyBottomInset();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [cardDetails, setCardDetails] = useState(null);
@@ -122,7 +124,7 @@ const AddCard = ({ navigation }) => {
     return (
       <MainContainer>
         <Header title="Add card" />
-        <View style={styles.screen}>
+        <View style={[styles.screen, { paddingBottom: bottomInset + getHeight(16) }]}>
           <Text style={styles.infoText}>
             No Stripe publishable key is configured. You can still add an
             in-memory mock card for local testing (no CardField / no native
@@ -154,7 +156,7 @@ const AddCard = ({ navigation }) => {
           />
         </View>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: bottomInset + getHeight(16) }]}>
           <ButtonComp
             disabled={loading}
             title={loading ? "Saving…" : "Save card"}

@@ -8,6 +8,7 @@ import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
 import { usePayments } from "@hooks/usePayments";
 import navigationStrings from "@navigation/navigationStrings";
 import { getHeight, getHoriPadding } from "@utils/responsive";
+import useStickyBottomInset from "@hooks/useStickyBottomInset";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import {
@@ -21,6 +22,7 @@ import {
 } from "react-native";
 
 const PaymentMethods = ({ navigation }) => {
+  const bottomInset = useStickyBottomInset();
   const [addingCard, setAddingCard] = useState(false);
   const { payment, getCards, selectCard, deleteCard, addDevelopmentCard, prepareAddCard } =
     usePayments();
@@ -80,9 +82,10 @@ const PaymentMethods = ({ navigation }) => {
         <FlatList
           data={payment.items}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={
-            payment.items.length === 0 ? styles.emptyList : undefined
-          }
+          contentContainerStyle={[
+            payment.items.length === 0 ? styles.emptyList : null,
+            { paddingBottom: bottomInset + getHeight(24) },
+          ]}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No saved cards yet.</Text>
           }

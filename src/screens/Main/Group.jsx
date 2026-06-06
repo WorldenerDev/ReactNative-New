@@ -16,21 +16,13 @@ import imagePath from "@assets/icons";
 import MainContainer from "@components/container/MainContainer";
 import navigationStrings from "@navigation/navigationStrings";
 import { getGroups } from "@api/services/mainServices";
+import { formatDisplayDate } from "@utils/formatDate";
+import { cardGap, cardRadius, cardShadow, typography } from "@utils/theme";
+import AppButton from "@components/AppButton";
 
 const Group = ({ navigation }) => {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Format date from ISO string to "MMM DD, YYYY" format
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   // Transform API data to match UI structure
   const transformGroupData = (groupsData) => {
@@ -50,8 +42,8 @@ const Group = ({ navigation }) => {
         title: group.groupName || group.cityId?.name || "Trip",
         location: group.cityId?.name || "",
         status: status,
-        startDate: formatDate(group.startDate),
-        endDate: formatDate(group.endDate),
+        startDate: formatDisplayDate(group.startDate),
+        endDate: formatDisplayDate(group.endDate),
         people: `${totalPeople} ${totalPeople === 1 ? "person" : "people"}`,
         image:
           group.groupImage ||
@@ -123,7 +115,7 @@ const Group = ({ navigation }) => {
           <View style={styles.dateRow}>
             <Image source={imagePath.CALENDER_ICON} style={styles.calendarIcon} />
             <Text style={styles.dateText}>
-              {item.startDate} - {item.endDate}
+              {item.startDate} – {item.endDate}
             </Text>
           </View>
 
@@ -134,17 +126,16 @@ const Group = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.chatButton}
+        <AppButton
+          title="Chat"
+          variant="primary"
           onPress={() =>
             navigation.navigate(navigationStrings.CHAT, {
               groupId: item?.id,
               tripId: item?.tripId,
             })
           }
-        >
-          <Text style={styles.actionButtonText}>Chat</Text>
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
@@ -155,9 +146,9 @@ const Group = ({ navigation }) => {
 
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyTitle}>No Trips Found</Text>
+      <Text style={styles.emptyTitle}>No Groups Yet</Text>
       <Text style={styles.emptySubtitle}>
-        Create your first trip to get started
+        Join or create a group to start planning together.
       </Text>
     </View>
   );
@@ -188,27 +179,18 @@ export default Group;
 
 const styles = StyleSheet.create({
   listContainer: {
-    paddingHorizontal: 0,
-    paddingVertical: getHeight(20),
+    paddingVertical: getHeight(16),
   },
   tripCard: {
     backgroundColor: colors.white,
-    marginHorizontal: 0,
-    marginBottom: getHeight(20),
-    borderRadius: getRadius(8),
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    marginBottom: cardGap,
+    borderRadius: cardRadius,
     flexDirection: "row",
     padding: getHeight(16),
     alignItems: "center",
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: colors.border,
+    ...cardShadow,
   },
   cardTouchable: {
     flex: 1,
@@ -245,9 +227,9 @@ const styles = StyleSheet.create({
     tintColor: colors.red,
   },
   locationText: {
-    fontSize: getHeight(11),
+    fontSize: getHeight(12),
     fontFamily: fonts.RobotoRegular,
-    color: colors.black,
+    color: colors.lightText,
     marginRight: getWidth(16),
   },
   checkIcon: {
@@ -257,9 +239,9 @@ const styles = StyleSheet.create({
     tintColor: colors.green,
   },
   statusText: {
-    fontSize: getHeight(11),
+    fontSize: getHeight(12),
     fontFamily: fonts.RobotoRegular,
-    color: colors.black,
+    color: colors.lightText,
   },
   dateRow: {
     flexDirection: "row",
@@ -273,9 +255,9 @@ const styles = StyleSheet.create({
     tintColor: colors.black,
   },
   dateText: {
-    fontSize: getHeight(11),
+    fontSize: getHeight(12),
     fontFamily: fonts.RobotoRegular,
-    color: colors.black,
+    color: colors.lightText,
   },
   peopleRow: {
     flexDirection: "row",
@@ -302,27 +284,14 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   peopleText: {
-    fontSize: getHeight(11),
+    fontSize: getHeight(12),
     fontFamily: fonts.RobotoRegular,
-    color: colors.black,
+    color: colors.lightText,
   },
   actionButtons: {
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: getWidth(16),
-  },
-  chatButton: {
-    backgroundColor: colors.secondary,
-    borderRadius: getRadius(6),
-    paddingHorizontal: getWidth(12),
-    paddingVertical: getHeight(6),
-    minWidth: getWidth(50),
-    alignItems: "center",
-  },
-  actionButtonText: {
-    fontSize: getHeight(11),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.white,
+    marginLeft: getWidth(12),
   },
   emptyContainer: {
     flex: 1,
@@ -331,15 +300,13 @@ const styles = StyleSheet.create({
     paddingVertical: getHeight(100),
   },
   emptyTitle: {
-    fontSize: getHeight(18),
+    ...typography.emptyTitle,
     fontFamily: fonts.RobotoBold,
-    color: colors.black,
     marginBottom: getHeight(8),
   },
   emptySubtitle: {
-    fontSize: getHeight(14),
+    ...typography.emptySubtitle,
     fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
     textAlign: "center",
   },
 });

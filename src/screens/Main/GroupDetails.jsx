@@ -29,6 +29,9 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import navigationStrings from "@navigation/navigationStrings";
+import useStickyBottomInset, {
+  useStickyScrollPadding,
+} from "@hooks/useStickyBottomInset";
 import icons from "@assets/icons";
 import ForYouCard from "@components/appComponent/ForYouCard";
 import {
@@ -50,6 +53,8 @@ const DUMMY_USER_IMAGE =
 const GroupDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const bottomInset = useStickyBottomInset();
+  const scrollPadding = useStickyScrollPadding();
   const { user } = useSelector((state) => state.auth);
   const { groupId, cityId } = route?.params || {};
 
@@ -399,7 +404,10 @@ const GroupDetails = () => {
         renderItem={renderMemberItem}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: scrollPadding },
+        ]}
         ListFooterComponent={() => (
           <View style={styles.footerButtons}>
             <ButtonComp
@@ -846,7 +854,10 @@ const GroupDetails = () => {
           numColumns={2}
           columnWrapperStyle={{ paddingHorizontal: getHoriPadding(4) }}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.wishListContent}
+          contentContainerStyle={[
+            styles.wishListContent,
+            { paddingBottom: scrollPadding + getHeight(24) },
+          ]}
         />
       </View>
     );
@@ -879,7 +890,7 @@ const GroupDetails = () => {
         (activeTab === "Members" ||
           activeTab === "Compare" ||
           activeTab === "Wishlisted") && (
-          <View style={styles.fixedChatContainer}>
+          <View style={[styles.fixedChatContainer, { bottom: bottomInset }]}>
             <ButtonComp
               title={"Chat"}
               onPress={handleChat}
@@ -1017,7 +1028,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingVertical: getHeight(8),
-    paddingBottom: getHeight(100),
   },
   footerButtons: {
     paddingTop: getHeight(8),
@@ -1118,7 +1128,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: getHoriPadding(16),
     right: getHoriPadding(16),
-    bottom: getHeight(36),
     zIndex: 10,
   },
   wishContainer: {
@@ -1126,7 +1135,6 @@ const styles = StyleSheet.create({
   },
   wishListContent: {
     paddingVertical: getHeight(8),
-    paddingBottom: getHeight(120),
   },
   wishItem: {
     flex: 1,

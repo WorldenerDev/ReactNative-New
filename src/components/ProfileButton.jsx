@@ -30,9 +30,9 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.input,
     borderRadius: getRadius(8),
-    paddingVertical: getVertiPadding(16),
+    paddingVertical: getVertiPadding(14),
     paddingHorizontal: getWidth(16),
-    marginBottom: getVertiPadding(12),
+    marginBottom: getVertiPadding(8),
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

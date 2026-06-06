@@ -34,7 +34,7 @@ const TopTab = ({
               {
                 fontSize: getFontSize(12),
                 fontFamily: fonts.RobotoMedium,
-                color: colors.primary,
+                color: colors.black,
               },
             ]}
           >

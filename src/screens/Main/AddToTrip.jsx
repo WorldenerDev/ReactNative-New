@@ -17,11 +17,16 @@ import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import fonts from "@assets/fonts";
 import navigationStrings from "@navigation/navigationStrings";
+import useStickyBottomInset, {
+  useStickyScrollPadding,
+} from "@hooks/useStickyBottomInset";
 import Contacts from "react-native-contacts";
 import { sendInvitation } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 
 const AddToTrip = ({ navigation, route }) => {
+  const bottomInset = useStickyBottomInset();
+  const scrollPadding = useStickyScrollPadding();
   const [searchQuery, setSearchQuery] = useState("");
   const [allData, setAllData] = useState([]);
   const [isSendingInvitations, setIsSendingInvitations] = useState(false); // Track loading state for Done button
@@ -369,7 +374,10 @@ const AddToTrip = ({ navigation, route }) => {
           data={filteredData}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.flatListContent}
+          contentContainerStyle={[
+            styles.flatListContent,
+            { paddingBottom: scrollPadding },
+          ]}
           ListHeaderComponent={() => (
             <View style={styles.searchContainer}>
               <TextInput
@@ -390,7 +398,7 @@ const AddToTrip = ({ navigation, route }) => {
           )}
         />
         {/* Floating Done Button */}
-        <View style={styles.floatingButtonContainer}>
+        <View style={[styles.floatingButtonContainer, { bottom: bottomInset }]}>
           <ButtonComp
             title={isSendingInvitations ? "Sending..." : "Done"}
             disabled={!hasSelections || isSendingInvitations}
@@ -500,17 +508,15 @@ const styles = StyleSheet.create({
     marginTop: getHeight(24),
   },
   flatListContent: {
-    paddingBottom: getHeight(100), // Space for floating button
+    paddingBottom: getHeight(16),
   },
   floatingButtonContainer: {
     position: "absolute",
-    bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: getWidth(16),
     paddingTop: getHeight(12),
-    paddingBottom: getHeight(20),
-
+    paddingBottom: getHeight(12),
   },
   doneButton: {
     width: "100%",

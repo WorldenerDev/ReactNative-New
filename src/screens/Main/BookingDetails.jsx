@@ -12,6 +12,7 @@ import {
     getRadius,
     getVertiPadding,
 } from '@utils/responsive';
+import useStickyBottomInset from '@hooks/useStickyBottomInset';
 import { useEffect, useState } from 'react';
 import {
     Alert,
@@ -25,6 +26,7 @@ import {
 } from 'react-native';
 
 const BookingDetails = ({ navigation, route }) => {
+    const bottomInset = useStickyBottomInset();
     const { orderId, bookingId, bookingItemId, isCancelled, activeTab } = route?.params || {};
     const [loading, setLoading] = useState(false);
     const [bookingData, setBookingData] = useState(null);
@@ -324,7 +326,10 @@ const BookingDetails = ({ navigation, route }) => {
             <Header showBack={true} title={bookingId || 'Booking Details'} />
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingBottom: bottomInset + getHeight(24) },
+                ]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Main White Card */}

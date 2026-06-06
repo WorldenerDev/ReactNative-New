@@ -71,7 +71,10 @@ const Account = ({ navigation }) => {
   };
 
   const handleMyUpcomingBookings = () => {
-    navigation.navigate(navigationStrings.BOOKING, { initialTab: "Upcoming" });
+    navigation.navigate(navigationStrings.BOOKING, {
+      screen: navigationStrings.BOOKING,
+      params: { initialTab: "Upcoming" },
+    });
   };
 
   const handleTransactionHistory = () => {
@@ -223,8 +226,8 @@ export default Account;
 
 const styles = StyleSheet.create({
   header: {
-    paddingTop: getVertiPadding(20),
-    paddingBottom: getVertiPadding(30),
+    paddingTop: getVertiPadding(16),
+    paddingBottom: getVertiPadding(20),
     position: "relative",
   },
   headerContent: {
@@ -271,13 +274,13 @@ const styles = StyleSheet.create({
     height: getHeight(50),
   },
   section: {
-    marginBottom: getVertiPadding(12),
+    marginBottom: getVertiPadding(8),
   },
   sectionTitle: {
-    fontSize: getFontSize(18),
+    fontSize: getFontSize(16),
     fontFamily: fonts.RobotoBold,
     fontWeight: "600",
     color: colors.black,
-    marginBottom: getVertiPadding(16),
+    marginBottom: getVertiPadding(10),
   },
 });
