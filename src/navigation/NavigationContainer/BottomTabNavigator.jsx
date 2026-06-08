@@ -6,7 +6,10 @@ import {
   Dimensions,
   Image,
 } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import {
+  createBottomTabNavigator,
+  BottomTabBarHeightCallbackContext,
+} from "@react-navigation/bottom-tabs";
 import Svg, { Path } from "react-native-svg";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
@@ -37,11 +40,16 @@ const tabIcons = {
 };
 
 const CustomTabBar = ({ state, navigation }) => {
+  const onHeightChange = React.useContext(BottomTabBarHeightCallbackContext);
   const activeIndex = state.index;
   const activeX = tabWidth * activeIndex;
 
   return (
-    <View style={{ width, height: TAB_BAR_HEIGHT, backgroundColor: colors.white }}>
+    <View
+      style={styles.tabBarContainer}
+      onLayout={(event) => onHeightChange?.(event.nativeEvent.layout.height)}
+      pointerEvents="box-none"
+    >
       <Svg width={width} height={TAB_BAR_HEIGHT} style={StyleSheet.absoluteFill}>
         <Path
           fill={colors.secondary}
@@ -97,7 +105,7 @@ const BottomTabNavigator = () => {
       detachInactiveScreens={false}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { height: TAB_BAR_HEIGHT },
+        tabBarStyle: styles.tabBarStyle,
       }}
       tabBar={(props) => <CustomTabBar {...props} />}
     >
@@ -113,6 +121,27 @@ const BottomTabNavigator = () => {
 export default BottomTabNavigator;
 
 const styles = StyleSheet.create({
+  tabBarContainer: {
+    width,
+    height: TAB_BAR_HEIGHT,
+    backgroundColor: "transparent",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    elevation: 0,
+  },
+  tabBarStyle: {
+    height: TAB_BAR_HEIGHT,
+    backgroundColor: "transparent",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
   tabRow: {
     flexDirection: "row",
     height: getHeight(65),

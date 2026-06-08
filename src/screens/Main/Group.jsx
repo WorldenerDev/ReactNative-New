@@ -18,7 +18,6 @@ import navigationStrings from "@navigation/navigationStrings";
 import { getGroups } from "@api/services/mainServices";
 import { formatDisplayDate } from "@utils/formatDate";
 import { cardGap, cardRadius, cardShadow, typography } from "@utils/theme";
-import AppButton from "@components/AppButton";
 
 const Group = ({ navigation }) => {
   const [trips, setTrips] = useState([]);
@@ -126,16 +125,21 @@ const Group = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.actionButtons}>
-        <AppButton
-          title="Chat"
-          variant="primary"
+        <View style={styles.chatDivider} />
+        <TouchableOpacity
+          style={styles.chatButton}
           onPress={() =>
             navigation.navigate(navigationStrings.CHAT, {
               groupId: item?.id,
               tripId: item?.tripId,
             })
           }
-        />
+          activeOpacity={0.7}
+          accessibilityLabel="Chat"
+          accessibilityRole="button"
+        >
+          <Image source={imagePath.CHAT_ICON} style={styles.chatIcon} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -289,9 +293,28 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "stretch",
+    paddingLeft: getWidth(10),
+  },
+  chatDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: "stretch",
+    backgroundColor: colors.border,
+    marginVertical: getHeight(10),
+    marginRight: getWidth(10),
+  },
+  chatButton: {
+    width: getWidth(40),
+    height: getWidth(40),
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: getWidth(12),
+  },
+  chatIcon: {
+    width: getWidth(20),
+    height: getWidth(20),
+    resizeMode: "contain",
   },
   emptyContainer: {
     flex: 1,

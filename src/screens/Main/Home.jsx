@@ -25,6 +25,20 @@ import ForYouCard from "@components/appComponent/ForYouCard";
 import CityCard from "@components/appComponent/CityCard";
 import CategoryCard from "@components/appComponent/CategoryCard";
 
+const getTimeOfDayGreeting = (name) => {
+  const hour = new Date().getHours();
+  let greeting = "Good evening";
+
+  if (hour < 12) {
+    greeting = "Good morning";
+  } else if (hour < 17) {
+    greeting = "Good afternoon";
+  }
+
+  const displayName = name?.trim() || "there";
+  return `${greeting}, ${displayName}!`;
+};
+
 const Home = ({ navigation }) => {
   const { user, categories } = useSelector((state) => state.auth);
   const { city, eventForYou } = useSelector((state) => state.cityTrip);
@@ -110,7 +124,7 @@ const Home = ({ navigation }) => {
   return (
     <MainContainer>
       <View style={styles.header}>
-        <Text style={styles.greeting}>{`Hi ${user?.name}!`}</Text>
+        <Text style={styles.greeting}>{getTimeOfDayGreeting(user?.name)}</Text>
         <TouchableOpacity
           onPress={() =>
             navigation.navigate(navigationStrings.SEARCH_CITY, {
