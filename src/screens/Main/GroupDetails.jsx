@@ -8,6 +8,7 @@ import {
   Image,
   Modal,
   Dimensions,
+  Alert,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import MainContainer from "@components/container/MainContainer";
@@ -50,6 +51,8 @@ import { getImageUrl } from "@api/apiClient";
 const DUMMY_USER_IMAGE =
   "https://ui-avatars.com/api/?name=User&background=random&size=200";
 
+const normalizeUserId = (id) => (id == null ? "" : String(id));
+
 const GroupDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -71,7 +74,8 @@ const GroupDetails = () => {
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [showLikedByModal, setShowLikedByModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
-  const tabs = ["Members", "Compare", "Wishlisted", "Settings"];
+  // const tabs = ["Members", "Compare Itinernary", "Wishlisted", "Settings"];
+  const tabs = ["Members", "Compare", "Wishlisted"];
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [compareUser, setCompareUser] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
@@ -134,7 +138,7 @@ const GroupDetails = () => {
   const transformMembersData = (data) => {
     if (!data) return [];
 
-    const currentUserId = user?._id || user?.id;
+    const currentUserId = normalizeUserId(user?._id || user?.id);
     const membersList = [];
     const avatarBgColors = [
       "#FFE5E5",
@@ -146,7 +150,8 @@ const GroupDetails = () => {
 
     // Add createdBy user
     if (data.createdBy) {
-      const isCurrentUser = data.createdBy._id === currentUserId;
+      const isCurrentUser =
+        normalizeUserId(data.createdBy._id) === currentUserId;
       const createdByImage =
         data.createdBy.image || data.createdBy.avatar || "";
       membersList.push({
@@ -166,7 +171,8 @@ const GroupDetails = () => {
         // Skip if user is already added as createdBy
         if (addedUser._id === data.createdBy?._id) return;
 
-        const isCurrentUser = addedUser._id === currentUserId;
+        const isCurrentUser =
+          normalizeUserId(addedUser._id) === currentUserId;
         const addedUserImage = addedUser.image || addedUser.avatar || "";
         membersList.push({
           id: addedUser._id,
@@ -294,6 +300,64 @@ const GroupDetails = () => {
     }
   };
 
+  const handleLeaveGroup = () => {
+    const currentUserId = normalizeUserId(user?._id || user?.id);
+    const isGroupCreator =
+      normalizeUserId(groupData?.createdBy?._id) === currentUserId;
+
+    if (!groupId || !currentUserId) {
+      showToast("error", "Missing required information");
+      return;
+    }
+
+    if (isGroupCreator) {
+      showToast(
+        "error",
+        "Group creators cannot leave. Transfer ownership or delete the group."
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Leave Group",
+      "Are you sure you want to leave this group?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const response = await removeUserFromGroup({
+                groupId,
+                userIdToRemove: currentUserId,
+              });
+
+              if (response?.success) {
+                showToast(
+                  "success",
+                  response?.message || "You have left the group"
+                );
+                navigation.navigate(navigationStrings.BOTTOM_TAB, {
+                  screen: navigationStrings.GROUP,
+                  params: { screen: navigationStrings.GROUP },
+                });
+              } else {
+                showToast("error", response?.message || "Failed to leave group");
+              }
+            } catch (error) {
+              console.error("Error leaving group:", error);
+              showToast("error", error?.message || "Something went wrong");
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleInviteParticipants = async () => {
     try {
       const permissionGranted = await requestContactsPermission();
@@ -414,18 +478,14 @@ const GroupDetails = () => {
               title={"Invite Participants"}
               onPress={handleInviteParticipants}
               disabled={false}
-              containerStyle={{
-                marginTop: getHeight(16),
-                marginBottom: getHeight(12),
-                backgroundColor: colors.white,
-                borderWidth: 1,
-                borderColor: colors.lightGray,
-                borderRadius: getRadius(12),
-              }}
-              textStyle={{
-                color: colors.black,
-                fontFamily: fonts.RobotoMedium,
-              }}
+              containerStyle={styles.inviteButton}
+              textStyle={styles.inviteButtonText}
+            />
+            <ButtonComp
+              title="Leave the Group"
+              onPress={handleLeaveGroup}
+              containerStyle={styles.leaveButton}
+              textStyle={styles.leaveButtonText}
             />
           </View>
         )}
@@ -1031,6 +1091,29 @@ const styles = StyleSheet.create({
   },
   footerButtons: {
     paddingTop: getHeight(8),
+  },
+  inviteButton: {
+    marginTop: getHeight(16),
+    marginBottom: getHeight(12),
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.lightGray,
+    borderRadius: getRadius(12),
+  },
+  inviteButtonText: {
+    color: colors.black,
+    fontFamily: fonts.RobotoMedium,
+  },
+  leaveButton: {
+    marginBottom: getHeight(12),
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.red,
+    borderRadius: getRadius(12),
+  },
+  leaveButtonText: {
+    color: colors.red,
+    fontFamily: fonts.RobotoMedium,
   },
   memberItem: {
     flexDirection: "row",

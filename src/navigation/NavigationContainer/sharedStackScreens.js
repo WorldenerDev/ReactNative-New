@@ -29,7 +29,11 @@ export const sharedStackScreens = [
   { name: navigationStrings.CITY_DETAIL, component: CityDetail },
   { name: navigationStrings.BROUSE_BY_CATEGORY, component: BrouseByCategory },
   { name: navigationStrings.ACTIVITY_DETAILS, component: ActivityDetails },
-  { name: navigationStrings.SURPRISES, component: Surprises },
+  {
+    name: navigationStrings.SURPRISES,
+    component: Surprises,
+    options: { gestureEnabled: false, fullScreenGestureEnabled: false },
+  },
   { name: navigationStrings.ADD_TO_TRIP, component: AddToTrip },
   { name: navigationStrings.TRIP_DETAILS, component: TripDetails },
   { name: navigationStrings.EDIT_TRIP, component: EditTrip },
@@ -56,6 +60,11 @@ export const sharedStackScreens = [
 ];
 
 export const renderSharedStackScreens = (Stack) =>
-  sharedStackScreens.map(({ name, component }) => (
-    <Stack.Screen key={name} name={name} component={component} />
+  sharedStackScreens.map(({ name, component, options }) => (
+    <Stack.Screen
+      key={name}
+      name={name}
+      component={component}
+      options={options}
+    />
   ));

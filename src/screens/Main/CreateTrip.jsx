@@ -26,6 +26,7 @@ import {
 } from "@utils/validators";
 import { createTrip, getTripBuddies } from "@api/services/mainServices";
 import usePermissions from "@hooks/usePermissions";
+import { resetToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import Contacts from "react-native-contacts";
 
 const CreateTrip = ({ navigation, route }) => {
@@ -84,16 +85,7 @@ const CreateTrip = ({ navigation, route }) => {
       // Call the API
       const response = await createTrip(tripData);
       showToast("success", "Trip created successfully!");
-      navigation.reset({
-        index: 1,
-        routes: [
-          { name: navigationStrings.BOTTOM_TAB },
-          {
-            name: navigationStrings.TRIP_DETAILS,
-            params: { tripId: response?.data?._id },
-          },
-        ],
-      });
+      resetToTripDetails(navigation, { tripId: response?.data?._id });
     } catch (error) {
       console.error("Error creating trip:", error);
       showToast("error", error?.message || "Failed to create trip");

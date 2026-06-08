@@ -30,12 +30,31 @@ import {
 import { showToast } from "@components/AppToast";
 import Loader from "@components/Loader";
 import navigationStrings from "@navigation/navigationStrings";
+import { TAB_BAR_HEIGHT } from "@navigation/constants/tabBar";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const BANNER_HEIGHT = getHeight(180);
 const SWIPE_THRESHOLD = 120;
 const ROTATION_DEG = 10;
 
+const ACTION_BUTTON_SIZE = getHeight(68);
+
 const Surprises = ({ navigation, route }) => {
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const tabBarClearance =
+    Math.max(tabBarHeight, TAB_BAR_HEIGHT) + insets.bottom + getVertiPadding(8);
+  const cardMaxHeight = Math.max(
+    getHeight(220),
+    SCREEN_HEIGHT -
+      BANNER_HEIGHT -
+      tabBarClearance -
+      ACTION_BUTTON_SIZE -
+      getHeight(110)
+  );
   const { cityData } = route.params || {};
   const [currentIndex, setCurrentIndex] = useState(0);
   const [surprises, setSurprises] = useState([]);
@@ -141,6 +160,15 @@ const Surprises = ({ navigation, route }) => {
     }
   }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      navigation.setOptions({
+        gestureEnabled: false,
+        fullScreenGestureEnabled: false,
+      });
+    }, [navigation])
+  );
+
   // Load more when we reach the end of the current list
   const loadMoreIfNeeded = () => {
     if (hasMore && !loadingMore) {
@@ -184,15 +212,23 @@ const Surprises = ({ navigation, route }) => {
     };
   }, []);
 
+  const shouldCaptureCardPan = (gestureState) => {
+    const { dx, dy } = gestureState;
+    return (
+      !isAnimating.current &&
+      Math.abs(dx) > 6 &&
+      Math.abs(dx) > Math.abs(dy)
+    );
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !isAnimating.current,
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return (
-          !isAnimating.current &&
-          (Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5)
-        );
-      },
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        shouldCaptureCardPan(gestureState),
+      onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+        shouldCaptureCardPan(gestureState),
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
         isPanning.current = false;
         position.stopAnimation();
@@ -468,14 +504,17 @@ const Surprises = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.contentContainer}>
+        <View
+          style={[styles.body, { paddingBottom: tabBarClearance }]}
+        >
           <Text style={styles.sectionTitle}>Surprises for you!</Text>
 
-          <View style={styles.cardContainer}>
+          <View style={styles.cardArea}>
             <Animated.View
               key={currentCard.id}
               style={[
                 styles.card,
+                { maxHeight: cardMaxHeight, height: cardMaxHeight },
                 {
                   transform: [
                     { translateX: position.x },
@@ -509,6 +548,12 @@ const Surprises = ({ navigation, route }) => {
             </Animated.View>
           </View>
 
+          {loadingMore && (
+            <View style={styles.loadingMoreContainer}>
+              <Text style={styles.loadingMoreText}>Loading more...</Text>
+            </View>
+          )}
+
           <View style={styles.actionButtonsContainer}>
             <TouchableOpacity
               style={styles.actionButton}
@@ -534,11 +579,6 @@ const Surprises = ({ navigation, route }) => {
               </View>
             </TouchableOpacity>
           </View>
-          {loadingMore && (
-            <View style={styles.loadingMoreContainer}>
-              <Text style={styles.loadingMoreText}>Loading more...</Text>
-            </View>
-          )}
         </View>
       </View>
     </ScreenWapper>
@@ -554,7 +594,7 @@ const styles = StyleSheet.create({
   },
   banner: {
     width: "100%",
-    height: getHeight(230),
+    height: BANNER_HEIGHT,
   },
   iconBtn: {
     width: getWidth(32),
@@ -587,29 +627,28 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(15),
     fontFamily: fonts.RobotoBold,
   },
-  contentContainer: {
+  body: {
     flex: 1,
     paddingHorizontal: getHoriPadding(20),
-    paddingTop: getVertiPadding(16),
-    paddingBottom: getVertiPadding(20),
+    paddingTop: getVertiPadding(12),
   },
   sectionTitle: {
     fontSize: getFontSize(20),
     fontFamily: fonts.RobotoBold,
     color: colors.black,
-    marginBottom: getVertiPadding(18),
+    marginBottom: getVertiPadding(12),
     letterSpacing: -0.5,
     alignSelf: "flex-start",
   },
-  cardContainer: {
-    width: "100%",
+  cardArea: {
+    flex: 1,
     alignItems: "center",
-    justifyContent: "flex-start",
-    marginBottom: getVertiPadding(16),
+    justifyContent: "center",
+    minHeight: 0,
+    marginBottom: getVertiPadding(8),
   },
   card: {
     width: SCREEN_WIDTH - getHoriPadding(40),
-    height: getHeight(380),
     borderRadius: getRadius(20),
     overflow: "hidden",
     backgroundColor: colors.white,
@@ -654,14 +693,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: getVertiPadding(16),
-    marginTop: getVertiPadding(8),
     gap: getWidth(56),
-    paddingHorizontal: getHoriPadding(20),
+    paddingTop: getVertiPadding(8),
+    paddingBottom: getVertiPadding(4),
   },
   actionButton: {
-    width: getWidth(68),
-    height: getHeight(68),
+    width: ACTION_BUTTON_SIZE,
+    height: ACTION_BUTTON_SIZE,
   },
   unlikeButton: {
     width: "100%",

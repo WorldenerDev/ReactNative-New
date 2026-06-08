@@ -3,6 +3,7 @@ import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
+import { navigateToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import navigationStrings from "@navigation/navigationStrings";
 import { useRoute } from "@react-navigation/native";
 import {
@@ -292,7 +293,7 @@ const AiChat = ({ navigation }) => {
 
   const handleViewTrip = useCallback(() => {
     if (!tripId) return;
-    navigation.navigate(navigationStrings.TRIP_DETAILS, { tripId });
+    navigateToTripDetails(navigation, { tripId });
   }, [navigation, tripId]);
 
   const handleGroupChat = useCallback(() => {

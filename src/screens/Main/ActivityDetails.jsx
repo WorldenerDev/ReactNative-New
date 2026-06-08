@@ -82,6 +82,12 @@ const ActivityDetails = ({ navigation, route }) => {
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [languagesExpanded, setLanguagesExpanded] = useState(false);
+
+  const LANGUAGE_PREVIEW_COUNT = 3;
+  const languageNames =
+    eventDetail?.tourDetails?.languagesAvailable?.map((lang) => lang.name) ??
+    [];
 
   const currentCityTrips = tripsByCity[cityId] || [];
 
@@ -105,6 +111,10 @@ const ActivityDetails = ({ navigation, route }) => {
       getTripsByCity();
     }
   }, [cityId]);
+
+  useEffect(() => {
+    setLanguagesExpanded(false);
+  }, [activityId, languageNames.length]);
 
   useEffect(() => {
     if (activityId) {
@@ -290,6 +300,48 @@ const ActivityDetails = ({ navigation, route }) => {
     }
   };
 
+  const renderLanguagesContent = () => {
+    if (languageNames.length === 0) {
+      return <Text style={styles.text}>Language not available</Text>;
+    }
+
+    if (languageNames.length <= LANGUAGE_PREVIEW_COUNT) {
+      return <Text style={styles.text}>{languageNames.join(", ")}</Text>;
+    }
+
+    const previewText = languageNames
+      .slice(0, LANGUAGE_PREVIEW_COUNT)
+      .join(", ");
+    const remainingCount = languageNames.length - LANGUAGE_PREVIEW_COUNT;
+
+    if (!languagesExpanded) {
+      return (
+        <Text style={styles.text}>
+          {previewText},{" "}
+          <Text
+            style={styles.languageExpandLink}
+            onPress={() => setLanguagesExpanded(true)}
+          >
+            {remainingCount}+
+          </Text>
+        </Text>
+      );
+    }
+
+    return (
+      <View style={styles.languageExpandedContent}>
+        <Text style={styles.text}>{languageNames.join(", ")}</Text>
+        <TouchableOpacity
+          onPress={() => setLanguagesExpanded(false)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.languageCollapseLink}>Show less</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
     <ScreenWapper>
       <View style={styles.headerImage}>
@@ -385,14 +437,9 @@ const ActivityDetails = ({ navigation, route }) => {
           </View>
           <View style={styles.featureRow}>
             <Image source={imagePath.LANGUAGE_ICON} style={styles.likeIcon} />
-            <Text style={styles.text}>
-              {eventDetail?.tourDetails?.languagesAvailable &&
-                eventDetail.tourDetails.languagesAvailable.length > 0
-                ? eventDetail.tourDetails.languagesAvailable
-                  .map((lang) => lang.name)
-                  .join(", ")
-                : "Language not available"}
-            </Text>
+            <View style={styles.languageTextContainer}>
+              {renderLanguagesContent()}
+            </View>
           </View>
           <View style={styles.featureRow}>
             <Image source={imagePath.DURATION_ICON} style={styles.likeIcon} />
@@ -754,6 +801,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "48%",
     marginBottom: 18,
+  },
+  languageTextContainer: {
+    flex: 1,
+    flexShrink: 1,
+  },
+  languageExpandedContent: {
+    flex: 1,
+  },
+  languageExpandLink: {
+    color: colors.primary,
+    fontFamily: fonts.RobotoMedium,
+    fontWeight: "600",
+  },
+  languageCollapseLink: {
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.primary,
+    marginTop: getVertiPadding(4),
   },
   text: {
     fontSize: 14,

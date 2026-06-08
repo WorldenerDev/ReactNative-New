@@ -12,6 +12,7 @@ import ButtonComp from "@components/ButtonComp";
 import MainContainer from "@components/container/MainContainer";
 import CustomDropdown from "@components/CustomDropdown";
 import Header from "@components/Header";
+import { navigateToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import navigationStrings from "@navigation/navigationStrings";
 import { getFontSize, getHeight, getRadius, getWidth } from "@utils/responsive";
 import { getTripId, normalizeTripDetails } from "@utils/tripHelpers";
@@ -419,7 +420,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         showToast("success", response?.message);
         const addedTrip = normalizeTripDetails(response?.data ?? response);
         const addedTripId = getTripId(addedTrip) || String(eventData.tripId);
-        navigation.navigate(navigationStrings.TRIP_DETAILS, {
+        navigateToTripDetails(navigation, {
           trip: addedTrip,
           tripId: addedTripId,
         });
