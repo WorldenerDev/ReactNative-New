@@ -14,12 +14,14 @@ import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import MainContainer from "@components/container/MainContainer";
+import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import { getGroups } from "@api/services/mainServices";
 import { formatDisplayDate } from "@utils/formatDate";
 import { cardGap, cardRadius, cardShadow, typography } from "@utils/theme";
 
 const Group = ({ navigation }) => {
+  const scrollPadding = useStickyScrollPadding();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -171,7 +173,10 @@ const Group = ({ navigation }) => {
         data={trips}
         renderItem={renderTripItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: scrollPadding },
+        ]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={renderEmptyComponent}
       />

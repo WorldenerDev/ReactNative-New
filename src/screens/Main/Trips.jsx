@@ -16,11 +16,13 @@ import { typography } from "@utils/theme";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
+import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserTrip, deleteUserTrip } from "@redux/slices/cityTripSlice";
 
 const Trips = ({ navigation }) => {
+  const scrollPadding = useStickyScrollPadding();
   const { trip } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
@@ -144,7 +146,10 @@ const Trips = ({ navigation }) => {
           );
         }}
         keyExtractor={(item) => item?._id.toString()}
-        contentContainerStyle={styles.flatListContent}
+        contentContainerStyle={[
+          styles.flatListContent,
+          { paddingBottom: scrollPadding },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

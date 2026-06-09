@@ -16,6 +16,7 @@ import {
 } from "@utils/responsive";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch, useSelector } from "react-redux";
 import { category } from "@redux/slices/authSlice";
@@ -40,6 +41,7 @@ const getTimeOfDayGreeting = (name) => {
 };
 
 const Home = ({ navigation }) => {
+  const scrollPadding = useStickyScrollPadding();
   const { user, categories } = useSelector((state) => state.auth);
   const { city, eventForYou } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
@@ -153,7 +155,10 @@ const Home = ({ navigation }) => {
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={ListHeader}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: scrollPadding },
+        ]}
       />
     </MainContainer>
   );

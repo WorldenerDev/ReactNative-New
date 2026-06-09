@@ -9,12 +9,12 @@ import {
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import MainContainer from './MainContainer';
 
-const ResponsiveContainer = React.memo(({ children, loader = false }) => {
+const ResponsiveContainer = React.memo(({ children, loader = false, contentContainerStyle }) => {
     return (
         <MainContainer loader={loader}>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAwareScrollView
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
                     keyboardShouldPersistTaps="handled"
                     enableOnAndroid={true}
                     enableAutomaticScroll={true}

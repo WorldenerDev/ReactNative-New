@@ -5,6 +5,7 @@ import imagePath from "@assets/icons";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import OptimizedImage from "@components/OptimizedImage";
 import ProfileButton from "@components/ProfileButton";
+import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import { logoutUser } from "@redux/slices/authSlice";
 import {
@@ -29,6 +30,7 @@ import { useDispatch, useSelector } from "react-redux";
 const Account = ({ navigation }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const scrollPadding = useStickyScrollPadding();
 
   // Get user profile image URI
   const getUserImageUri = () => {
@@ -63,7 +65,7 @@ const Account = ({ navigation }) => {
     ]);
   };
   const handleSavedCards = () => {
-    navigation.navigate(navigationStrings.PAYMENT);
+    navigation.navigate(navigationStrings.SAVED_CARDS);
   };
 
   const handleEditProfile = () => {
@@ -126,7 +128,9 @@ const Account = ({ navigation }) => {
   };
 
   return (
-    <ResponsiveContainer>
+    <ResponsiveContainer
+      contentContainerStyle={{ paddingBottom: scrollPadding }}
+    >
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
       {/* Header */}
       <View style={styles.header}>

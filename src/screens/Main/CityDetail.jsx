@@ -7,6 +7,9 @@ import ScreenWapper from "@components/container/ScreenWapper";
 import CustomDropdown from "@components/CustomDropdown";
 import ImagePlaceholder from "@components/ImagePlaceholder";
 import OptimizedImage from "@components/OptimizedImage";
+import useStickyBottomInset, {
+  useStickyScrollPadding,
+} from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import {
   fetchEventForYouCityID,
@@ -52,6 +55,8 @@ const formatTripLabel = (trip) => {
 
 /** --- screen --- */
 const CityDetail = ({ route, navigation }) => {
+  const scrollPadding = useStickyScrollPadding();
+  const bottomInset = useStickyBottomInset();
   const { cityData, selectedTripId, selectedTrip: selectedTripFromRoute } =
     route.params || {};
   const dispatch = useDispatch();
@@ -167,7 +172,7 @@ const CityDetail = ({ route, navigation }) => {
         showsVerticalScrollIndicator={false}
         renderItem={null}
         ListHeaderComponent={
-          <View style={styles.listContainer}>
+          <View style={[styles.listContainer, { paddingBottom: scrollPadding }]}>
             {/* Banner */}
             <View>
               <OptimizedImage
@@ -305,7 +310,7 @@ const CityDetail = ({ route, navigation }) => {
       />
       {/* Floating AI Chat Icon */}
       <TouchableOpacity
-        style={styles.floatingIcon}
+        style={[styles.floatingIcon, { bottom: bottomInset }]}
         onPress={() =>
           navigation.navigate(navigationStrings.SURPRISES, {
             cityData: cityData,
@@ -434,7 +439,6 @@ const styles = StyleSheet.create({
   },
   floatingIcon: {
     position: "absolute",
-    bottom: getVertiPadding(80),
     right: getHoriPadding(16),
     width: getWidth(56),
     height: getHeight(56),
