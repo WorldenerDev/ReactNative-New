@@ -28,6 +28,7 @@ const CustomInput = ({
   containerStyle = {},
   inputStyle = {},
   error = "",
+  rightElement = null,
   ...rest
 }) => {
   const [isSecure, setIsSecure] = useState(secure);
@@ -75,6 +76,12 @@ const CustomInput = ({
               resizeMode="contain"
             />
           </TouchableOpacity>
+        )}
+
+        {!!rightElement && (
+          <View style={styles.iconBtn} pointerEvents="none">
+            {rightElement}
+          </View>
         )}
       </View>
 

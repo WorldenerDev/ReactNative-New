@@ -6,6 +6,8 @@ import {
   Image,
   StatusBar,
 } from "react-native";
+import Svg, { Path } from "react-native-svg";
+import { getImageUrl } from "@api/apiClient";
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
@@ -30,8 +32,32 @@ import useStickyBottomInset, {
   useStickyScrollPadding,
 } from "@hooks/useStickyBottomInset";
 import OptimizedImage from "@components/OptimizedImage";
-import { URL } from "@api/apiClient";
 import navigationStrings from "@navigation/navigationStrings";
+import {
+  buildUpdateProfileFormData,
+  extractProfileImagePath,
+} from "@utils/formDataHelper";
+import { setItem } from "@utils/storage";
+import { STORAGE_KEYS } from "@utils/storageKeys";
+
+const PencilIcon = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+      stroke={colors.lightText}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+      stroke={colors.lightText}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 const EditProfile = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -41,21 +67,11 @@ const EditProfile = ({ navigation }) => {
   const { pickImage } = useImagePicker();
 
   const [name, setName] = useState(user?.name || "");
-  const [mobileNumber, setMobileNumber] = useState(user?.phone_number || "");
   const [profileImage, setProfileImage] = useState(null);
+  const mobileNumber = user?.phone_number || "";
 
   // Construct image URI: if user has image, use URL + image path, otherwise null
-  const getUserImageUri = () => {
-    const userImage = user?.image || user?.profileImage;
-    if (userImage && userImage.trim() !== "") {
-      // If image already has http/https, use as is, otherwise prepend URL
-      if (userImage.startsWith("http://") || userImage.startsWith("https://")) {
-        return userImage;
-      }
-      return `${URL}${userImage}`;
-    }
-    return null;
-  };
+  const getUserImageUri = () => getImageUrl(user?.image || user?.profileImage) || null;
 
   const [imageUri, setImageUri] = useState(getUserImageUri());
   const [loading, setLoading] = useState(false);
@@ -68,47 +84,37 @@ const EditProfile = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const formData = new FormData();
 
-      formData.append("name", name);
-      formData.append("phone_number", mobileNumber);
-
-      if (profileImage) {
-        formData.append("image", {
-          uri: profileImage.uri,
-          type: profileImage.type,
-          name: profileImage.name,
-        });
-      }
+      const formData = buildUpdateProfileFormData({
+        name,
+        phone_number: mobileNumber,
+        // email: user?.email,
+        gender: user?.gender,
+        dob: user?.dob,
+        nationality: user?.nationality,
+        image: profileImage,
+      });
 
       const response = await updateProfile(formData);
 
       if (response?.success || response?.data) {
-        const responseImage =
-          response?.data?.image || response?.data?.user?.image;
-        let finalImageUri = imageUri;
-
-        if (responseImage) {
-          // If response image is a relative path, prepend URL
-          if (
-            responseImage.startsWith("http://") ||
-            responseImage.startsWith("https://")
-          ) {
-            finalImageUri = responseImage;
-          } else {
-            finalImageUri = `${URL}${responseImage}`;
-          }
-        }
+        const responseImage = extractProfileImagePath(response);
+        const finalImageUri = responseImage
+          ? getImageUrl(responseImage)
+          : imageUri;
 
         const updatedUser = {
           ...user,
-          name: name,
+          name,
           phone_number: mobileNumber,
           image: responseImage || user?.image,
+          profileImage: responseImage || user?.profileImage,
         };
 
         dispatch(setUser(updatedUser));
+        await setItem(STORAGE_KEYS.USER_DATA, updatedUser);
         setImageUri(finalImageUri);
+        setProfileImage(null);
         showToast(
           "success",
           response?.message || "Profile updated successfully"
@@ -218,15 +224,15 @@ const EditProfile = ({ navigation }) => {
             value={name}
             onChangeText={setName}
             editable={!loading}
+            rightElement={<PencilIcon />}
           />
 
           <CustomInput
             label="Mobile Number"
             placeholder="Enter mobile number"
             value={mobileNumber}
-            onChangeText={setMobileNumber}
             keyboardType="phone-pad"
-            editable={!loading}
+            editable={false}
           />
         </View>
 

@@ -6,6 +6,7 @@ export const endpoints = {
     otp: "/verifyOtp",
     socialLogin: "/socialLoginAndSignUp",
     getCategory: "/getCategories",
+    getProfile: "/getProfile",
     selectCategory: "/selectCategory",
     getCms: "getCms",
   },

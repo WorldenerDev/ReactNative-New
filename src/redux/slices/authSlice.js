@@ -184,8 +184,13 @@ const authSlice = createSlice({
     });
     handleAsyncCases(builder, postCategory, {
       onFulfilled: (state, action) => {
-        state.user = action.payload;
-        state.token = action.payload.token;
+        if (state.user && action.meta?.arg?.preferences) {
+          state.user = {
+            ...state.user,
+            preferences: action.meta.arg.preferences,
+            isPreference: true,
+          };
+        }
       },
     });
     builder.addCase(logoutUser.fulfilled, (state) => {

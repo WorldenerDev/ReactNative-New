@@ -6,7 +6,8 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import MainContainer from "@components/container/MainContainer";
 import {
   getHeight,
@@ -43,38 +44,58 @@ const getTimeOfDayGreeting = (name) => {
 const Home = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
   const { user, categories } = useSelector((state) => state.auth);
-  const { city, eventForYou } = useSelector((state) => state.cityTrip);
+  const { city, eventForYou, eventForYouPreferencesKey } = useSelector(
+    (state) => state.cityTrip
+  );
   const dispatch = useDispatch();
+  const preferencesKey = JSON.stringify(user?.preferences ?? []);
 
-  useEffect(() => {
-    getCity();
-    getCategory();
-    getForYou();
-  }, [dispatch]);
-
-  const getCity = async () => {
+  const getCity = useCallback(async () => {
     try {
       await dispatch(fetchAllCity());
     } catch (error) {
       console.error("Failed to fetch City on home Screen ", error);
     }
-  };
+  }, [dispatch]);
 
-  const getForYou = async () => {
-    try {
-      await dispatch(fetchEventForYou());
-    } catch (error) {
-      console.error("Failed to fetch Event For You on home Screen ", error);
-    }
-  };
-
-  const getCategory = async () => {
+  const getCategory = useCallback(async () => {
     try {
       await dispatch(category());
     } catch (err) {
       console.error("Failed to fetch category on home Screen ", err);
     }
-  };
+  }, [dispatch]);
+
+  const getForYou = useCallback(async () => {
+    if (
+      eventForYou.length > 0 &&
+      eventForYouPreferencesKey === preferencesKey
+    ) {
+      return;
+    }
+
+    try {
+      await dispatch(fetchEventForYou({ preferencesKey }));
+    } catch (error) {
+      console.error("Failed to fetch Event For You on home Screen ", error);
+    }
+  }, [
+    dispatch,
+    eventForYou.length,
+    eventForYouPreferencesKey,
+    preferencesKey,
+  ]);
+
+  useEffect(() => {
+    getCity();
+    getCategory();
+  }, [getCity, getCategory]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getForYou();
+    }, [getForYou])
+  );
 
   const ListHeader = () => (
     <View>

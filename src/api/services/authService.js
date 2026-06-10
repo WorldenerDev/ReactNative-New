@@ -11,6 +11,7 @@ export const login = (data) => apiPost(endpoints?.auth?.login, data);
 export const SocialLogin = (data) =>
   apiPost(endpoints?.auth?.socialLogin, data);
 export const getCategory = (data) => apiGet(endpoints?.auth?.getCategory);
+export const getProfile = () => apiGet(endpoints?.auth?.getProfile);
 export const SelectCategory = (data) =>
   apiPost(endpoints?.auth?.selectCategory, data);
 export const getCms = (type) =>

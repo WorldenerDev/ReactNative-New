@@ -84,11 +84,7 @@ export const compareUsersInGroup = (data) => apiPost(endpoints?.main?.compareUse
 export const getGroupWishlisted = (groupId, cityId) =>
   apiGet(`${endpoints?.main?.getGroupWishlisted}/${groupId}/wishlisted`, cityId ? { cityId } : {});
 export const updateProfile = (formData) =>
-  apiPost(endpoints?.main?.updateProfile, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  apiPost(endpoints?.main?.updateProfile, formData);
 export const addCard = (data) => apiPost(endpoints?.main?.addCard, data);
 export const saveStripePaymentMethod = (data) =>
   apiPost(endpoints?.main?.addCard, data);

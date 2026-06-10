@@ -36,8 +36,7 @@ export const fetchEventForYou = createAsyncThunk(
   endpoints?.main?.getEventForYou,
   async (payload, { rejectWithValue }) => {
     try {
-      const res = await getEventForYou(payload);
-      //   console.log("All event for you respnce", res);
+      const res = await getEventForYou();
       return res;
     } catch (err) {
       return rejectWithValue(err.message);
@@ -114,6 +113,7 @@ const cityTripSlice = createSlice({
   initialState: {
     city: [],
     eventForYou: [],
+    eventForYouPreferencesKey: null,
     trip: [],
     tripsByCity: {}, // Map to store trips by cityId: { cityId: [trips] }
     loading: false,
@@ -140,12 +140,26 @@ const cityTripSlice = createSlice({
       },
     });
 
-    // Handle fetching events for you
-    handleAsyncCases(builder, fetchEventForYou, {
-      onFulfilled: (state, action) => {
+    // For You: only block the UI on first load; background refreshes stay silent.
+    builder
+      .addCase(fetchEventForYou.pending, (state) => {
+        state.error = null;
+        if (state.eventForYou.length === 0) {
+          state.loading = true;
+        }
+      })
+      .addCase(fetchEventForYou.fulfilled, (state, action) => {
+        state.loading = false;
         state.eventForYou = action.payload?.data || action.payload || [];
-      },
-    });
+        const preferencesKey = action.meta?.arg?.preferencesKey;
+        if (preferencesKey !== undefined) {
+          state.eventForYouPreferencesKey = preferencesKey;
+        }
+      })
+      .addCase(fetchEventForYou.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
 
     // Handle popular events by city (CityDetail)
     handleAsyncCases(builder, fetchPopularEvent);

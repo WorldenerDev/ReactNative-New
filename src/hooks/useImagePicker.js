@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import usePermissions from './usePermissions';
-import { isIOS } from '@utils/uiUtils';
 
 /**
  * Custom hook for picking an image from the gallery or taking a photo using the camera.
@@ -32,15 +31,16 @@ const useImagePicker = () => {
      * Opens the gallery to pick an image.
      */
     const pickImage = async () => {
+        const hasPermission = await requestMediaPermission();
+        if (!hasPermission) {
+            return null;
+        }
+
         const options = {
             mediaType: 'photo',
-            cropping: true,
-            width: 800,
-            height: 600,
-            cropperCircleOverlay: true,
-            smartAlbums: isIOS
-                ? ['UserLibrary', 'PhotoStream', 'Bursts', 'Screenshots']
-                : undefined,
+            quality: 0.8,
+            selectionLimit: 1,
+            includeExtra: true,
         };
 
         try {

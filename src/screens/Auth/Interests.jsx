@@ -24,6 +24,7 @@ import navigationStrings from "@navigation/navigationStrings";
 import Routes from "@navigation/Routes";
 import { useDispatch } from "react-redux";
 import { category, postCategory, setUser } from "@redux/slices/authSlice";
+import { fetchEventForYou } from "@redux/slices/cityTripSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 
@@ -81,9 +82,15 @@ const Interests = ({ navigation, route }) => {
         const loginData = {
           ...userData,
           isPreference: true,
+          preferences: selectedInterests,
         };
         await setItem(STORAGE_KEYS?.USER_DATA, loginData);
         dispatch(setUser(loginData));
+        await dispatch(
+          fetchEventForYou({
+            preferencesKey: JSON.stringify(selectedInterests),
+          })
+        );
       }
     } catch (error) {
       console.log("error on post category on interest screen ");

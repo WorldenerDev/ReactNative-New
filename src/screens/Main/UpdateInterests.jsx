@@ -1,13 +1,15 @@
-import { SelectCategory } from "@api/services/authService";
+import { getProfile } from "@api/services/authService";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
 import useStickyBottomInset, {
   useStickyScrollPadding,
 } from "@hooks/useStickyBottomInset";
 import MainContainer from "@components/container/MainContainer";
 import StepTitle from "@components/StepTitle";
-import { category } from "@redux/slices/authSlice";
+import { category, postCategory, setUser } from "@redux/slices/authSlice";
+import { fetchEventForYou } from "@redux/slices/cityTripSlice";
 import {
   getFontSize,
   getHeight,
@@ -15,75 +17,152 @@ import {
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
-import { useEffect, useState } from "react";
+import { setItem } from "@utils/storage";
+import { STORAGE_KEYS } from "@utils/storageKeys";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
+const normalizePreferenceIds = (preferences = []) =>
+  preferences.map((id) => String(id));
 
+const formatCategoriesWithSelections = (categories, selectedIds) => {
+  const selectedSet = new Set(selectedIds);
+
+  return categories.map((item) => ({
+    ...item,
+    cover_image_url: item.cover_image_url || item.event_image_url,
+    selected: selectedSet.has(String(item.id)),
+  }));
+};
 
 const UpdateInterests = ({ navigation }) => {
   const bottomInset = useStickyBottomInset();
   const scrollPadding = useStickyScrollPadding();
   const dispatch = useDispatch();
+  const { user, categories } = useSelector((state) => state.auth);
   const [selectedInterests, setSelectedInterests] = useState([]);
-  const [interests, setInterests] = useState([]);
+  const [fetchingCategories, setFetchingCategories] = useState(true);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const getCategory = async () => {
-      try {
-        const result = await dispatch(category());
-        console.log("category result payload", result);
-        const formattedData = result?.payload?.data?.map((item) => ({
-          ...item,
-          cover_image_url: item.event_image_url,
-          selected: false,
-        }));
+  const interests = useMemo(
+    () => formatCategoriesWithSelections(categories, selectedInterests),
+    [categories, selectedInterests]
+  );
 
-        setInterests(formattedData);
-      } catch (err) {
-        console.error("Failed to fetch category", err);
-      }
-    };
-    getCategory();
-  }, [dispatch]);
+  const loadSavedPreferences = useCallback(async () => {
+    try {
+      const profileResult = await getProfile();
+      return normalizePreferenceIds(
+        profileResult?.data?.preferences ?? user?.preferences ?? []
+      );
+    } catch {
+      return normalizePreferenceIds(user?.preferences ?? []);
+    }
+  }, [user?.preferences]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const loadScreenData = async () => {
+        setFetchingCategories(true);
+        setPreferencesLoaded(false);
+
+        const categoryPromise = dispatch(category()).finally(() => {
+          if (isActive) {
+            setFetchingCategories(false);
+          }
+        });
+
+        const preferencesPromise = loadSavedPreferences().then((prefs) => {
+          if (isActive) {
+            setSelectedInterests(prefs);
+            setPreferencesLoaded(true);
+          }
+          return prefs;
+        });
+
+        try {
+          await Promise.all([categoryPromise, preferencesPromise]);
+        } catch (error) {
+          console.error("Failed to load interests screen data", error);
+          if (isActive) {
+            showToast("error", "Could not load interests.");
+          }
+        }
+      };
+
+      loadScreenData();
+
+      return () => {
+        isActive = false;
+      };
+    }, [dispatch, loadSavedPreferences])
+  );
 
   const toggleInterest = (id) => {
-    setInterests((prevInterests) =>
-      prevInterests.map((interest) =>
-        interest.id === id
-          ? { ...interest, selected: !interest.selected }
-          : interest
-      )
-    );
+    const idStr = String(id);
 
-    setSelectedInterests((prev) => {
-      if (prev.includes(String(id))) {
-        return prev.filter((item) => item !== String(id));
-      } else {
-        return [...prev, String(id)];
-      }
-    });
+    setSelectedInterests((prev) =>
+      prev.includes(idStr)
+        ? prev.filter((item) => item !== idStr)
+        : [...prev, idStr]
+    );
   };
 
   const handleContinue = async () => {
+    if (selectedInterests.length === 0) {
+      showToast("error", "Please select at least one interest.");
+      return;
+    }
+
     try {
-      const data = {
-        preferences: selectedInterests,
-      };
-      const responce = await SelectCategory(data)
-      console.log("Post category result ", responce);
-      if (responce?.success) {
+      setSaving(true);
+      const result = await dispatch(
+        postCategory({ preferences: selectedInterests })
+      );
+
+      if (result?.meta?.requestStatus === "rejected") {
+        return;
+      }
+
+      if (result?.payload?.success) {
+        const updatedUser = {
+          ...user,
+          preferences: selectedInterests,
+          isPreference: true,
+        };
+        await setItem(STORAGE_KEYS.USER_DATA, updatedUser);
+        dispatch(setUser(updatedUser));
+        await dispatch(
+          fetchEventForYou({
+            preferencesKey: JSON.stringify(selectedInterests),
+          })
+        );
+        showToast("success", "Interests updated successfully.");
         navigation.goBack();
+      } else {
+        showToast(
+          "error",
+          result?.payload?.message || "Failed to update interests."
+        );
       }
     } catch (error) {
-      console.log("error on post category on interest screen ");
+      console.error("Error updating interests", error);
+      showToast("error", "Failed to update interests.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -112,53 +191,82 @@ const UpdateInterests = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const showInlineLoader = fetchingCategories && interests.length === 0;
+  const showEmptyState =
+    !fetchingCategories && preferencesLoaded && interests.length === 0;
 
   return (
-    <MainContainer>
+    <MainContainer loader={saving}>
       <StepTitle
         title="Select Interests"
         subtitle="Choose your interests to personalize your experience"
       />
 
       <View style={styles.container}>
-        <FlatList
-          data={interests}
-          renderItem={renderInterestItem}
-          keyExtractor={(item) => item.id.toString()}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.listContainer,
-            { paddingBottom: scrollPadding },
-          ]}
-        />
+        {showInlineLoader ? (
+          <View style={styles.inlineLoader}>
+            <ActivityIndicator size="large" color={colors.black} />
+          </View>
+        ) : (
+          <FlatList
+            style={styles.list}
+            data={interests}
+            renderItem={renderInterestItem}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.listContainer,
+              { paddingBottom: scrollPadding, flexGrow: 1 },
+            ]}
+            ListEmptyComponent={
+              showEmptyState ? (
+                <Text style={styles.emptyText}>No interests available.</Text>
+              ) : null
+            }
+          />
+        )}
       </View>
 
-      {/* Floating Continue Button */}
       {selectedInterests.length > 0 && (
         <View style={[styles.floatingButton, { bottom: bottomInset }]}>
           <ButtonComp
-            disabled={false}
-            title="Continue"
+            disabled={saving}
+            title={saving ? "Saving..." : "Continue"}
             onPress={handleContinue}
             containerStyle={styles.continueButtonStyle}
           />
         </View>
       )}
     </MainContainer>
-  )
-}
+  );
+};
 
-export default UpdateInterests
+export default UpdateInterests;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     marginTop: getVertiPadding(20),
   },
+  list: {
+    flex: 1,
+  },
   listContainer: {
     paddingBottom: getVertiPadding(20),
+  },
+  inlineLoader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+    marginTop: getVertiPadding(40),
   },
   row: {
     justifyContent: "space-between",
@@ -239,4 +347,3 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 });
-
