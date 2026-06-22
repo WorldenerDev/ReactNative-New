@@ -20,7 +20,7 @@ import fonts from "@assets/fonts";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch, useSelector } from "react-redux";
-import { category } from "@redux/slices/authSlice";
+import { fetchCategoriesTree } from "@redux/slices/authSlice";
 import imagePath from "@assets/icons";
 import { fetchAllCity, fetchEventForYou } from "@redux/slices/cityTripSlice";
 import ForYouCard from "@components/appComponent/ForYouCard";
@@ -60,7 +60,7 @@ const Home = ({ navigation }) => {
 
   const getCategory = useCallback(async () => {
     try {
-      await dispatch(category());
+      await dispatch(fetchCategoriesTree({ level: 1 }));
     } catch (err) {
       console.error("Failed to fetch category on home Screen ", err);
     }
@@ -131,6 +131,7 @@ const Home = ({ navigation }) => {
             onPress={() =>
               navigation.navigate(navigationStrings.BROUSE_BY_CATEGORY, {
                 name: item?.name,
+                categoryIn: item?.code,
               })
             }
           />

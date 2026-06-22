@@ -23,7 +23,7 @@ import {
 import navigationStrings from "@navigation/navigationStrings";
 import Routes from "@navigation/Routes";
 import { useDispatch } from "react-redux";
-import { category, postCategory, setUser } from "@redux/slices/authSlice";
+import { fetchCategoriesTree, postCategory, setUser } from "@redux/slices/authSlice";
 import { fetchEventForYou } from "@redux/slices/cityTripSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
@@ -37,11 +37,10 @@ const Interests = ({ navigation, route }) => {
   useEffect(() => {
     const getCategory = async () => {
       try {
-        const result = await dispatch(category());
-        console.log("category result payload", result);
+        const result = await dispatch(fetchCategoriesTree({ level: 2 }));
         const formattedData = result?.payload?.data?.map((item) => ({
           ...item,
-          cover_image_url: item.event_image_url,
+          cover_image_url: item.cover_image_url || item.event_image_url,
           selected: false,
         }));
 

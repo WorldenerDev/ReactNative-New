@@ -16,6 +16,7 @@ import {
   fetchPopularEvent,
   fetchTripByCity,
 } from "@redux/slices/cityTripSlice";
+import { getCityCategories } from "@api/services/mainServices";
 import {
   getFontSize,
   getHeight,
@@ -60,10 +61,10 @@ const CityDetail = ({ route, navigation }) => {
   const { cityData, selectedTripId, selectedTrip: selectedTripFromRoute } =
     route.params || {};
   const dispatch = useDispatch();
-  const { categories } = useSelector((state) => state.auth);
   const { tripsByCity } = useSelector((state) => state.cityTrip);
   const [popularThing, setPopularThings] = useState([]);
   const [eventByCity, setEventByCity] = useState([]);
+  const [cityCategories, setCityCategories] = useState([]);
   const [selectedTrip, setSelectedTrip] = useState(null);
 
   // Get trips for current city from Redux map
@@ -77,7 +78,24 @@ const CityDetail = ({ route, navigation }) => {
     PopularEvents();
     getEvent_by_city();
     getTripsByCity();
+    loadCityCategories();
   }, [cityData?.city_id, selectedTripFromRoute, selectedTripId]);
+
+  const loadCityCategories = async () => {
+    if (!cityData?.city_id) {
+      setCityCategories([]);
+      return;
+    }
+    setCityCategories([]);
+    try {
+      const result = await getCityCategories(cityData.city_id);
+      const list = result?.data || result || [];
+      setCityCategories(Array.isArray(list) ? list : []);
+    } catch (error) {
+      console.warn("fetchCityCategories error:", error);
+      setCityCategories([]);
+    }
+  };
 
   useEffect(() => {
     if (selectedTripFromRoute?.value) {
@@ -278,13 +296,15 @@ const CityDetail = ({ route, navigation }) => {
             </Text>
             <FlatList
               horizontal
-              data={categories}
+              data={cityCategories}
               renderItem={({ item }) => (
                 <CategoryCard
                   item={item}
                   onPress={() =>
                     navigation.navigate(navigationStrings.BROUSE_BY_CATEGORY, {
                       name: item?.name,
+                      categoryIn: item?.code,
+                      cityId: cityData?.city_id,
                     })
                   }
                 />

@@ -8,6 +8,7 @@ import {
   getCategory,
   SelectCategory,
 } from "@api/services/authService";
+import { getCategoriesTree } from "@api/services/mainServices";
 import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
 import { setItem } from "@utils/storage";
@@ -97,6 +98,18 @@ export const category = createAsyncThunk(
     }
   }
 );
+
+export const fetchCategoriesTree = createAsyncThunk(
+  "auth/fetchCategoriesTree",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const res = await getCategoriesTree(params);
+      return res;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 export const postCategory = createAsyncThunk(
   endpoints?.auth?.selectCategory,
   async (payload, { rejectWithValue }) => {
@@ -178,6 +191,11 @@ const authSlice = createSlice({
       },
     });
     handleAsyncCases(builder, category, {
+      onFulfilled: (state, action) => {
+        state.categories = action.payload?.data || action.payload || [];
+      },
+    });
+    handleAsyncCases(builder, fetchCategoriesTree, {
       onFulfilled: (state, action) => {
         state.categories = action.payload?.data || action.payload || [];
       },

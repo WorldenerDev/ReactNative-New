@@ -16,6 +16,8 @@ export const endpoints = {
     getEventForYou: "/getEventsForYou",
     getPopularEvents: "/getPopularEvents",
     getEventBrowserByCategory: "/getEventBrowserByCategory",
+    getCityCategories: "/getCategory",
+    getCategoriesTree: "/getCategoriesTree",
     getTrips: "/getTrips",
     createTrip: "/createTrip",
     updateTrip: "/updateTrip",

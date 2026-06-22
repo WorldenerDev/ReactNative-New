@@ -8,7 +8,7 @@ import useStickyBottomInset, {
 } from "@hooks/useStickyBottomInset";
 import MainContainer from "@components/container/MainContainer";
 import StepTitle from "@components/StepTitle";
-import { category, postCategory, setUser } from "@redux/slices/authSlice";
+import { fetchCategoriesTree, postCategory, setUser } from "@redux/slices/authSlice";
 import { fetchEventForYou } from "@redux/slices/cityTripSlice";
 import {
   getFontSize,
@@ -79,7 +79,7 @@ const UpdateInterests = ({ navigation }) => {
         setFetchingCategories(true);
         setPreferencesLoaded(false);
 
-        const categoryPromise = dispatch(category()).finally(() => {
+        const categoryPromise = dispatch(fetchCategoriesTree({ level: 2 })).finally(() => {
           if (isActive) {
             setFetchingCategories(false);
           }

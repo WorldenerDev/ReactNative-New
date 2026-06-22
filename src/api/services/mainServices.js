@@ -12,6 +12,10 @@ export const getPopularEvents = (params) =>
   apiGet(endpoints?.main?.getPopularEvents, params);
 export const getEventBrowserByCategory = (params) =>
   apiGet(endpoints?.main?.getEventBrowserByCategory, params);
+export const getCityCategories = (cityId) =>
+  apiGet(endpoints?.main?.getCityCategories, { city_id: cityId });
+export const getCategoriesTree = (params) =>
+  apiGet(endpoints?.main?.getCategoriesTree, params);
 export const getTrip = (params) => apiGet(endpoints?.main?.getTrips, params);
 export const getTripDetails = (tripId) =>
   apiGet(`${endpoints?.main?.getTripDetails}/${tripId}`);

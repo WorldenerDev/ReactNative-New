@@ -33,9 +33,12 @@ const formatDate = (date) => {
 };
 
 const BrouseByCategory = ({ navigation, route }) => {
-  const { name } = route.params || "";
-  console.log("name", name);
-  const [search, setSearch] = useState(name || "");
+  const {
+    name,
+    cityId,
+    categoryIn: categoryCode = "new-activities",
+  } = route.params || {};
+  const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -56,14 +59,19 @@ const BrouseByCategory = ({ navigation, route }) => {
         const params = {
           availableFrom: dateRange.availableFrom,
           availableTo: dateRange.availableTo,
-          categoryIn: "new-activities",
           limit: 20,
           sortBy: "rating",
           offset: 0,
-          search: query || undefined,
+          ...(cityId != null && cityId !== "" ? { cityId } : {}),
         };
+
+        if (query) {
+          params.search = query;
+        } else {
+          params.categoryIn = categoryCode;
+        }
+
         const resp = await getEventBrowserByCategory(params);
-        // API client returns response.data directly per interceptor
         const list = Array.isArray(resp?.data)
           ? resp?.data
           : resp?.items || resp || [];
@@ -74,29 +82,24 @@ const BrouseByCategory = ({ navigation, route }) => {
         setLoading(false);
       }
     },
-    [dateRange]
+    [dateRange, cityId, categoryCode]
   );
 
-  // initial load
   useEffect(() => {
-    fetchData(name || "");
-  }, [fetchData, name]);
-
-  // debounce search
-  useEffect(() => {
+    const delay = search.trim() ? 400 : 0;
     const id = setTimeout(() => {
-      fetchData(search?.trim());
-    }, 400);
+      fetchData(search.trim());
+    }, delay);
     return () => clearTimeout(id);
-  }, [search, fetchData]);
+  }, [search, fetchData, categoryCode, cityId]);
 
   return (
     <MainContainer loader={loading}>
-      <Header title="Cruise Activities" />
+      <Header title={name || "Browse by Category"} />
       <TouchableOpacity
         onPress={() =>
           navigation.navigate(navigationStrings.SEARCH_CITY, {
-            mode: "eventOnly", // Search only events from BrouseByCategory
+            mode: "eventOnly",
             fromScreen: "BrouseByCategory",
           })
         }
@@ -110,7 +113,7 @@ const BrouseByCategory = ({ navigation, route }) => {
           placeholderTextColor={colors.lightText}
           style={styles.searchInput}
           returnKeyType="search"
-          editable={true} // Make it editable so users can search
+          editable={true}
         />
         <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
       </TouchableOpacity>
@@ -164,7 +167,6 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: colors.border,
-    flexDirection: "row",
     marginVertical: getVertiPadding(15),
   },
   searchInput: {
