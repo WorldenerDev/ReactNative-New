@@ -24,6 +24,7 @@ import {
   getRadius,
 } from "@utils/responsive";
 import { formatDisplayDate } from "@utils/formatDate";
+import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import {
   getInvitations,
   acceptInvite,
@@ -57,6 +58,7 @@ const getNotificationTypeLabel = (item) => {
 };
 
 const NotificationScreen = () => {
+  const scrollPadding = useStickyScrollPadding();
   const [activeTab, setActiveTab] = useState("Notifications");
   const [notifications, setNotifications] = useState([]);
   const [invitations, setInvitations] = useState([]);
@@ -316,7 +318,10 @@ const NotificationScreen = () => {
           }
           keyExtractor={(item) => item._id || item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[
+            styles.listContainer,
+            { paddingBottom: scrollPadding },
+          ]}
           ListEmptyComponent={renderEmptyState}
         />
       </View>
@@ -336,7 +341,7 @@ const styles = StyleSheet.create({
     marginHorizontal: getHoriPadding(12),
   },
   listContainer: {
-    paddingBottom: getVertiPadding(12),
+    flexGrow: 1,
     paddingTop: getVertiPadding(4),
   },
   notificationItem: {
