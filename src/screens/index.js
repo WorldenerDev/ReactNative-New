@@ -40,6 +40,8 @@ export { default as SaveCard } from "./Main/SaveCard";
 export { default as SearchCity } from "./Main/SearchCity";
 export { default as Surprises } from "./Main/Surprises";
 export { default as TripDetails } from "./Main/TripDetails";
+export { default as TransactionDetail } from "./Main/TransactionDetail";
+export { default as TransactionHistory } from "./Main/TransactionHistory";
 export { default as Trips } from "./Main/Trips";
 export { default as UpdateInterests } from "./Main/UpdateInterests";
 export { default as ViewAiChat } from "./Main/ViewAiChat";

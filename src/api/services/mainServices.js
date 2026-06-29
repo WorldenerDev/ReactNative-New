@@ -103,3 +103,5 @@ export const getChatbotHistoryList = (params) =>
   apiGet(endpoints?.main?.chatbotHistoryList, params);
 export const getChatbotHistory = (conversationId, params) =>
   apiGet(`${endpoints?.main?.chatbotHistory}/${conversationId}`, params);
+export const getTransactions = (params) =>
+  apiGet(endpoints?.main?.getTransactions, params);

@@ -15,7 +15,7 @@ import {
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
-import { formattedDate, isoDurationToHours } from "@utils/uiUtils";
+import { formattedDate, getActivityDurationLabel } from "@utils/uiUtils";
 import { useEffect, useState } from "react";
 import {
   FlatList,
@@ -128,6 +128,11 @@ const Cart = ({ navigation }) => {
   const renderItem = ({ item }) => {
     const firstActivity = item?.activities?.[0];
     const ticketsDisplay = formatTicketsDisplay(item?.activities);
+    const tourDetails =
+      item?.tourDetails ??
+      (item?.duration ? { duration: item.duration } : null);
+    const durationLabel = getActivityDurationLabel(tourDetails);
+    const showDuration = durationLabel !== "Duration not available";
     return (
       <View style={styles.card}>
         <View style={styles.rowTop}>
@@ -169,13 +174,10 @@ const Cart = ({ navigation }) => {
               <Text style={styles.perkText}>Free Cancellation</Text>
             </View>
           )}
-          {item?.duration && (
+          {showDuration && (
             <View style={styles.perkItem}>
               <Image source={imagePath.DURATION_ICON} style={styles.perkIcon} />
-              <Text style={styles.perkText}>
-                {" "}
-                Duration: {isoDurationToHours(item?.duration || 0)} hours
-              </Text>
+              <Text style={styles.perkText}>{durationLabel}</Text>
             </View>
           )}
           {item?.instant_confirmation && (

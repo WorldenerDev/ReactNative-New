@@ -72,6 +72,7 @@ export const endpoints = {
     chatbot: "/chatbot",
     chatbotHistoryList: "/chatbot/history-list",
     chatbotHistory: "/chatbot/history",
+    getTransactions: "/getTransactions",
   },
 
 };

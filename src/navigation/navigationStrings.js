@@ -45,4 +45,6 @@ export default {
   SURPRISES: "Surprises",
   MEMBER_PROFILE: "MemberProfile",
   UPDATE_INTERESTS: "UpdateInterests",
+  TRANSACTION_HISTORY: "TransactionHistory",
+  TRANSACTION_DETAIL: "TransactionDetail",
 };

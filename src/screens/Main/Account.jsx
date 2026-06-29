@@ -80,7 +80,7 @@ const Account = ({ navigation }) => {
   };
 
   const handleTransactionHistory = () => {
-    // TODO: Navigate to transaction history screen
+    navigation.navigate(navigationStrings.TRANSACTION_HISTORY);
   };
 
   const handleNotificationSettings = () => {

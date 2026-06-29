@@ -26,7 +26,7 @@ import {
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
-import { isoDurationToHours } from "@utils/uiUtils";
+import { getActivityDurationLabel } from "@utils/uiUtils";
 import { useEffect, useState } from "react";
 import {
   Dimensions,
@@ -39,12 +39,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 
-// Helper function to get city name only
-const getCityName = (trip) => {
-  return trip?.city_id?.name || "Trip";
-};
+const HERO_HIT_SLOP = { top: 4, bottom: 4, left: 4, right: 4 };
 
 // Helper function to format trip label with date (for dropdown options)
 const formatTripLabel = (trip) => {
@@ -59,6 +57,8 @@ const formatTripLabel = (trip) => {
 };
 
 const ActivityDetails = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
+  const heroTop = insets.top + getVertiPadding(8);
   const bottomInset = useStickyBottomInset();
   const { eventData, selectedTrip: selectedTripFromRoute } =
     route?.params || {};
@@ -214,11 +214,23 @@ const ActivityDetails = ({ navigation, route }) => {
   const handleLikeToggle = async () => {
     if (isLoading) return;
 
+    const resolvedCityId =
+      cityId ??
+      eventData?.city_data?.id ??
+      eventData?.city_id ??
+      null;
+
+    if (!isLiked && resolvedCityId == null) {
+      showToast("error", "City information not available for this activity");
+      return;
+    }
+
     try {
       setIsLoading(true);
       const response = await activityLikeUnlike({
         activity_id: activityId,
         is_liked: !isLiked,
+        ...(resolvedCityId != null && { city_id: String(resolvedCityId) }),
       });
 
       if (response) {
@@ -377,52 +389,52 @@ const ActivityDetails = ({ navigation, route }) => {
             />
           }
         />
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <Image source={imagePath.BACK_ICON} style={styles.backIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.likeBtn, isLoading && styles.likeBtnDisabled]}
-          onPress={handleLikeToggle}
-          disabled={isLoading}
-        >
-          <Image
-            source={isLiked ? imagePath.LIKE_ICON : imagePath.UN_LIKE_ICON}
-            style={[styles.likeIcon, isLoading && styles.likeIconDisabled]}
-          />
-          {isLoading && (
-            <View style={styles.loadingOverlay}>
-              <Text style={styles.loadingText}>...</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        {cityId && (
-          <View style={styles.tripDropdownContainer}>
-            <CustomDropdown
-              placeholder="Trip Name"
-              options={currentCityTrips.map((trip) => ({
-                label: formatTripLabel(trip),
-                value: trip._id,
-              }))}
-              selectedValue={selectedTrip}
-              onValueChange={(item) => {
-                const selectedTripObj = {
-                  label: getCityName(item),
-                  value: item._id,
-                };
-                setSelectedTrip(selectedTripObj);
-              }}
-              containerStyle={styles.tripDropdownWrapper}
-              dropdownWrapperStyle={styles.tripDropdown}
-              textStyle={styles.tripDropdownText}
-              arrowIconStyle={styles.tripArrowIcon}
-              showIcon={true}
-              disabled={currentCityTrips.length === 0}
-            />
+        <View style={[styles.heroTopBar, { top: heroTop }]}>
+          <TouchableOpacity
+            style={styles.heroIconBtn}
+            onPress={() => navigation.goBack()}
+            hitSlop={HERO_HIT_SLOP}
+            activeOpacity={0.7}
+          >
+            <Image source={imagePath.BACK_ICON} style={styles.heroIcon} />
+          </TouchableOpacity>
+          <View style={styles.heroActions}>
+            <TouchableOpacity
+              style={styles.heroIconBtn}
+              onPress={handleSharePress}
+              hitSlop={HERO_HIT_SLOP}
+              activeOpacity={0.7}
+            >
+              <Image source={imagePath.SHARE_ICON} style={styles.heroIcon} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.heroIconBtn,
+                isLoading && styles.heroIconBtnDisabled,
+              ]}
+              onPress={handleLikeToggle}
+              disabled={isLoading}
+              hitSlop={HERO_HIT_SLOP}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={isLiked ? imagePath.LIKE_ICON : imagePath.UN_LIKE_ICON}
+                style={[
+                  styles.wishlistIcon,
+                  isLiked
+                    ? styles.wishlistIconLiked
+                    : styles.wishlistIconOutline,
+                  isLoading && styles.heroIconDisabled,
+                ]}
+              />
+              {isLoading && (
+                <View style={styles.loadingOverlay}>
+                  <Text style={styles.loadingText}>...</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
         <View style={styles.blackStrip}>
           <Text numberOfLines={2} style={styles.title}>
             {eventData?.name || eventData?.title}
@@ -438,11 +450,30 @@ const ActivityDetails = ({ navigation, route }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.shareIconContainer}>
-          <TouchableOpacity onPress={handleSharePress}>
-            <Image source={imagePath.SHARE_ICON} style={styles.shareIcon} />
-          </TouchableOpacity>
-        </View>
+        {cityId && (
+          <View style={styles.tripSelectorRow}>
+            <CustomDropdown
+              label="Select Trip to add this activity to:"
+              placeholder="Select a trip"
+              modalVariant="sheet"
+              modalTitle="Select a trip"
+              modalSubtitle="Choose which trip to add this activity to"
+              emptyMessage="No trips found for this city. Create a trip first."
+              options={currentCityTrips.map((trip) => ({
+                label: formatTripLabel(trip),
+                value: trip._id,
+              }))}
+              selectedValue={selectedTrip}
+              onValueChange={setSelectedTrip}
+              containerStyle={styles.tripSelectorWrapper}
+              dropdownWrapperStyle={styles.tripSelectorDropdown}
+              textStyle={styles.tripSelectorText}
+              arrowIconStyle={styles.tripSelectorArrow}
+              showIcon={true}
+              disabled={currentCityTrips.length === 0}
+            />
+          </View>
+        )}
         <View style={styles.container}>
           <View style={styles.featureRow}>
             <Image source={imagePath.CHECK_ICON} style={styles.likeIcon} />
@@ -461,9 +492,7 @@ const ActivityDetails = ({ navigation, route }) => {
           <View style={styles.featureRow}>
             <Image source={imagePath.DURATION_ICON} style={styles.likeIcon} />
             <Text style={styles.text}>
-              Duration:{" "}
-              {isoDurationToHours(eventDetail?.tourDetails?.duration?.[0])}{" "}
-              hours
+              {getActivityDurationLabel(eventDetail?.tourDetails)}
             </Text>
           </View>
           <View style={styles.featureRow}>
@@ -721,26 +750,56 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
   },
-  backBtn: {
+  heroTopBar: {
     position: "absolute",
-    top: 45,
-    left: 15,
+    left: getHoriPadding(15),
+    right: getHoriPadding(15),
     zIndex: 2,
-    width: getWidth(32),
-    height: getHeight(32),
-    borderRadius: getRadius(16),
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  heroActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getHoriPadding(8),
+  },
+  heroIconBtn: {
+    width: getWidth(36),
+    height: getHeight(36),
+    borderRadius: getRadius(18),
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.88)",
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  backIcon: {
+  heroIconBtnDisabled: {
+    opacity: 0.5,
+  },
+  heroIcon: {
     height: getHeight(20),
     width: getWidth(20),
     resizeMode: "contain",
     tintColor: colors.black,
   },
-  likeBtn: { position: "absolute", top: 45, right: 15, zIndex: 2 },
-  likeBtnDisabled: { opacity: 0.5 },
+  heroIconDisabled: {
+    opacity: 0.5,
+  },
+  wishlistIcon: {
+    height: getHeight(22),
+    width: getWidth(22),
+    resizeMode: "contain",
+  },
+  wishlistIconOutline: {
+    tintColor: colors.black,
+  },
+  wishlistIconLiked: {
+    tintColor: colors.red,
+  },
   likeIcon: {
     height: getHeight(20),
     width: getWidth(20),
@@ -756,7 +815,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.3)",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: getRadius(18),
   },
   loadingText: {
     color: colors.white,
@@ -791,12 +850,35 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: getHeight(15),
   },
-  shareIconContainer: {
-    height: getHeight(30),
+  tripSelectorRow: {
+    width: "100%",
+    paddingVertical: getVertiPadding(12),
+    marginBottom: getVertiPadding(4),
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGray,
   },
-  shareIcon: {
-    height: getHeight(20),
-    width: getWidth(20),
+  tripSelectorWrapper: {
+    width: "100%",
+    paddingVertical: 0,
+  },
+  tripSelectorDropdown: {
+    backgroundColor: colors.input,
+    paddingHorizontal: getHoriPadding(14),
+    paddingVertical: getVertiPadding(10),
+    borderRadius: getRadius(12),
+    height: "auto",
+    minHeight: getHeight(44),
+    width: "100%",
+    top: 0,
+  },
+  tripSelectorText: {
+    color: colors.black,
+    fontSize: getFontSize(15),
+    fontFamily: fonts.RobotoMedium,
+    flex: 1,
+  },
+  tripSelectorArrow: {
+    tintColor: colors.black,
   },
   content: {
     fontSize: getFontSize(14),
@@ -877,32 +959,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flexDirection: "column",
-  },
-  tripDropdownContainer: {
-    position: "absolute",
-    top: getVertiPadding(35),
-    right: getHoriPadding(10),
-    maxWidth: getWidth(150),
-    zIndex: 2,
-  },
-  tripDropdownWrapper: {
-    backgroundColor: "transparent",
-  },
-  tripDropdown: {
-    backgroundColor: "transparent",
-    paddingHorizontal: getHoriPadding(10),
-    paddingVertical: getVertiPadding(6),
-    borderRadius: getRadius(20),
-    height: "auto",
-    minHeight: getHeight(32),
-  },
-  tripDropdownText: {
-    color: colors.white,
-    fontSize: getFontSize(15),
-    fontFamily: fonts.RobotoBold,
-  },
-  tripArrowIcon: {
-    tintColor: colors.black,
   },
   modalOverlay: {
     flex: 1,
