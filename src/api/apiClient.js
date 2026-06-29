@@ -4,8 +4,9 @@ import { getItem } from "@utils/storage";
 import { showToast } from "@components/AppToast";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { store } from "@redux/store";
+import { URL } from "@config/api";
 
- export const URL = "https://api.worldener.com";
+export { URL };
 
 /**
  * Constructs a full image URL from a relative path

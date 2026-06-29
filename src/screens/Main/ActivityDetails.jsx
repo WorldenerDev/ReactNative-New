@@ -117,6 +117,19 @@ const ActivityDetails = ({ navigation, route }) => {
   }, [activityId, languageNames.length]);
 
   useEffect(() => {
+    const languages = eventDetail?.tourDetails?.languagesAvailable;
+    if (!languages?.length) {
+      setSelectedLanguage(null);
+      return;
+    }
+    if (languages.length === 1) {
+      setSelectedLanguage(languages[0].code);
+    } else {
+      setSelectedLanguage(null);
+    }
+  }, [eventDetail?.tourDetails?.languagesAvailable, activityId]);
+
+  useEffect(() => {
     if (activityId) {
       fetchEventDetails();
     }
@@ -162,11 +175,15 @@ const ActivityDetails = ({ navigation, route }) => {
     }
 
     const languagesAvailable = eventDetail?.tourDetails?.languagesAvailable;
+    const language =
+      languagesAvailable?.length === 1
+        ? languagesAvailable[0].code
+        : selectedLanguage;
     if (
       languagesAvailable &&
       Array.isArray(languagesAvailable) &&
-      languagesAvailable.length > 0 &&
-      !selectedLanguage
+      languagesAvailable.length > 1 &&
+      !language
     ) {
       showToast(
         "error",
@@ -178,7 +195,7 @@ const ActivityDetails = ({ navigation, route }) => {
     const data = {
       activityUuid: activityId,
       pickupPointId: selectedPoint,
-      ...(selectedLanguage && { language: selectedLanguage }),
+      ...(language && { language }),
       activityName: eventData?.name,
       cityId: cityId,
       instant_confirmation: eventDetail?.bookingPolicies?.maxConfirmationTime,
@@ -530,8 +547,8 @@ const ActivityDetails = ({ navigation, route }) => {
           </Accordion>
         )}
 
-        {eventDetail?.tourDetails?.languagesAvailable?.length > 0 && (
-          <Accordion title={"Language"} key={"Language"} defaultOpen={false}>
+        {eventDetail?.tourDetails?.languagesAvailable?.length > 1 && (
+          <Accordion title={"Language"} key={"Language"} defaultOpen={true}>
             <View style={styles.listContainer}>
               {eventDetail.tourDetails.languagesAvailable.map((lang, index) => (
                 <RadioCheckbox

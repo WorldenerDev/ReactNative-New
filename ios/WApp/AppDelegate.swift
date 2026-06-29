@@ -5,9 +5,11 @@ import ReactAppDependencyProvider
 import GoogleSignIn
 import AuthenticationServices
 import Firebase
+import FirebaseMessaging
+import UserNotifications
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
   var window: UIWindow?
 
   var reactNativeDelegate: ReactNativeDelegate?
@@ -22,6 +24,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     delegate.dependencyProvider = RCTAppDependencyProvider()
 
     FirebaseApp.configure()
+
+    UNUserNotificationCenter.current().delegate = self
+    application.registerForRemoteNotifications()
+
     reactNativeDelegate = delegate
     reactNativeFactory = factory
 
@@ -34,6 +40,32 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     )
 
     return true
+  }
+
+  func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    Messaging.messaging().apnsToken = deviceToken
+  }
+
+  func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
+    NSLog("APNs registration failed: \(error.localizedDescription)")
+  }
+
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    if #available(iOS 14.0, *) {
+      completionHandler([.banner, .list, .badge, .sound])
+    } else {
+      completionHandler([.alert, .badge, .sound])
+    }
   }
 
   // MARK: - Google Sign-In URL Handling

@@ -23,51 +23,80 @@ import {
   getHoriPadding,
   getRadius,
 } from "@utils/responsive";
-import { getInvitations, acceptInvite, rejectInvite } from "@api/services/mainServices";
+import { formatDisplayDate } from "@utils/formatDate";
+import {
+  getInvitations,
+  acceptInvite,
+  rejectInvite,
+  getNotifications,
+  markNotificationRead,
+} from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
+
+const getInvitationStatus = (item) => {
+  if (item?.status) return item.status;
+  if (item?.isInviteAccepted) return "accepted";
+  if (item?.isRejected) return "rejected";
+  return "pending";
+};
+
+const getNotificationTypeLabel = (item) => {
+  const type = item?.notifictaion_type;
+  const title = (item?.title || "").toLowerCase();
+
+  switch (type) {
+    case "group_invitation":
+      return title.includes("trip") ? "Trip Invite" : "Group Invite";
+    case "trip_reminder":
+      return "Trip Reminder";
+    case "admin_broadcast":
+      return "News & Alert";
+    default:
+      return "Notification";
+  }
+};
 
 const NotificationScreen = () => {
   const [activeTab, setActiveTab] = useState("Notifications");
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      message: "This is a test notification that can be more than 1 line",
-      time: "Yesterday",
-      isRead: false,
-    },
-    {
-      id: "2",
-      message: "This is a single line notification",
-      time: "Yesterday",
-      isRead: false,
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const markAsRead = (id) => {
+  const markAsRead = async (item) => {
+    if (item?.isRead) return;
+
     setNotifications((prev) =>
       prev.map((notification) =>
-        notification.id === id
+        notification._id === item._id
           ? { ...notification, isRead: true }
           : notification
       )
     );
+
+    try {
+      await markNotificationRead({ notificationId: item._id });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification._id === item._id
+            ? { ...notification, isRead: false }
+            : notification
+        )
+      );
+    }
   };
 
   const handleAcceptInvitation = async (item) => {
     try {
       setLoading(true);
-      console.log("item", item);
       const response = await acceptInvite({
         groupId: item?.groupId,
         invitedId: item?._id,
       });
-      console.log("response", response);
-      if (response?.data) {
-        // Remove the invitation from the list on success
-        setInvitations((prev) => prev.filter((invitation) => invitation._id !== item._id));
+      if (response?.success) {
         showToast("success", "Invitation accepted successfully");
+        await fetchInvitations();
       }
     } catch (error) {
       console.error("Error accepting invitation:", error);
@@ -85,10 +114,9 @@ const NotificationScreen = () => {
         invitedId: item?._id,
       });
 
-      if (response?.data) {
-        // Remove the invitation from the list on success
-        setInvitations((prev) => prev.filter((invitation) => invitation._id !== item._id));
+      if (response?.success) {
         showToast("success", "Invitation rejected successfully");
+        await fetchInvitations();
       }
     } catch (error) {
       console.error("Error rejecting invitation:", error);
@@ -100,19 +128,18 @@ const NotificationScreen = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Fetch invitations when switching to Invitations tab
     if (tab === "Invitations") {
       fetchInvitations();
+    } else {
+      fetchNotifications();
     }
   };
-
 
   const fetchInvitations = async () => {
     try {
       setLoading(true);
       const response = await getInvitations();
-      setInvitations(response?.data);
-
+      setInvitations(response?.data || []);
     } catch (error) {
       console.error("Error fetching invitations:", error);
       showToast("error", error?.message || "Failed to fetch invitations");
@@ -122,10 +149,25 @@ const NotificationScreen = () => {
     }
   };
 
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await getNotifications();
+      setNotifications(response?.data?.notifications || []);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      showToast("error", error?.message || "Failed to fetch notifications");
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Fetch invitations when component mounts if Invitations tab is active
     if (activeTab === "Invitations") {
       fetchInvitations();
+    } else {
+      fetchNotifications();
     }
   }, []);
 
@@ -134,6 +176,10 @@ const NotificationScreen = () => {
   };
 
   const renderInvitationItem = ({ item }) => {
+    const status = getInvitationStatus(item);
+    const isPending = status === "pending";
+    const groupLabel = item?.groupName ? ` "${item.groupName}"` : " the group";
+
     return (
       <View style={styles.invitationCard}>
         <View style={styles.invitationContent}>
@@ -147,36 +193,60 @@ const NotificationScreen = () => {
           <View style={styles.invitationTextContainer}>
             <Text style={styles.invitationText}>
               <Text style={styles.highlightedText}>{item?.invitedBy?.name}</Text>
-              {" has invited you to join the group!"}
+              {` has invited you to join${groupLabel}!`}
             </Text>
+            {item?.createdAt ? (
+              <Text style={styles.invitationTime}>
+                {formatDisplayDate(item.createdAt)}
+              </Text>
+            ) : null}
+            {!isPending ? (
+              <Text
+                style={[
+                  styles.statusLabel,
+                  status === "accepted"
+                    ? styles.statusAccepted
+                    : styles.statusRejected,
+                ]}
+              >
+                {status === "accepted" ? "Accepted" : "Rejected"}
+              </Text>
+            ) : null}
           </View>
         </View>
-        <View style={styles.buttonContainer}>
-          <ButtonComp
-            title="Accept"
-            onPress={() => handleAcceptInvitation(item)}
-            containerStyle={styles.acceptButton}
-            textStyle={styles.acceptButtonText}
-            disabled={false}
-          />
-          <ButtonComp
-            title="Reject"
-            onPress={() => handleRejectInvitation(item)}
-            containerStyle={styles.rejectButton}
-            textStyle={styles.rejectButtonText}
-          />
-        </View>
+        {isPending ? (
+          <View style={styles.buttonContainer}>
+            <ButtonComp
+              title="Accept"
+              onPress={() => handleAcceptInvitation(item)}
+              containerStyle={styles.acceptButton}
+              textStyle={styles.acceptButtonText}
+              disabled={loading}
+            />
+            <ButtonComp
+              title="Reject"
+              onPress={() => handleRejectInvitation(item)}
+              containerStyle={styles.rejectButton}
+              textStyle={styles.rejectButtonText}
+              disabled={loading}
+            />
+          </View>
+        ) : null}
       </View>
     );
   };
 
   const renderNotificationItem = ({ item, index }) => {
     const currentData = getCurrentData();
+    const message = item?.body || item?.title || "";
+    const time = item?.createdAt ? formatDisplayDate(item.createdAt) : "";
+    const typeLabel = getNotificationTypeLabel(item);
+
     return (
       <View>
         <TouchableOpacity
           style={styles.notificationItem}
-          onPress={() => markAsRead(item.id)}
+          onPress={() => markAsRead(item)}
         >
           <View style={styles.notificationContent}>
             <View style={styles.iconContainer}>
@@ -185,10 +255,19 @@ const NotificationScreen = () => {
                 style={styles.notificationIcon}
                 resizeMode="contain"
               />
+              {!item?.isRead ? <View style={styles.unreadDot} /> : null}
             </View>
             <View style={styles.textContainer}>
-              <Text style={styles.notificationMessage}>{item.message}</Text>
-              <Text style={styles.notificationTime}>{item.time}</Text>
+              <Text style={styles.notificationTypeLabel}>{typeLabel}</Text>
+              <Text
+                style={[
+                  styles.notificationMessage,
+                  !item?.isRead && styles.notificationMessageUnread,
+                ]}
+              >
+                {message}
+              </Text>
+              {time ? <Text style={styles.notificationTime}>{time}</Text> : null}
             </View>
           </View>
         </TouchableOpacity>
@@ -212,7 +291,7 @@ const NotificationScreen = () => {
       <Text style={styles.emptyMessage}>
         {activeTab === "Notifications"
           ? "You're all caught up! We'll notify you when something new happens."
-          : "No pending invitations at the moment."}
+          : "No invitations yet. When someone invites you to a group, it will appear here."}
       </Text>
     </View>
   );
@@ -281,8 +360,25 @@ const styles = StyleSheet.create({
     width: getWidth(30),
     height: getHeight(30),
   },
+  unreadDot: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: getWidth(8),
+    height: getHeight(8),
+    borderRadius: getRadius(4),
+    backgroundColor: colors.secondary,
+  },
   textContainer: {
     flex: 1,
+  },
+  notificationTypeLabel: {
+    fontSize: getFontSize(11),
+    fontFamily: fonts.RobotoMedium,
+    color: "#1E3A8A",
+    marginBottom: getVertiPadding(4),
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   notificationMessage: {
     fontSize: getFontSize(14),
@@ -290,6 +386,9 @@ const styles = StyleSheet.create({
     color: colors.primary,
     lineHeight: getFontSize(20),
     marginBottom: getVertiPadding(4),
+  },
+  notificationMessageUnread: {
+    fontFamily: fonts.RobotoMedium,
   },
   notificationTime: {
     fontSize: getFontSize(12),
@@ -326,7 +425,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: getFontSize(20),
   },
-  // Invitation Card Styles
   invitationCard: {
     backgroundColor: colors.white,
     paddingHorizontal: getHoriPadding(12),
@@ -368,6 +466,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoRegular,
     color: colors.primary,
     lineHeight: getFontSize(19),
+  },
+  invitationTime: {
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+    marginTop: getVertiPadding(4),
+  },
+  statusLabel: {
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoMedium,
+    marginTop: getVertiPadding(6),
+  },
+  statusAccepted: {
+    color: "#15803D",
+  },
+  statusRejected: {
+    color: colors.lightText,
   },
   highlightedText: {
     fontFamily: fonts.RobotoMedium,

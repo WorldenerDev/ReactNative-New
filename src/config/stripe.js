@@ -3,19 +3,33 @@
  *
  * Values come from the project root `.env` via `babel-plugin-inline-dotenv`
  * (see `babel.config.js`). Metro also loads `.env` in `metro.config.js` for tooling.
+ *
+ * Active key follows `API_ENV`: production → live key, uat → test key.
  */
-const STRIPE_PUBLISHABLE_KEY_FROM_ENV = String(
-  process.env.STRIPE_PUBLISHABLE_KEY || ""
-).trim();
+const API_ENV = String(process.env.API_ENV || "production")
+  .trim()
+  .toLowerCase();
 
 const isPublishableStripeKey = (key) =>
   key.startsWith("pk_test_") || key.startsWith("pk_live_");
 
-export const STRIPE_PUBLISHABLE_KEY = isPublishableStripeKey(
-  STRIPE_PUBLISHABLE_KEY_FROM_ENV
-)
-  ? STRIPE_PUBLISHABLE_KEY_FROM_ENV
-  : "";
+const normalizeKey = (key) => {
+  const trimmed = String(key || "").trim();
+  return isPublishableStripeKey(trimmed) ? trimmed : "";
+};
+
+const STRIPE_PUBLISHABLE_KEY_PRODUCTION = normalizeKey(
+  process.env.STRIPE_PUBLISHABLE_KEY_PRODUCTION
+);
+
+const STRIPE_PUBLISHABLE_KEY_UAT = normalizeKey(
+  process.env.STRIPE_PUBLISHABLE_KEY_UAT
+);
+
+export const STRIPE_PUBLISHABLE_KEY =
+  API_ENV === "uat"
+    ? STRIPE_PUBLISHABLE_KEY_UAT
+    : STRIPE_PUBLISHABLE_KEY_PRODUCTION;
 
 /** Test Customer id (`cus_...`) for SetupIntent / PaymentIntent when using the dev backend. */
 export const STRIPE_TEST_CUSTOMER_ID = String(

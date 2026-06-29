@@ -80,6 +80,12 @@ const toastConfig = {
       </Text>
     </View>
   ),
+  notification: ({ text1, text2 }) => (
+    <View style={[styles.toast, styles.notificationToast]}>
+      <Text style={styles.notificationTitle}>{text1}</Text>
+      {text2 ? <Text style={styles.notificationBody}>{text2}</Text> : null}
+    </View>
+  ),
 };
 
 // Function to show toast anywhere
@@ -89,6 +95,18 @@ export const showToast = (type = "info", message = "") => {
     text1: message,
     position: "top",
     visibilityTime: 3000,
+    autoHide: true,
+    topOffset: 50,
+  });
+};
+
+export const showPushNotification = (title = "Notification", body = "") => {
+  Toast.show({
+    type: "notification",
+    text1: title,
+    text2: body || undefined,
+    position: "top",
+    visibilityTime: 4500,
     autoHide: true,
     topOffset: 50,
   });
@@ -113,5 +131,21 @@ const styles = StyleSheet.create({
   text: {
     fontSize: getFontSize(14),
     fontWeight: "500",
+  },
+  notificationToast: {
+    backgroundColor: colors.white,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.secondary,
+  },
+  notificationTitle: {
+    fontSize: getFontSize(14),
+    fontWeight: "600",
+    color: colors.primary,
+    marginBottom: getVertiPadding(4),
+  },
+  notificationBody: {
+    fontSize: getFontSize(13),
+    color: colors.lightText,
+    lineHeight: getFontSize(18),
   },
 });

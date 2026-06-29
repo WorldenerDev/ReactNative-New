@@ -53,6 +53,8 @@ export const endpoints = {
     getInvitations: "/getInvitations",
     acceptInvite: "/accept-invite",
     rejectInvite: "/reject-invite",
+    getNotifications: "/get-notifications",
+    markNotificationRead: "/mark-notification-read",
     getRefundPolicies: "/get-refund-policies",
     cancelOrderItem: "/cancel-order-item",
     getGroupMessages: "/getGroupMessages",

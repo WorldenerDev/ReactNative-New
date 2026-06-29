@@ -75,6 +75,8 @@ export const sendInvitation = (data) => apiPost(endpoints?.main?.sendInvitation,
 export const getInvitations = () => apiGet(endpoints?.main?.getInvitations);
 export const acceptInvite = (data) => apiPost(endpoints?.main?.acceptInvite, data);
 export const rejectInvite = (data) => apiPost(endpoints?.main?.rejectInvite, data);
+export const getNotifications = (params) => apiGet(endpoints?.main?.getNotifications, params);
+export const markNotificationRead = (data) => apiPost(endpoints?.main?.markNotificationRead, data);
 export const getRefundPolicies = (data) => apiPost(endpoints?.main?.getRefundPolicies, data);
 export const cancelOrderItem = (data) => apiPost(endpoints?.main?.cancelOrderItem, data);
 export const getGroupMessages = (groupId) =>
