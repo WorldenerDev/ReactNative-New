@@ -33,16 +33,25 @@ class GoogleSignInService {
       const userInfo = await GoogleSignin.signIn();
 
       // Extract user data from the correct structure (data.user)
+      const googleUserId = userInfo?.data?.user?.id;
+      if (!googleUserId) {
+        return {
+          success: false,
+          error: "Google Sign-In did not return a user id",
+          code: "MISSING_USER_ID",
+        };
+      }
+
       const userData = {
-        id: userInfo?.data?.user?.id || "unknown",
-        email: userInfo?.data?.user?.email || "unknown",
-        name: userInfo?.data?.user?.name || "unknown",
-        givenName: userInfo?.data?.user?.givenName || "unknown",
-        familyName: userInfo?.data?.user?.familyName || "unknown",
+        id: googleUserId,
+        email: userInfo?.data?.user?.email || "",
+        name: userInfo?.data?.user?.name || "",
+        givenName: userInfo?.data?.user?.givenName || "",
+        familyName: userInfo?.data?.user?.familyName || "",
         photo: userInfo?.data?.user?.photo || null,
         hasPhoto: !!userInfo?.data?.user?.photo,
-        idToken: userInfo?.data?.idToken || "missing",
-        serverAuthCode: userInfo?.data?.serverAuthCode || "missing",
+        idToken: userInfo?.data?.idToken || "",
+        serverAuthCode: userInfo?.data?.serverAuthCode || "",
         scopes: userInfo?.data?.scopes || [],
       };
 

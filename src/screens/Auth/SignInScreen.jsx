@@ -22,7 +22,7 @@ import SocialLoginButtons from "@components/SocialLoginButtons";
 import { getDeviceId } from "@utils/uiUtils";
 import { logAuthToken } from "@utils/devAuthTokenLog";
 import { getFCMToken } from "@utils/fcmToken";
-import { buildSocialLoginPayload } from "@utils/socialLoginPayload";
+import { buildSocialLoginPayload, isSocialLoginPayloadValid } from "@utils/socialLoginPayload";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -105,6 +105,10 @@ const SignInScreen = ({ navigation }) => {
         deviceId,
         fcmToken,
       });
+      if (!isSocialLoginPayloadValid(payload)) {
+        showToast("error", "Social sign-in did not return a valid account id.");
+        return;
+      }
       const loginResult = await dispatch(googleAppleSignIn(payload));
       if (googleAppleSignIn.rejected.match(loginResult)) {
         showToast("error", loginResult.payload || "Login failed");

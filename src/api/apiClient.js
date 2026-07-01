@@ -5,6 +5,7 @@ import { showToast } from "@components/AppToast";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { store } from "@redux/store";
 import { URL } from "@config/api";
+import { handleSessionExpired } from "@utils/sessionHandler";
 
 export { URL };
 
@@ -52,10 +53,11 @@ apiClient.interceptors.request.use(async (config) => {
     config.headers["Content-Type"] = "application/json";
   }
 
+  const { Authorization, ...safeHeaders } = config.headers || {};
   console.log("📤 API Request:", {
     method: config.method?.toUpperCase(),
     url: (config.baseURL || "") + (config.url || ""),
-    headers: config.headers,
+    headers: safeHeaders,
     params: config.params,
     data: config.data,
   });
@@ -72,13 +74,31 @@ apiClient.interceptors.response.use(
     });
     return response?.data;
   },
-  (error) => {
+  async (error) => {
     console.log(" error =>", error);
     console.error("API Error:", error?.response?.data || error.message);
-    if (!error?.config?.skipErrorToast) {
-      showToast("error", error?.response?.data?.message || error.message);
+
+    const status = error?.response?.status;
+    const responseData = error?.response?.data;
+    const isSessionExpired =
+      status === 401 || responseData?.isSessionExpired === true;
+    const isLogoutRequest = String(error?.config?.url || "").includes("/logout");
+
+    if (isSessionExpired && !error?.config?.skipSessionExpiry && !isLogoutRequest) {
+      if (!error?.config?.skipErrorToast) {
+        showToast(
+          "error",
+          responseData?.message || "Your session has expired. Please sign in again."
+        );
+      }
+      await handleSessionExpired();
+      throw responseData || { message: "Session expired" };
     }
-    throw error?.response?.data || { message: "Network error" };
+
+    if (!error?.config?.skipErrorToast) {
+      showToast("error", responseData?.message || error.message);
+    }
+    throw responseData || { message: "Network error" };
   }
 );
 

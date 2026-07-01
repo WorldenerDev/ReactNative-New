@@ -187,7 +187,16 @@ export const exitGuestMode = createAsyncThunk(
   async () => {
     await removeItem(STORAGE_KEYS.USER_DATA);
     await removeItem(STORAGE_KEYS.TOKEN);
-    return true;
+    return "SignInScreen";
+  }
+);
+
+export const expireSession = createAsyncThunk(
+  "auth/expireSession",
+  async () => {
+    await removeItem(STORAGE_KEYS.USER_DATA);
+    await removeItem(STORAGE_KEYS.TOKEN);
+    return "SignInScreen";
   }
 );
 
@@ -291,10 +300,17 @@ const authSlice = createSlice({
       state.pendingAuthRedirect = true;
       state.pendingAuthRoute = action.payload || "SignInScreen";
     });
-    builder.addCase(exitGuestMode.fulfilled, (state) => {
+    builder.addCase(exitGuestMode.fulfilled, (state, action) => {
       state.user = null;
       state.token = null;
-      state.pendingAuthRedirect = false;
+      state.pendingAuthRedirect = true;
+      state.pendingAuthRoute = action.payload || "SignInScreen";
+    });
+    builder.addCase(expireSession.fulfilled, (state, action) => {
+      state.user = null;
+      state.token = null;
+      state.pendingAuthRedirect = true;
+      state.pendingAuthRoute = action.payload || "SignInScreen";
     });
   },
 });

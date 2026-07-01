@@ -37,7 +37,7 @@ import {
 import { objectToFormData } from "@utils/formDataHelper";
 import { getDeviceId } from "@utils/uiUtils";
 import { getFCMToken } from "@utils/fcmToken";
-import { buildSocialLoginPayload } from "@utils/socialLoginPayload";
+import { buildSocialLoginPayload, isSocialLoginPayloadValid } from "@utils/socialLoginPayload";
 
 const SignUp = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -101,6 +101,10 @@ const SignUp = ({ navigation }) => {
         deviceId,
         fcmToken,
       });
+      if (!isSocialLoginPayloadValid(payload)) {
+        showToast("error", "Social sign-in did not return a valid account id.");
+        return;
+      }
       const loginResult = await dispatch(googleAppleSignIn(payload));
       if (googleAppleSignIn.rejected.match(loginResult)) {
         showToast("error", loginResult.payload || "Login failed");

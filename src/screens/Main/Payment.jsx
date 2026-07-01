@@ -42,7 +42,7 @@ const Payment = ({ navigation, route }) => {
           cartId: cart_id,
           tripId: trip_id,
           amountMinor: amount_minor,
-          currency: currency || "usd",
+          currency: currency,
         })
       );
       getCards().catch(() => {
@@ -60,11 +60,15 @@ const Payment = ({ navigation, route }) => {
       showToast("error", "Order not found. Please retry checkout.");
       return;
     }
+    if (!amount_minor || !currency) {
+      showToast("error", "Order total is missing. Please retry checkout.");
+      return;
+    }
     try {
       setLoading(true);
       const paymentIntentResponse = await createStripePaymentIntent({
         amount: amount_minor,
-        currency: currency || "usd",
+        currency,
         paymentMethodId: selectedId,
         orderUuid,
         description: "Musement booking payment",

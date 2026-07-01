@@ -241,11 +241,14 @@ const ActivityDetails = ({ navigation, route }) => {
         ...(resolvedCityId != null && { city_id: String(resolvedCityId) }),
       });
 
-      if (response) {
+      if (response?.liked !== undefined) {
+        setIsLiked(response.liked);
+      } else if (response) {
         setIsLiked(!isLiked);
       }
     } catch (error) {
       console.error("Like/Unlike error:", error);
+      showToast("error", error?.message || "Failed to update favorite");
     } finally {
       setIsLoading(false);
     }
@@ -384,6 +387,21 @@ const ActivityDetails = ({ navigation, route }) => {
       </View>
     );
   };
+
+  if (!activityId) {
+    return (
+      <ScreenWapper>
+        <View style={styles.missingParamsContainer}>
+          <Text style={styles.missingParamsText}>
+            Activity details are unavailable.
+          </Text>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.missingParamsAction}>Go back</Text>
+          </TouchableOpacity>
+        </View>
+      </ScreenWapper>
+    );
+  }
 
   return (
     <ScreenWapper>
@@ -759,6 +777,24 @@ const ActivityDetails = ({ navigation, route }) => {
 };
 export default ActivityDetails;
 const styles = StyleSheet.create({
+  missingParamsContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: getHoriPadding(24),
+  },
+  missingParamsText: {
+    fontFamily: fonts.RobotoRegular,
+    fontSize: getFontSize(16),
+    color: colors.black,
+    textAlign: "center",
+    marginBottom: getVertiPadding(16),
+  },
+  missingParamsAction: {
+    fontFamily: fonts.RobotoBold,
+    fontSize: getFontSize(16),
+    color: colors.primary,
+  },
   headerImage: {
     height: getHeight(280),
     width: "100%",

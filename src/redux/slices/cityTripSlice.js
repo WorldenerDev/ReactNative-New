@@ -7,7 +7,7 @@ import {
 } from "@api/services/cityTripService"; // 👈 your API calls here
 import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
-import { guestLoginUser } from "@redux/slices/authSlice";
+import { guestLoginUser, expireSession, logoutUser } from "@redux/slices/authSlice";
 import {
   getAllCity,
   getEventForYou,
@@ -167,6 +167,25 @@ const cityTripSlice = createSlice({
     builder.addCase(guestLoginUser.fulfilled, (state) => {
       state.eventForYou = [];
       state.eventForYouPreferencesKey = null;
+    });
+
+    builder.addCase(logoutUser.fulfilled, (state) => {
+      state.city = [];
+      state.eventForYou = [];
+      state.eventForYouPreferencesKey = null;
+      state.trip = [];
+      state.tripsByCity = {};
+      state.loading = false;
+      state.error = null;
+    });
+    builder.addCase(expireSession.fulfilled, (state) => {
+      state.city = [];
+      state.eventForYou = [];
+      state.eventForYouPreferencesKey = null;
+      state.trip = [];
+      state.tripsByCity = {};
+      state.loading = false;
+      state.error = null;
     });
 
     // Handle popular events by city (CityDetail)

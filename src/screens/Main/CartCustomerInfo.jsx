@@ -484,11 +484,17 @@ const CartCustomerInfo = ({ navigation, route }) => {
         }
         const orderUuid = orderResponse.data.order_id;
         const orderAmountMajor = Number(orderResponse?.data?.total_amount);
-        const orderCurrency =
-          String(orderResponse?.data?.currency || currency || "usd").toLowerCase();
+        const orderCurrency = String(
+          orderResponse?.data?.currency || "usd"
+        ).toLowerCase();
         const orderAmountMinor = Number.isFinite(orderAmountMajor)
           ? Math.round(orderAmountMajor * 100)
-          : amount_minor;
+          : null;
+
+        if (!orderAmountMinor) {
+          showToast("error", "Could not determine order total. Please try again.");
+          return;
+        }
 
         // If participant schema exists, call update participants API
         if (

@@ -1,29 +1,52 @@
-import { Image, ImageBackground, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import React, { useEffect } from "react";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import navigationStrings from "@navigation/navigationStrings";
-import { getItem } from "@utils/storage";
+import { getItem, setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { SafeAreaView } from "react-native-safe-area-context";
+import usePermissions from "@hooks/usePermissions";
 
 const SplashScreen = ({ navigation }) => {
+  const { requestNotificationPermission } = usePermissions();
+
   useEffect(() => {
     const checkFlow = async () => {
       try {
         const hasLaunched = await getItem(STORAGE_KEYS.HAS_LAUNCHED);
-        const notifGranted = await getItem(STORAGE_KEYS.NOTIFICATION_GRANTED);
-        const locationGranted = await getItem(STORAGE_KEYS.LOCATION_GRANTED);
+        const notificationScreenSeen = await getItem(
+          STORAGE_KEYS.NOTIFICATION_SCREEN_SEEN
+        );
 
-        setTimeout(() => {
-          if (!hasLaunched) {
-            navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
-          } else if (!notifGranted) {
-            navigation.navigate(navigationStrings.ENABLENOTIFICATIONSCREEN);
-          } else {
-            navigation.navigate(navigationStrings.SIGNINSCREEN);
-          }
-        }, 3000);
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        if (!hasLaunched) {
+          navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
+          return;
+        }
+
+        if (notificationScreenSeen) {
+          navigation.navigate(navigationStrings.SIGNINSCREEN);
+          return;
+        }
+
+        const existingPermission = await getItem(
+          STORAGE_KEYS.NOTIFICATION_GRANTED
+        );
+        if (
+          existingPermission === null ||
+          existingPermission === undefined ||
+          existingPermission === ""
+        ) {
+          const permissionGranted = await requestNotificationPermission();
+          await setItem(
+            STORAGE_KEYS.NOTIFICATION_GRANTED,
+            permissionGranted ? "true" : "false"
+          );
+        }
+
+        navigation.navigate(navigationStrings.ENABLENOTIFICATIONSCREEN);
       } catch (error) {
         console.error("Error reading storage:", error);
         navigation.navigate(navigationStrings.ONBOARDINGSCREEN);
@@ -31,7 +54,7 @@ const SplashScreen = ({ navigation }) => {
     };
 
     checkFlow();
-  }, [navigation]);
+  }, [navigation, requestNotificationPermission]);
 
   return (
     <View style={styles.container}>

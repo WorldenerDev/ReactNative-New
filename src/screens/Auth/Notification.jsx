@@ -1,7 +1,6 @@
-import { Image, StyleSheet, Text, View } from "react-native";
-import React, { useState } from "react";
+import { Image, Linking, Platform, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
-import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
 import { getFontSize, getHeight, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
@@ -9,37 +8,68 @@ import ButtonComp from "@components/ButtonComp";
 import fonts from "@assets/fonts";
 import colors from "@assets/colors";
 import navigationStrings from "@navigation/navigationStrings";
-import usePermissions from "@hooks/usePermissions";
-import { setItem } from "@utils/storage";
+import { getItem, setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
+import { checkNotifications, RESULTS } from "react-native-permissions";
 
 const Notification = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { requestNotificationPermission } = usePermissions();
+  const [permissionGranted, setPermissionGranted] = useState(false);
 
-  const handleEnableNotification = async () => {
+  useEffect(() => {
+    const loadPermissionStatus = async () => {
+      const stored = await getItem(STORAGE_KEYS.NOTIFICATION_GRANTED);
+      if (stored === "true") {
+        setPermissionGranted(true);
+        return;
+      }
+
+      try {
+        const { status } = await checkNotifications();
+        setPermissionGranted(status === RESULTS.GRANTED);
+      } catch (error) {
+        console.warn("Failed to read notification permission:", error);
+      }
+    };
+
+    loadPermissionStatus();
+  }, []);
+
+  const finishNotificationFlow = async () => {
+    await setItem(STORAGE_KEYS.NOTIFICATION_SCREEN_SEEN, "true");
+    navigation.navigate(navigationStrings.SIGNINSCREEN);
+  };
+
+  const handleContinue = async () => {
     setIsLoading(true);
     try {
-      const permissionGranted = await requestNotificationPermission();
-
-      if (permissionGranted) {
-        await setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, "true");
-        navigation.navigate(navigationStrings.SIGNINSCREEN);
-      } else {
-        await setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, "false");
-        navigation.navigate(navigationStrings.SIGNINSCREEN);
+      if (!permissionGranted) {
+        if (Platform.OS === "ios") {
+          await Linking.openSettings();
+        } else {
+          await Linking.openSettings();
+        }
       }
+      await finishNotificationFlow();
     } catch (error) {
-      await setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, "false");
-      navigation.navigate(navigationStrings.SIGNINSCREEN);
+      console.warn("Failed to open notification settings:", error);
+      await finishNotificationFlow();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await setItem(STORAGE_KEYS.NOTIFICATION_GRANTED, "skipped");
+    await setItem(STORAGE_KEYS.NOTIFICATION_SCREEN_SEEN, "true");
     navigation.navigate(navigationStrings.SIGNINSCREEN);
   };
+
+  const buttonTitle = permissionGranted
+    ? "Continue"
+    : isLoading
+      ? "Opening Settings..."
+      : "Open Notification Settings";
 
   return (
     <ResponsiveContainer>
@@ -53,9 +83,9 @@ const Notification = ({ navigation }) => {
         resizeMode="contain"
       />
       <ButtonComp
-        title={isLoading ? "Checking Permission..." : "Enable Notification"}
+        title={buttonTitle}
         containerStyle={styles.buttonStyle}
-        onPress={handleEnableNotification}
+        onPress={handleContinue}
         disabled={isLoading}
       />
       <Text style={styles.notificationText} onPress={handleSkip}>

@@ -48,7 +48,9 @@ const ForYouCard = ({ item, onPress }) => {
         is_liked: newLikeState,
         city_id: item?.city_data?.id || item?.city_id,
       });
-      console.log("Like/Unlike response:", response);
+      if (response?.liked !== undefined) {
+        setLocalIsLiked(response.liked);
+      }
     } catch (error) {
       console.error("Error liking/unliking activity:", error);
       setLocalIsLiked(!newLikeState);

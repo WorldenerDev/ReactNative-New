@@ -186,6 +186,19 @@ const CityDetail = ({ route, navigation }) => {
     />
   );
 
+  if (!cityData?.city_id) {
+    return (
+      <ScreenWapper>
+        <View style={styles.missingParamsContainer}>
+          <Text style={styles.missingParamsText}>City details are unavailable.</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.missingParamsAction}>Go back</Text>
+          </TouchableOpacity>
+        </View>
+      </ScreenWapper>
+    );
+  }
+
   return (
     <ScreenWapper>
       <FlatList
@@ -351,6 +364,24 @@ const CityDetail = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  missingParamsContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: getHoriPadding(24),
+  },
+  missingParamsText: {
+    fontFamily: fonts.RobotoRegular,
+    fontSize: getFontSize(16),
+    color: colors.black,
+    textAlign: "center",
+    marginBottom: getVertiPadding(16),
+  },
+  missingParamsAction: {
+    fontFamily: fonts.RobotoBold,
+    fontSize: getFontSize(16),
+    color: colors.primary,
+  },
   listContainer: {
     paddingBottom: getVertiPadding(20),
   },

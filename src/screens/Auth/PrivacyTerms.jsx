@@ -14,8 +14,8 @@ try {
   );
 }
 
-const PrivacyTerms = ({ route }) => {
-  const { type } = route.params;
+const PrivacyTerms = ({ route, navigation }) => {
+  const type = route?.params?.type || "privacy-policy";
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

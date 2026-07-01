@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { getGroupMessages } from "@api/services/mainServices";
 import { handleAsyncCases } from "@utils/reduxHelpers";
+import { expireSession, logoutUser } from "@redux/slices/authSlice";
 
 // ----------------- Thunks -----------------
 
@@ -126,6 +127,18 @@ const chatSlice = createSlice({
         }
       },
     });
+    builder.addCase(logoutUser.fulfilled, () => ({
+      messages: {},
+      users: {},
+      loading: false,
+      error: null,
+    }));
+    builder.addCase(expireSession.fulfilled, () => ({
+      messages: {},
+      users: {},
+      loading: false,
+      error: null,
+    }));
   },
 });
 

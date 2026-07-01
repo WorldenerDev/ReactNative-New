@@ -42,4 +42,7 @@ export const buildSocialLoginPayload = ({
   };
 };
 
+export const isSocialLoginPayloadValid = (payload) =>
+  Boolean(payload?.social_id);
+
 export default buildSocialLoginPayload;

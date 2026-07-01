@@ -629,6 +629,22 @@ const Chat = ({ navigation, route }) => {
     </View>
   );
 
+  if (!groupId) {
+    return (
+      <MainContainer>
+        <Header title="Group Chat" />
+        <View style={styles.missingParamsContainer}>
+          <Text style={styles.missingParamsText}>
+            This chat is unavailable. Missing group information.
+          </Text>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.missingParamsAction}>Go back</Text>
+          </TouchableOpacity>
+        </View>
+      </MainContainer>
+    );
+  }
+
   return (
     <MainContainer loader={messagesLoading}>
       <Header
@@ -821,6 +837,23 @@ const Chat = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  missingParamsContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  missingParamsText: {
+    fontSize: 16,
+    color: "#111",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  missingParamsAction: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#007AFF",
+  },
   inputToolbar: {
     backgroundColor: "#fff",
     // paddingHorizontal: 10,

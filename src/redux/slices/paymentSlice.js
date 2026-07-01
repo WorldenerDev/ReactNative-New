@@ -1,6 +1,7 @@
-import { getStripeCardList } from "@api/services/mainServices";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { getStripeCardList } from "@api/services/mainServices";
 import * as paymentApi from "../../services/payment";
+import { expireSession, logoutUser } from "@redux/slices/authSlice";
 
 const mapStripeCardList = (cards) =>
   (Array.isArray(cards) ? cards : [])
@@ -149,7 +150,9 @@ const paymentSlice = createSlice({
       })
       .addCase(removePaymentMethod.rejected, (state, action) => {
         state.error = action.payload || "Delete failed";
-      });
+      })
+      .addCase(logoutUser.fulfilled, () => ({ ...initialState }))
+      .addCase(expireSession.fulfilled, () => ({ ...initialState }));
   },
 });
 
