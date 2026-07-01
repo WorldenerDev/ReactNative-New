@@ -7,6 +7,7 @@ import {
 } from "@api/services/cityTripService"; // 👈 your API calls here
 import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
+import { guestLoginUser } from "@redux/slices/authSlice";
 import {
   getAllCity,
   getEventForYou,
@@ -36,7 +37,8 @@ export const fetchEventForYou = createAsyncThunk(
   endpoints?.main?.getEventForYou,
   async (payload, { rejectWithValue }) => {
     try {
-      const res = await getEventForYou();
+      const { preferencesKey: _preferencesKey, ...apiParams } = payload || {};
+      const res = await getEventForYou(apiParams);
       return res;
     } catch (err) {
       return rejectWithValue(err.message);
@@ -150,7 +152,8 @@ const cityTripSlice = createSlice({
       })
       .addCase(fetchEventForYou.fulfilled, (state, action) => {
         state.loading = false;
-        state.eventForYou = action.payload?.data || action.payload || [];
+        const data = action.payload?.data ?? action.payload;
+        state.eventForYou = Array.isArray(data) ? data : [];
         const preferencesKey = action.meta?.arg?.preferencesKey;
         if (preferencesKey !== undefined) {
           state.eventForYouPreferencesKey = preferencesKey;
@@ -160,6 +163,11 @@ const cityTripSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       });
+
+    builder.addCase(guestLoginUser.fulfilled, (state) => {
+      state.eventForYou = [];
+      state.eventForYouPreferencesKey = null;
+    });
 
     // Handle popular events by city (CityDetail)
     handleAsyncCases(builder, fetchPopularEvent);

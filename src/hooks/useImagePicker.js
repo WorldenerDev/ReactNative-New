@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Platform } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import usePermissions from './usePermissions';
 
@@ -16,59 +17,57 @@ const useImagePicker = () => {
     const formatImageData = (asset) => {
         if (!asset?.uri) return null;
 
-        const fileName = asset.uri.split('/').pop() || `image_${Date.now()}.jpg`;
-        const extension = fileName.split('.').pop()?.toLowerCase();
-        const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
+        const rawName = asset.fileName || asset.uri.split('/').pop();
+        const name =
+            rawName && /\.(jpe?g|png|webp)$/i.test(rawName)
+                ? rawName.replace(/\.(heic|heif)$/i, '.jpg')
+                : `image_${Date.now()}.jpg`;
+
+        const rawType = (asset.type || 'image/jpeg').toLowerCase();
+        const type =
+            rawType === 'image/heic' || rawType === 'image/heif'
+                ? 'image/jpeg'
+                : rawType;
 
         return {
             uri: asset.uri,
-            type: asset.type || mimeType,
-            name: fileName,
+            type,
+            name,
         };
     };
+
+    const needsGalleryPermission = () =>
+        Platform.OS === 'android' && Number(Platform.Version) < 33;
 
     /**
      * Opens the gallery to pick an image.
      */
     const pickImage = async () => {
-        const hasPermission = await requestMediaPermission();
-        if (!hasPermission) {
-            return null;
+        if (needsGalleryPermission()) {
+            const hasPermission = await requestMediaPermission();
+            if (!hasPermission) {
+                throw new Error('Photo library permission is required.');
+            }
         }
 
         const options = {
             mediaType: 'photo',
             quality: 0.8,
             selectionLimit: 1,
-            includeExtra: true,
+            assetRepresentationMode: 'compatible',
         };
 
-        try {
-            const result = await launchImageLibrary(options);
+        const result = await launchImageLibrary(options);
 
-            if (result.didCancel) {
-                return null;
-            }
-
-            const asset = result.assets?.[0];
-            if (!asset?.uri) {
-                return null;
-            }
-
-            const fileName = asset.uri.split('/').pop();
-            const name =
-                fileName && /\.(jpe?g|png)$/i.test(fileName)
-                    ? fileName
-                    : `image_${Date.now()}.jpg`;
-
-            return {
-                uri: asset.uri,
-                type: asset.type ?? 'image/jpeg',
-                name,
-            };
-        } catch (error) {
-            throw error;
+        if (result.didCancel) {
+            return null;
         }
+
+        if (result.errorCode) {
+            throw new Error(result.errorMessage || result.errorCode);
+        }
+
+        return formatImageData(result.assets?.[0]);
     };
 
     /**
@@ -77,31 +76,32 @@ const useImagePicker = () => {
     const takePhoto = useCallback(async () => {
         const hasPermission = await requestCameraPermission();
         if (!hasPermission) {
-            throw new Error('Camera permissions not granted. Check console for details.');
+            throw new Error('Camera permission is required.');
         }
 
-        return new Promise((resolve, reject) => {
-            const options = {
-                mediaType: 'photo',
-                quality: 0.8,
-                maxWidth: 1580,
-                maxHeight: 2000,
-                includeBase64: false,
-                saveToPhotos: false,
-                cameraType: 'back',
-            };
+        const options = {
+            mediaType: 'photo',
+            quality: 0.8,
+            maxWidth: 1580,
+            maxHeight: 2000,
+            includeBase64: false,
+            saveToPhotos: false,
+            cameraType: 'back',
+            assetRepresentationMode: 'compatible',
+        };
 
-            launchCamera(options, (response) => {
-                if (response.didCancel) {
-                    resolve(null);
-                } else if (response.errorMessage) {
-                    reject(new Error(response.errorMessage));
-                } else {
-                    resolve(formatImageData(response.assets?.[0]) || null);
-                }
-            });
-        });
-    }, []);
+        const response = await launchCamera(options);
+
+        if (response.didCancel) {
+            return null;
+        }
+
+        if (response.errorCode) {
+            throw new Error(response.errorMessage || response.errorCode);
+        }
+
+        return formatImageData(response.assets?.[0]);
+    }, [requestCameraPermission]);
 
     return { pickImage, takePhoto };
 };

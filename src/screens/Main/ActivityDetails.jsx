@@ -17,6 +17,7 @@ import OptimizedImage from "@components/OptimizedImage";
 import RadioCheckbox from "@components/RadioCheckbox";
 import navigationStrings from "@navigation/navigationStrings";
 import useStickyBottomInset from "@hooks/useStickyBottomInset";
+import useAuth from "@hooks/useAuth";
 import { fetchTripByCity } from "@redux/slices/cityTripSlice";
 import {
   getFontSize,
@@ -26,7 +27,10 @@ import {
   getVertiPadding,
   getWidth,
 } from "@utils/responsive";
-import { getActivityDurationLabel } from "@utils/uiUtils";
+import {
+  getActivityDurationLabel,
+  getConfirmationTimeLabel,
+} from "@utils/uiUtils";
 import { useEffect, useState } from "react";
 import {
   Dimensions,
@@ -57,6 +61,7 @@ const formatTripLabel = (trip) => {
 };
 
 const ActivityDetails = ({ navigation, route }) => {
+  const { isGuest, requireAuth } = useAuth();
   const insets = useSafeAreaInsets();
   const heroTop = insets.top + getVertiPadding(8);
   const bottomInset = useStickyBottomInset();
@@ -107,10 +112,10 @@ const ActivityDetails = ({ navigation, route }) => {
   }, [selectedTripFromRoute]);
 
   useEffect(() => {
-    if (cityId) {
+    if (cityId && !isGuest) {
       getTripsByCity();
     }
-  }, [cityId]);
+  }, [cityId, isGuest]);
 
   useEffect(() => {
     setLanguagesExpanded(false);
@@ -157,7 +162,7 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleCheckAvailability = () => {
-    if (!selectedTrip?.value) {
+    if (!isGuest && !selectedTrip?.value) {
       showToast("error", "Please select a trip before adding activities");
       return;
     }
@@ -201,7 +206,7 @@ const ActivityDetails = ({ navigation, route }) => {
       instant_confirmation: eventDetail?.bookingPolicies?.maxConfirmationTime,
       free_cancellation: eventDetail?.bookingPolicies?.freeCancellation,
       duration: eventDetail?.tourDetails?.duration?.[0],
-      tripId: selectedTrip?.value,
+      tripId: isGuest ? undefined : selectedTrip?.value,
       // Pass price/currency (wishlist has these; getEventsForYou has price)
       price: eventData?.price ?? eventDetail?.price,
       currency: eventData?.currency ?? "USD",
@@ -212,6 +217,9 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleLikeToggle = async () => {
+    if (!requireAuth("Sign in to save favorites")) {
+      return;
+    }
     if (isLoading) return;
 
     const resolvedCityId =
@@ -244,6 +252,9 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleSharePress = async () => {
+    if (!requireAuth("Sign in to share with groups")) {
+      return;
+    }
     setShowShareModal(true);
     if (groups.length === 0 && activityId) {
       fetchGroups();
@@ -298,6 +309,9 @@ const ActivityDetails = ({ navigation, route }) => {
   };
 
   const handleShare = async () => {
+    if (!requireAuth("Sign in to share with groups")) {
+      return;
+    }
     if (selectedGroups.length === 0) {
       showToast("error", "Please select at least one group");
       return;
@@ -331,7 +345,7 @@ const ActivityDetails = ({ navigation, route }) => {
 
   const renderLanguagesContent = () => {
     if (languageNames.length === 0) {
-      return <Text style={styles.text}>Language not available</Text>;
+      return <Text style={styles.text}>Languages not available</Text>;
     }
 
     if (languageNames.length <= LANGUAGE_PREVIEW_COUNT) {
@@ -351,7 +365,7 @@ const ActivityDetails = ({ navigation, route }) => {
             style={styles.languageExpandLink}
             onPress={() => setLanguagesExpanded(true)}
           >
-            {remainingCount}+
+            +{remainingCount} more
           </Text>
         </Text>
       );
@@ -450,7 +464,7 @@ const ActivityDetails = ({ navigation, route }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {cityId && (
+        {cityId && !isGuest && (
           <View style={styles.tripSelectorRow}>
             <CustomDropdown
               label="Select Trip to add this activity to:"
@@ -479,8 +493,8 @@ const ActivityDetails = ({ navigation, route }) => {
             <Image source={imagePath.CHECK_ICON} style={styles.likeIcon} />
             <Text style={styles.text}>
               {eventDetail?.bookingPolicies?.freeCancellation
-                ? "Free Cancellation"
-                : "Need confirmation"}
+                ? "Free cancellation"
+                : "No free cancellation"}
             </Text>
           </View>
           <View style={styles.featureRow}>
@@ -498,9 +512,9 @@ const ActivityDetails = ({ navigation, route }) => {
           <View style={styles.featureRow}>
             <Image source={imagePath.INSTANT_ICON} style={styles.likeIcon} />
             <Text style={styles.text}>
-              {eventDetail?.bookingPolicies?.maxConfirmationTime === "P0D"
-                ? "Instant confirmation"
-                : "Need confirmation"}
+              {getConfirmationTimeLabel(
+                eventDetail?.bookingPolicies?.maxConfirmationTime,
+              )}
             </Text>
           </View>
         </View>
@@ -577,7 +591,7 @@ const ActivityDetails = ({ navigation, route }) => {
         )}
 
         {eventDetail?.tourDetails?.languagesAvailable?.length > 1 && (
-          <Accordion title={"Language"} key={"Language"} defaultOpen={true}>
+          <Accordion title={"Languages"} key={"Languages"} defaultOpen={true}>
             <View style={styles.listContainer}>
               {eventDetail.tourDetails.languagesAvailable.map((lang, index) => (
                 <RadioCheckbox

@@ -4,14 +4,16 @@ import {
   otp,
   resendOtp,
   login,
+  logout as logoutApi,
   SocialLogin,
   getCategory,
   SelectCategory,
+  guestLogin,
 } from "@api/services/authService";
 import { getCategoriesTree } from "@api/services/mainServices";
 import { endpoints } from "@api/endpoints";
 import { handleAsyncCases } from "@utils/reduxHelpers";
-import { setItem } from "@utils/storage";
+import { setItem, removeItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { updateUserOnlineStatus } from "./onlineStatusSlice";
 
@@ -77,12 +79,35 @@ export const googleAppleSignIn = createAsyncThunk(
       const res = await SocialLogin(payload);
       const result = {
         ...res?.data,
-        token: res?.accessToken,
+        accessToken: res?.data?.accessToken || res?.accessToken,
+        token: res?.data?.accessToken || res?.accessToken,
+        isGuest: false,
       };
       await setItem(STORAGE_KEYS?.USER_DATA, result);
       return result;
     } catch (err) {
       return rejectWithValue(err.message || "Google Sign-In failed");
+    }
+  }
+);
+
+export const guestLoginUser = createAsyncThunk(
+  endpoints?.auth?.guestLogin,
+  async (payload, { rejectWithValue }) => {
+    try {
+      const res = await guestLogin(payload);
+      if (!res?.success && res?.status === 0) {
+        return rejectWithValue(res?.message || "Guest login failed");
+      }
+      const userData = {
+        ...(res?.data || {}),
+        accessToken: res?.data?.accessToken,
+        isGuest: true,
+      };
+      await setItem(STORAGE_KEYS.USER_DATA, userData);
+      return userData;
+    } catch (err) {
+      return rejectWithValue(err?.message || "Guest login failed");
     }
   }
 );
@@ -128,13 +153,40 @@ export const logoutUser = createAsyncThunk(
     const { auth } = getState();
     const token = auth?.user?.accessToken || auth?.user?.token || auth?.token;
 
-    if (token) {
+    if (token && !auth?.user?.isGuest) {
       try {
         await dispatch(updateUserOnlineStatus(false)).unwrap();
       } catch (error) {
         console.warn("Failed to set offline status on logout:", error);
       }
+
+      try {
+        await logoutApi();
+      } catch (error) {
+        console.warn("Failed to clear server session on logout:", error);
+      }
     }
+
+    await removeItem(STORAGE_KEYS.USER_DATA);
+    await removeItem(STORAGE_KEYS.TOKEN);
+    return true;
+  }
+);
+
+export const exitGuestForSignIn = createAsyncThunk(
+  "auth/exitGuestForSignIn",
+  async (authRoute = "SignInScreen") => {
+    await removeItem(STORAGE_KEYS.USER_DATA);
+    await removeItem(STORAGE_KEYS.TOKEN);
+    return authRoute;
+  }
+);
+
+export const exitGuestMode = createAsyncThunk(
+  "auth/exitGuestMode",
+  async () => {
+    await removeItem(STORAGE_KEYS.USER_DATA);
+    await removeItem(STORAGE_KEYS.TOKEN);
     return true;
   }
 );
@@ -148,6 +200,8 @@ const authSlice = createSlice({
     loading: false,
     error: null,
     categories: [],
+    pendingAuthRedirect: false,
+    pendingAuthRoute: null,
   },
   reducers: {
     setUser: (state, action) => {
@@ -157,6 +211,11 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
+      state.pendingAuthRedirect = false;
+    },
+    clearPendingAuthRedirect: (state) => {
+      state.pendingAuthRedirect = false;
+      state.pendingAuthRoute = null;
     },
   },
   extraReducers: (builder) => {
@@ -168,8 +227,10 @@ const authSlice = createSlice({
     });
     handleAsyncCases(builder, onOtp, {
       onFulfilled: (state, action) => {
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        const user = action.payload?.data || action.payload?.user || action.payload;
+        state.user = { ...user, isGuest: false };
+        state.token = user?.accessToken || action.payload?.token || null;
+        state.pendingAuthRedirect = false;
       },
     });
     handleAsyncCases(builder, requestOtp, {
@@ -188,6 +249,14 @@ const authSlice = createSlice({
       onFulfilled: (state, action) => {
         state.user = action.payload;
         state.token = action.payload?.accessToken || action.payload?.token || null;
+        state.pendingAuthRedirect = false;
+      },
+    });
+    handleAsyncCases(builder, guestLoginUser, {
+      onFulfilled: (state, action) => {
+        state.user = action.payload;
+        state.token = action.payload?.accessToken || null;
+        state.pendingAuthRedirect = false;
       },
     });
     handleAsyncCases(builder, category, {
@@ -214,9 +283,21 @@ const authSlice = createSlice({
     builder.addCase(logoutUser.fulfilled, (state) => {
       state.user = null;
       state.token = null;
+      state.pendingAuthRedirect = false;
+    });
+    builder.addCase(exitGuestForSignIn.fulfilled, (state, action) => {
+      state.user = null;
+      state.token = null;
+      state.pendingAuthRedirect = true;
+      state.pendingAuthRoute = action.payload || "SignInScreen";
+    });
+    builder.addCase(exitGuestMode.fulfilled, (state) => {
+      state.user = null;
+      state.token = null;
+      state.pendingAuthRedirect = false;
     });
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { setUser, logout, clearPendingAuthRedirect } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,4 +1,5 @@
 import { getTransactions } from "@api/services/mainServices";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { showToast } from "@components/AppToast";
@@ -31,6 +32,7 @@ const getTransactionTitle = (tx) =>
   tx?.description?.trim() ||
   "Payment";
 
+
 const getTransactionSubtitle = (tx) => {
   const city = tx?.tripDetail?.destinationCity?.trim();
   if (city) return city;
@@ -55,6 +57,7 @@ const getStatusStyle = (status) => {
 };
 
 const TransactionHistory = ({ navigation }) => {
+  useGuestScreenGuard();
   const bottomInset = useStickyBottomInset();
   const [transactions, setTransactions] = useState([]);
   const [pagination, setPagination] = useState(null);

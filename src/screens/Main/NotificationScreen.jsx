@@ -1,3 +1,4 @@
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   StyleSheet,
   Text,
@@ -34,6 +35,7 @@ import {
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 
+
 const getInvitationStatus = (item) => {
   if (item?.status) return item.status;
   if (item?.isInviteAccepted) return "accepted";
@@ -58,6 +60,7 @@ const getNotificationTypeLabel = (item) => {
 };
 
 const NotificationScreen = () => {
+  useGuestScreenGuard();
   const scrollPadding = useStickyScrollPadding();
   const [activeTab, setActiveTab] = useState("Notifications");
   const [notifications, setNotifications] = useState([]);

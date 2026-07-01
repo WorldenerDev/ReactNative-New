@@ -28,6 +28,7 @@ import {
   getAllCity,
 } from "@api/services/mainServices";
 import imagePath from "@assets/icons";
+import useAuth from "@hooks/useAuth";
 
 // Default cities to show when search is empty (only these 9)
 const DEFAULT_CITY_NAMES = [
@@ -43,6 +44,7 @@ const DEFAULT_CITY_NAMES = [
 ];
 
 const SearchCity = ({ navigation, route }) => {
+  const { requireAuth } = useAuth();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [defaultCities, setDefaultCities] = useState([]); // All cities when search is empty
@@ -130,6 +132,11 @@ const SearchCity = ({ navigation, route }) => {
         <TouchableOpacity
           onPress={() => {
             if (mode === "cityOnly") {
+              const isTripCreationPick =
+                fromScreen === "CreateTrip" || !fromScreen;
+              if (isTripCreationPick && !requireAuth()) {
+                return;
+              }
               // If in cityOnly mode, navigate back to the screen we came from
               if (fromScreen === "CreateTrip") {
                 navigation.navigate(navigationStrings.CREATE_TRIP, {

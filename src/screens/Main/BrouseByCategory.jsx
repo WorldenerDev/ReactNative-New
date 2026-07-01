@@ -23,6 +23,7 @@ import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import fonts from "@assets/fonts";
 import { getEventBrowserByCategory } from "@api/services/mainServices";
+import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 
 const formatDate = (date) => {
@@ -33,6 +34,7 @@ const formatDate = (date) => {
 };
 
 const BrouseByCategory = ({ navigation, route }) => {
+  const scrollPadding = useStickyScrollPadding();
   const {
     name,
     cityId,
@@ -133,7 +135,10 @@ const BrouseByCategory = ({ navigation, route }) => {
         numColumns={2}
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: scrollPadding },
+        ]}
         ListEmptyComponent={
           !loading ? (
             <Text style={{ color: colors.lightText, textAlign: "center" }}>

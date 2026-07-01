@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { updateOnlineStatus } from "@api/services/onlineStatusService";
 import { endpoints } from "@api/endpoints";
+import { getFCMToken } from "@utils/fcmToken";
 
 export const updateUserOnlineStatus = createAsyncThunk(
   endpoints?.main?.updateOnlineStatus,
@@ -12,7 +13,16 @@ export const updateUserOnlineStatus = createAsyncThunk(
       return { isOnline, skipped: true };
     }
 
-    await updateOnlineStatus({ isOnline });
+    const payload = { isOnline };
+
+    if (isOnline) {
+      const fcmToken = await getFCMToken();
+      if (fcmToken) {
+        payload.fcm_token = fcmToken;
+      }
+    }
+
+    await updateOnlineStatus(payload);
     return { isOnline };
   }
 );

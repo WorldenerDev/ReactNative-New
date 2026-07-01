@@ -1,3 +1,4 @@
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   StyleSheet,
   Text,
@@ -40,7 +41,9 @@ import { setUser } from "@redux/slices/authSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 
+
 const CartCustomerInfo = ({ navigation, route }) => {
+  useGuestScreenGuard();
   // Get user data from Redux store
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);

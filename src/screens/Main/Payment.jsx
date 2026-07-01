@@ -1,4 +1,5 @@
 import { createStripePaymentIntent } from "@api/services/mainServices";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
@@ -22,7 +23,9 @@ import {
   View,
 } from "react-native";
 
+
 const Payment = ({ navigation, route }) => {
+  useGuestScreenGuard();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [addingCard, setAddingCard] = useState(false);

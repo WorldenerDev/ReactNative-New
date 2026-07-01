@@ -1,3 +1,4 @@
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   StyleSheet,
   Text,
@@ -53,7 +54,9 @@ const DUMMY_USER_IMAGE =
 
 const normalizeUserId = (id) => (id == null ? "" : String(id));
 
+
 const GroupDetails = () => {
+  useGuestScreenGuard();
   const navigation = useNavigation();
   const route = useRoute();
   const bottomInset = useStickyBottomInset();

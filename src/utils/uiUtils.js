@@ -138,6 +138,17 @@ export const getActivityDurationLabel = (tourDetails) => {
   }
   return `Duration: ${durationInfo.text}`;
 };
+
+export const getConfirmationTimeLabel = (maxConfirmationTime) => {
+  if (maxConfirmationTime === "P0D") {
+    return "Instant confirmation";
+  }
+  const duration = formatIso8601Duration(maxConfirmationTime);
+  if (duration) {
+    return `Confirmed within ${duration}`;
+  }
+  return "Subject to confirmation";
+};
 // utils/formattedDate.js
 export const formattedDate = (dateString) => {
   if (!dateString) return "";

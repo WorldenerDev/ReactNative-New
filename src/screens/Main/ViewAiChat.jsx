@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native'
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import React, { useMemo, useCallback, useEffect, useState } from 'react'
 import MainContainer from '@components/container/MainContainer'
 import Header from '@components/Header'
@@ -9,7 +10,9 @@ import { getChatbotHistoryList, getGroups } from '@api/services/mainServices'
 import { useRoute } from '@react-navigation/native'
 import navigationStrings from '@navigation/navigationStrings'
 
+
 const ViewAiChat = ({ navigation }) => {
+  useGuestScreenGuard();
     const route = useRoute()
     const { groupId, tripId } = route?.params || {}
     const [tripTitle, setTripTitle] = useState('Trip')

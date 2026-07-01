@@ -10,8 +10,11 @@ import colors from "@assets/colors";
 import { getHeight } from "@utils/responsive";
 import { getOrders } from "@api/services/mainServices";
 import navigationStrings from "@navigation/navigationStrings";
+import GuestPrompt from "@components/GuestPrompt";
+import useAuth from "@hooks/useAuth";
 
 const Booking = ({ navigation, route }) => {
+  const { isGuest } = useAuth();
   const initialTab = route?.params?.initialTab || "All";
   const [activeTab, setActiveTab] = useState(initialTab);
   const [orders, setOrders] = useState([]);
@@ -27,6 +30,9 @@ const Booking = ({ navigation, route }) => {
 
   // Fetch orders from API based on active tab
   useEffect(() => {
+    if (isGuest) {
+      return;
+    }
     const fetchOrders = async () => {
       setLoading(true);
       setError(null);
@@ -61,7 +67,7 @@ const Booking = ({ navigation, route }) => {
     };
 
     fetchOrders();
-  }, [activeTab]);
+  }, [activeTab, isGuest]);
 
   // Transform API data to match UI structure
   const transformOrdersToTrips = (ordersData, currentTab) => {
@@ -209,6 +215,18 @@ const Booking = ({ navigation, route }) => {
   );
 
   const renderEmptyComponent = () => <EmptyBookingState type={activeTab} />;
+
+  if (isGuest) {
+    return (
+      <MainContainer>
+        <Header showBack={false} title="My Booking" />
+        <GuestPrompt
+          title="Sign in to view bookings"
+          subtitle="Create an account to book activities and manage your upcoming trips."
+        />
+      </MainContainer>
+    );
+  }
 
   if (loading) {
     return (

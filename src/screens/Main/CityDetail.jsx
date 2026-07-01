@@ -36,6 +36,7 @@ import {
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { toSelectedTripOption } from "@utils/tripHelpers";
+import useAuth from "@hooks/useAuth";
 
 // Helper function to get city name only
 const getCityName = (trip) => {
@@ -58,6 +59,7 @@ const formatTripLabel = (trip) => {
 const CityDetail = ({ route, navigation }) => {
   const scrollPadding = useStickyScrollPadding();
   const bottomInset = useStickyBottomInset();
+  const { isGuest } = useAuth();
   const { cityData, selectedTripId, selectedTrip: selectedTripFromRoute } =
     route.params || {};
   const dispatch = useDispatch();
@@ -77,9 +79,11 @@ const CityDetail = ({ route, navigation }) => {
     }
     PopularEvents();
     getEvent_by_city();
-    getTripsByCity();
+    if (!isGuest) {
+      getTripsByCity();
+    }
     loadCityCategories();
-  }, [cityData?.city_id, selectedTripFromRoute, selectedTripId]);
+  }, [cityData?.city_id, selectedTripFromRoute, selectedTripId, isGuest]);
 
   const loadCityCategories = async () => {
     if (!cityData?.city_id) {
@@ -225,6 +229,7 @@ const CityDetail = ({ route, navigation }) => {
               </TouchableOpacity>
 
               {/* Trip Name Dropdown */}
+              {!isGuest && (
               <View style={styles.tripDropdownContainer}>
                 <CustomDropdown
                   placeholder="Trip Name"
@@ -251,6 +256,7 @@ const CityDetail = ({ route, navigation }) => {
                   disabled={currentCityTrips.length === 0}
                 />
               </View>
+              )}
 
               {/* Search */}
               <TouchableOpacity

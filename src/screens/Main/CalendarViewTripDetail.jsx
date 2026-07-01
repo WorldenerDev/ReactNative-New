@@ -252,8 +252,9 @@ const CalendarViewTripDetail = ({ navigation, route }) => {
           </Text>
           {selectedDate && (
             <Text style={styles.activitiesSubtitle}>
-              {activitiesForSelectedDate.length} activity
-              {activitiesForSelectedDate.length !== 1 ? "ies" : ""} found
+              {activitiesForSelectedDate.length}{" "}
+              {activitiesForSelectedDate.length === 1 ? "activity" : "activities"}{" "}
+              found
             </Text>
           )}
 

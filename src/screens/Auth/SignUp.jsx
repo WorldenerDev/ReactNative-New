@@ -26,6 +26,7 @@ import {
   signupUser,
   setUser,
   googleAppleSignIn,
+  guestLoginUser,
 } from "@redux/slices/authSlice";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 import {
@@ -34,7 +35,9 @@ import {
   validateMobileNumber,
 } from "@utils/validators";
 import { objectToFormData } from "@utils/formDataHelper";
-import { getDeviceId, getDeviceType } from "@utils/uiUtils";
+import { getDeviceId } from "@utils/uiUtils";
+import { getFCMToken } from "@utils/fcmToken";
+import { buildSocialLoginPayload } from "@utils/socialLoginPayload";
 
 const SignUp = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -90,41 +93,25 @@ const SignUp = ({ navigation }) => {
     console.log("Social login result receiveddd:", result, provider);
 
     const deviceId = await getDeviceId();
+    const fcmToken = await getFCMToken();
     try {
-      if (result?.provider === "google") {
-        console.log("google provider result ", result);
-        const payload = {
-          name: result?.userData?.givenName,
-          email: result?.userData?.email,
-          device_type: getDeviceType(),
-          social_id: result?.userData?.id,
-          device_id: deviceId,
-          fcm_token: "not given",
-        };
-        const loginResult = await dispatch(googleAppleSignIn(payload));
-        console.log("Google login result in signup", loginResult);
-        const userInfo = {
-          ...loginResult?.payload,
-          token: loginResult?.payload?.accessToken,
-        };
-        dispatch(setUser(userInfo));
-      } else {
-        const payload = {
-          name: result?.userData?.givenName,
-          email: result?.userData?.email,
-          device_type: getDeviceType(),
-          social_id: result?.userData?.id,
-          device_id: deviceId,
-          fcm_token: "not given",
-        };
-        const loginResult = await dispatch(googleAppleSignIn(payload));
-        console.log("Google login result in signin", loginResult);
-        const userInfo = {
-          ...loginResult?.payload,
-          token: loginResult?.payload?.accessToken,
-        };
-        dispatch(setUser(userInfo));
+      const payload = buildSocialLoginPayload({
+        provider: result?.provider || provider,
+        result,
+        deviceId,
+        fcmToken,
+      });
+      const loginResult = await dispatch(googleAppleSignIn(payload));
+      if (googleAppleSignIn.rejected.match(loginResult)) {
+        showToast("error", loginResult.payload || "Login failed");
+        return;
       }
+      console.log(`${provider} login result in signup`, loginResult);
+      const userInfo = {
+        ...loginResult?.payload,
+        token: loginResult?.payload?.accessToken,
+      };
+      dispatch(setUser(userInfo));
     } catch (error) {
       console.error("Social login error:", error);
       showToast("error", error.message || "Login failed");
@@ -135,8 +122,23 @@ const SignUp = ({ navigation }) => {
     showToast("error", error.error || "Social login failed");
   };
 
-  const handleGuestPress = () => {
-    showToast("info", "Continuing as guest");
+  const handleGuestPress = async () => {
+    try {
+      const deviceId = await getDeviceId();
+      const fcmToken = await getFCMToken();
+      const result = await dispatch(
+        guestLoginUser({
+          device_type: Platform.OS,
+          device_id: deviceId,
+          fcm_token: fcmToken || "not_available",
+        })
+      );
+      if (guestLoginUser.rejected.match(result)) {
+        showToast("error", result.payload || "Guest login failed");
+      }
+    } catch (error) {
+      showToast("error", error?.message || "Guest login failed");
+    }
   };
 
   return (

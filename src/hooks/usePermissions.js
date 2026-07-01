@@ -36,13 +36,13 @@ const usePermissions = () => {
         try {
             const status = await check(permission);
 
-            if (status === RESULTS.GRANTED) {
+            if (status === RESULTS.GRANTED || status === RESULTS.LIMITED) {
                 return true;
             }
 
             const result = await request(permission);
 
-            if (result === RESULTS.GRANTED) {
+            if (result === RESULTS.GRANTED || result === RESULTS.LIMITED) {
                 console.log(`✅ ${name} granted after request`);
                 return true;
             }

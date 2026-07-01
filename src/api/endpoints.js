@@ -9,6 +9,8 @@ export const endpoints = {
     getProfile: "/getProfile",
     selectCategory: "/selectCategory",
     getCms: "getCms",
+    logout: "/logout",
+    guestLogin: "/guestLogin",
   },
   main: {
     updateOnlineStatus: "/update-online-status",
@@ -55,6 +57,8 @@ export const endpoints = {
     rejectInvite: "/reject-invite",
     getNotifications: "/get-notifications",
     markNotificationRead: "/mark-notification-read",
+    getNotificationSettings: "/get-notification-settings",
+    updateNotificationSettings: "/update-notification-settings",
     getRefundPolicies: "/get-refund-policies",
     cancelOrderItem: "/cancel-order-item",
     getGroupMessages: "/getGroupMessages",

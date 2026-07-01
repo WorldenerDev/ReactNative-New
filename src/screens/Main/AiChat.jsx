@@ -1,4 +1,5 @@
 import { chatbot, getChatbotHistory, getGroups } from "@api/services/mainServices";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import MainContainer from "@components/container/MainContainer";
@@ -53,7 +54,9 @@ const createTextMessage = ({ id, text, createdAt, user, indexOffset = 0 }) => ({
 
 const ACTIVITY_BUBBLE_WIDTH = 280;
 
+
 const AiChat = ({ navigation }) => {
+  useGuestScreenGuard();
   const route = useRoute();
   const { groupId, tripId, conversation_id, fromHistoryList } = route?.params || {};
   const { user } = useSelector((state) => state.auth);

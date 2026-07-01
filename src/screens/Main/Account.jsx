@@ -7,7 +7,9 @@ import OptimizedImage from "@components/OptimizedImage";
 import ProfileButton from "@components/ProfileButton";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
-import { logoutUser } from "@redux/slices/authSlice";
+import { logoutUser, exitGuestMode, exitGuestForSignIn } from "@redux/slices/authSlice";
+import ButtonComp from "@components/ButtonComp";
+import useAuth from "@hooks/useAuth";
 import {
   getFontSize,
   getHeight,
@@ -25,11 +27,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 const Account = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, isGuest } = useAuth();
   const scrollPadding = useStickyScrollPadding();
 
   // Get user profile image URI
@@ -126,6 +128,68 @@ const Account = ({ navigation }) => {
       ]
     );
   };
+
+  const handleExitGuestMode = () => {
+    Alert.alert("Exit Guest Mode", "Leave guest browsing and return to sign in?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Exit",
+        onPress: () => dispatch(exitGuestMode()),
+      },
+    ]);
+  };
+
+  if (isGuest) {
+    return (
+      <ResponsiveContainer
+        contentContainerStyle={{ paddingBottom: scrollPadding }}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>Browsing as Guest</Text>
+              <Text style={styles.subtitle}>
+                Sign in to access your profile, bookings, and saved cards.
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <ButtonComp
+          title="Sign In"
+          disabled={false}
+          onPress={() =>
+            dispatch(exitGuestForSignIn(navigationStrings.SIGNINSCREEN))
+          }
+          containerStyle={styles.guestPrimaryBtn}
+        />
+        <ButtonComp
+          title="Create Account"
+          disabled={false}
+          onPress={() =>
+            dispatch(exitGuestForSignIn(navigationStrings.SIGNUPSCREEN))
+          }
+          containerStyle={styles.guestSecondaryBtn}
+          textStyle={styles.guestSecondaryBtnText}
+        />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Legal & Support</Text>
+          <ProfileButton
+            title="Terms of Service"
+            onPress={handleTermsOfService}
+          />
+          <ProfileButton title="Privacy Policy" onPress={handlePrivacyPolicy} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Guest</Text>
+          <ProfileButton title="Exit Guest Mode" onPress={handleExitGuestMode} />
+        </View>
+      </ResponsiveContainer>
+    );
+  }
 
   return (
     <ResponsiveContainer
@@ -229,6 +293,18 @@ const Account = ({ navigation }) => {
 export default Account;
 
 const styles = StyleSheet.create({
+  guestPrimaryBtn: {
+    marginBottom: getVertiPadding(12),
+  },
+  guestSecondaryBtn: {
+    marginBottom: getVertiPadding(24),
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  guestSecondaryBtnText: {
+    color: colors.black,
+  },
   header: {
     paddingTop: getVertiPadding(16),
     paddingBottom: getVertiPadding(20),

@@ -11,8 +11,8 @@ export const appendFileToFormData = (formData, fieldName, file) => {
   }
 
   let uri = file.uri;
-  if (Platform.OS === "ios" && uri.startsWith("file://")) {
-    uri = uri.replace("file://", "");
+  if (Platform.OS === "ios" && !uri.startsWith("file://")) {
+    uri = `file://${uri}`;
   }
 
   const rawType = (file.type || "image/jpeg").toLowerCase();

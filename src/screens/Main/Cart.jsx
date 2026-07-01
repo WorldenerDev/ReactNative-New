@@ -1,4 +1,5 @@
 import { cartCheckout, getCartList, removeItemFromCart } from "@api/services/mainServices";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
@@ -31,7 +32,9 @@ const NEXT_BUTTON_HEIGHT = 16;
 const BOTTOM_MARGIN = 20;
 const EXTRA_SCROLL_PADDING = 18;
 
+
 const Cart = ({ navigation }) => {
+  useGuestScreenGuard();
   const [cartList, setCartList] = useState([]);
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();

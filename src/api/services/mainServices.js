@@ -60,7 +60,9 @@ export const updateCart = (data) =>
   apiPost(endpoints?.main?.updateCart, data);
 export const getOrders = (params) => apiGet(endpoints?.main?.getOrders, params);
 export const getOrderDetails = (orderId) =>
-  apiGet(`${endpoints?.main?.getOrderDetails}/${orderId}`);
+  apiGet(`${endpoints?.main?.getOrderDetails}/${orderId}`, undefined, {
+    timeout: 30000,
+  });
 export const getTripBuddies = (data) =>
   apiPost(endpoints?.main?.getTripBuddies, data);
 export const getTripBycity = (cityId) =>
@@ -77,7 +79,12 @@ export const acceptInvite = (data) => apiPost(endpoints?.main?.acceptInvite, dat
 export const rejectInvite = (data) => apiPost(endpoints?.main?.rejectInvite, data);
 export const getNotifications = (params) => apiGet(endpoints?.main?.getNotifications, params);
 export const markNotificationRead = (data) => apiPost(endpoints?.main?.markNotificationRead, data);
-export const getRefundPolicies = (data) => apiPost(endpoints?.main?.getRefundPolicies, data);
+export const getNotificationSettings = () =>
+  apiGet(endpoints?.main?.getNotificationSettings);
+export const updateNotificationSettings = (data) =>
+  apiPost(endpoints?.main?.updateNotificationSettings, data);
+export const getRefundPolicies = (data) =>
+  apiPost(endpoints?.main?.getRefundPolicies, data, { skipErrorToast: true });
 export const cancelOrderItem = (data) => apiPost(endpoints?.main?.cancelOrderItem, data);
 export const getGroupMessages = (groupId) =>
   apiGet(`${endpoints?.main?.getGroupMessages}/${groupId}`);

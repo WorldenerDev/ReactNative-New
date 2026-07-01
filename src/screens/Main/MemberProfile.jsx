@@ -1,3 +1,4 @@
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   StyleSheet,
   Text,
@@ -23,7 +24,9 @@ import {
   getRadius,
 } from "@utils/responsive";
 
+
 const MemberProfile = ({ route, navigation }) => {
+  useGuestScreenGuard();
   // Get user data from route params or use default
   const userData = {
     name: "Alessandro",

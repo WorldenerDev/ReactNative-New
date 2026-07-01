@@ -1,4 +1,5 @@
 import { getProfile } from "@api/services/authService";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { showToast } from "@components/AppToast";
@@ -35,6 +36,7 @@ import { useDispatch, useSelector } from "react-redux";
 const normalizePreferenceIds = (preferences = []) =>
   preferences.map((id) => String(id));
 
+
 const formatCategoriesWithSelections = (categories, selectedIds) => {
   const selectedSet = new Set(selectedIds);
 
@@ -46,6 +48,7 @@ const formatCategoriesWithSelections = (categories, selectedIds) => {
 };
 
 const UpdateInterests = ({ navigation }) => {
+  useGuestScreenGuard();
   const bottomInset = useStickyBottomInset();
   const scrollPadding = useStickyScrollPadding();
   const dispatch = useDispatch();

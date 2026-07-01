@@ -1,3 +1,4 @@
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   StyleSheet,
   Text,
@@ -24,7 +25,9 @@ import Contacts from "react-native-contacts";
 import { sendInvitation } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 
+
 const AddToTrip = ({ navigation, route }) => {
+  useGuestScreenGuard();
   const bottomInset = useStickyBottomInset();
   const scrollPadding = useStickyScrollPadding();
   const [searchQuery, setSearchQuery] = useState("");

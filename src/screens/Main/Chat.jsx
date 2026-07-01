@@ -1,4 +1,5 @@
 import { getImageUrl, URL } from "@api/apiClient";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   addUpdateEmoji,
   blockUser,
@@ -48,6 +49,7 @@ const EMOJI_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"];
 const INPUT_TOOLBAR_HEIGHT = 60;
 
 // Avatar component to handle image loading errors
+
 const AvatarComponent = ({ avatar, name, onPress, styles }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -81,6 +83,7 @@ const AvatarComponent = ({ avatar, name, onPress, styles }) => {
 };
 
 const Chat = ({ navigation, route }) => {
+  useGuestScreenGuard();
   const { groupId, tripId } = route?.params || {};
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);

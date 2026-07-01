@@ -1,4 +1,5 @@
 import { cancelOrderItem, getOrderDetails, getRefundPolicies } from '@api/services/mainServices';
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from '@assets/colors';
 import fonts from '@assets/fonts';
 import { showToast } from '@components/AppToast';
@@ -25,7 +26,9 @@ import {
     View,
 } from 'react-native';
 
+
 const BookingDetails = ({ navigation, route }) => {
+  useGuestScreenGuard();
     const bottomInset = useStickyBottomInset();
     const { orderId, bookingId, bookingItemId, isCancelled, activeTab } = route?.params || {};
     const [loading, setLoading] = useState(false);
@@ -89,7 +92,16 @@ const BookingDetails = ({ navigation, route }) => {
 
                     // Also check order status for cancelled bookings
                     const orderStatus = orderData?.status || orderData?.order_status;
-                    if (orderStatus === 'cancelled') {
+                    const isItemCancelled =
+                        selectedItem?.status === "KO" ||
+                        selectedItem?.status === "REFUNDED" ||
+                        Boolean(selectedItem?.cancellation_reason);
+
+                    if (
+                        orderStatus === "cancelled" ||
+                        orderStatus === "CANCELLED" ||
+                        isItemCancelled
+                    ) {
                         setIsOrderCancelled(true);
                     }
 
@@ -152,51 +164,66 @@ const BookingDetails = ({ navigation, route }) => {
                         : [];
                     setVoucherUrls(vouchers);
 
-                    // Fetch refund policies for the selected item only (so "Cancellable by" matches this activity)
+                    // Show booking details immediately; fetch refund policies separately
+                    setLoading(false);
+
                     const orderUuid = musementData?.uuid;
                     const selectedItemUuid = selectedItem?.uuid;
-                    const orderItemUuidsForRefund = selectedItemUuid ? [selectedItemUuid] : items.map(item => item?.uuid).filter(Boolean);
+                    const orderItemUuidsForRefund = selectedItemUuid
+                        ? [selectedItemUuid]
+                        : items.map((item) => item?.uuid).filter(Boolean);
 
-                    if (orderUuid && orderItemUuidsForRefund.length > 0) {
-                        try {
-                            const refundResponse = await getRefundPolicies({
-                                orderUuid: orderUuid,
-                                orderItemUuids: orderItemUuidsForRefund,
-                            });
+                    if (
+                        !isItemCancelled &&
+                        orderUuid &&
+                        orderItemUuidsForRefund.length > 0
+                    ) {
+                        getRefundPolicies({
+                            orderUuid,
+                            orderItemUuids: orderItemUuidsForRefund,
+                        })
+                            .then((refundResponse) => {
+                                if (
+                                    refundResponse?.success &&
+                                    refundResponse?.data?.length > 0
+                                ) {
+                                    const applicableUntil =
+                                        refundResponse.data[0]?.applicable_until;
+                                    let formattedCancellableBy = "N/A";
 
-                            if (refundResponse?.success && refundResponse?.data?.length > 0) {
-                                const applicableUntil = refundResponse.data[0]?.applicable_until;
-                                let formattedCancellableBy = 'N/A';
-
-                                if (applicableUntil) {
-                                    try {
-                                        // Format: "2025-11-18 09:00"
-                                        const dateObj = new Date(applicableUntil);
-                                        formattedCancellableBy = dateObj.toLocaleString('en-US', {
-                                            day: 'numeric',
-                                            month: 'long',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        });
-                                        // Store raw date for comparison
-                                        setCancellableByDate(dateObj);
-                                    } catch (e) {
-                                        formattedCancellableBy = applicableUntil;
+                                    if (applicableUntil) {
+                                        try {
+                                            const dateObj = new Date(applicableUntil);
+                                            formattedCancellableBy = dateObj.toLocaleString(
+                                                "en-US",
+                                                {
+                                                    day: "numeric",
+                                                    month: "long",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                }
+                                            );
+                                            setCancellableByDate(dateObj);
+                                        } catch (e) {
+                                            formattedCancellableBy = applicableUntil;
+                                        }
                                     }
-                                }
 
-                                // Update booking data with cancellable by date
-                                setBookingData(prev => ({
-                                    ...prev,
-                                    cancellableBy: formattedCancellableBy,
-                                }));
-                            }
-                        } catch (refundError) {
-                            console.error('Error fetching refund policies:', refundError);
-                            // Don't show error toast for refund policies, just log it
-                        }
+                                    setBookingData((prev) => ({
+                                        ...prev,
+                                        cancellableBy: formattedCancellableBy,
+                                    }));
+                                }
+                            })
+                            .catch((refundError) => {
+                                console.error(
+                                    "Error fetching refund policies:",
+                                    refundError
+                                );
+                            });
                     }
+                    return;
                 } else {
                     showToast('error', response?.message || 'Failed to fetch order details');
                 }

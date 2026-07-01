@@ -16,12 +16,13 @@ import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import { validateForm, validateMobileNumber } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
-import { googleAppleSignIn, loginUser, setUser } from "@redux/slices/authSlice";
+import { googleAppleSignIn, guestLoginUser, loginUser, setUser } from "@redux/slices/authSlice";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
-import { getDeviceId, getDeviceType } from "@utils/uiUtils";
+import { getDeviceId } from "@utils/uiUtils";
 import { logAuthToken } from "@utils/devAuthTokenLog";
-import messaging from "@react-native-firebase/messaging";
+import { getFCMToken } from "@utils/fcmToken";
+import { buildSocialLoginPayload } from "@utils/socialLoginPayload";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -37,24 +38,9 @@ const SignInScreen = ({ navigation }) => {
     setData((prev) => ({ ...prev, countryCode: code }));
   };
 
-  const getFCMToken = async () => {
+  const getFCMTokenForAuth = async () => {
     try {
-      if (Platform.OS === "ios") {
-        await messaging().registerDeviceForRemoteMessages();
-      }
-
-      const authStatus = await messaging().hasPermission();
-      if (!authStatus) {
-        const requestStatus = await messaging().requestPermission();
-        const granted =
-          requestStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          requestStatus === messaging.AuthorizationStatus.PROVISIONAL;
-        if (!granted) {
-          return null;
-        }
-      }
-
-      const fcmToken = await messaging().getToken();
+      const fcmToken = await getFCMToken();
       console.log("FCM Token:", fcmToken);
       return fcmToken;
     } catch (error) {
@@ -66,7 +52,7 @@ const SignInScreen = ({ navigation }) => {
   const onPressSignin = async () => {
     try {
       const deviceId = await getDeviceId();
-      const fcmToken = await getFCMToken();
+      const fcmToken = await getFCMTokenForAuth();
       console.log("fcmToken", fcmToken);
       const error = validateForm([
         { validator: validateMobileNumber, values: [data?.phoneNumber] },
@@ -93,6 +79,8 @@ const SignInScreen = ({ navigation }) => {
           fromScreen: "signin",
           phoneNumber: data?.countryCode + data?.phoneNumber,
           fcm_Token: fcmToken,
+          deviceId,
+          deviceType: Platform.OS,
         });
       } else {
         showToast("error", result?.payload);
@@ -109,44 +97,26 @@ const SignInScreen = ({ navigation }) => {
     console.log("Social login result receiveddd:", result, provider);
 
     const deviceId = await getDeviceId();
-    const fcmToken = await getFCMToken();
+    const fcmToken = await getFCMTokenForAuth();
     try {
-      if (result?.provider === "google") {
-        console.log("google provider result ", result);
-        const data = {
-          name: result?.userData?.givenName,
-          email: result?.userData?.email,
-          device_type: getDeviceType(),
-          social_id: result?.userData?.id,
-          device_id: deviceId,
-          fcm_token: fcmToken || "not_available",
-        };
-        const loginResult = await dispatch(googleAppleSignIn(data));
-        console.log("Google login result in signin", loginResult);
-        logAuthToken("SignIn Google", loginResult?.payload);
-        const userInfo = {
-          ...loginResult?.payload,
-          token: loginResult?.payload?.accessToken,
-        };
-        dispatch(setUser(userInfo));
-      } else {
-        const data = {
-          name: result?.userData?.givenName,
-          email: result?.userData?.email,
-          device_type: getDeviceType(),
-          social_id: result?.userData?.id,
-          device_id: deviceId,
-          fcm_token: fcmToken || "not_available",
-        };
-        const loginResult = await dispatch(googleAppleSignIn(data));
-        console.log("Google login result in signin", loginResult);
-        logAuthToken("SignIn Apple", loginResult?.payload);
-        const userInfo = {
-          ...loginResult?.payload,
-          token: loginResult?.payload?.accessToken,
-        };
-        dispatch(setUser(userInfo));
+      const payload = buildSocialLoginPayload({
+        provider: result?.provider || provider,
+        result,
+        deviceId,
+        fcmToken,
+      });
+      const loginResult = await dispatch(googleAppleSignIn(payload));
+      if (googleAppleSignIn.rejected.match(loginResult)) {
+        showToast("error", loginResult.payload || "Login failed");
+        return;
       }
+      console.log(`${provider} login result in signin`, loginResult);
+      logAuthToken(`SignIn ${provider}`, loginResult?.payload);
+      const userInfo = {
+        ...loginResult?.payload,
+        token: loginResult?.payload?.accessToken,
+      };
+      dispatch(setUser(userInfo));
     } catch (error) {
       console.error("Social login error:", error);
       showToast("error", error.message || "Login failed");
@@ -157,8 +127,23 @@ const SignInScreen = ({ navigation }) => {
     showToast("error", error.error || "Social login failed");
   };
 
-  const handleGuestPress = () => {
-    showToast("info", "Continuing as guest");
+  const handleGuestPress = async () => {
+    try {
+      const deviceId = await getDeviceId();
+      const fcmToken = await getFCMTokenForAuth();
+      const result = await dispatch(
+        guestLoginUser({
+          device_type: Platform.OS,
+          device_id: deviceId,
+          fcm_token: fcmToken || "not_available",
+        })
+      );
+      if (guestLoginUser.rejected.match(result)) {
+        showToast("error", result.payload || "Guest login failed");
+      }
+    } catch (error) {
+      showToast("error", error?.message || "Guest login failed");
+    }
   };
 
   return (

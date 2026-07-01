@@ -1,3 +1,4 @@
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   StyleSheet,
   Text,
@@ -29,7 +30,9 @@ import usePermissions from "@hooks/usePermissions";
 import { resetToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import Contacts from "react-native-contacts";
 
+
 const CreateTrip = ({ navigation, route }) => {
+  useGuestScreenGuard();
   // Initialize state from route params if available
   const [fromDate, setFromDate] = useState(route?.params?.fromDate || "");
   const [toDate, setToDate] = useState(route?.params?.toDate || "");

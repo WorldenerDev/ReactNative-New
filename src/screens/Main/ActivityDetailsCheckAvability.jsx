@@ -27,9 +27,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import useAuth from "@hooks/useAuth";
 import { Calendar } from "react-native-calendars";
 
 const ActivityDetailsCheckAvability = ({ navigation, route }) => {
+  const { requireAuth } = useAuth();
   const { eventData, from } = route?.params || {};
   const [eventDate, setEventDate] = useState([]);
   const [dateDetails, setDateDetails] = useState([]);
@@ -306,6 +308,9 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   };
 
   const handleSave = async () => {
+    if (!requireAuth()) {
+      return;
+    }
     try {
       // Collect selected data for booking
       const selectedProducts = ticketTypes

@@ -1,4 +1,5 @@
 import { downloadVoucher } from '@api/services/mainServices'
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from '@assets/colors'
 import fonts from '@assets/fonts'
 import imagePath from '@assets/icons'
@@ -11,7 +12,9 @@ import { getFontSize, getHeight, getWidth } from '@utils/responsive'
 import { useState } from 'react'
 import { Alert, Image, Linking, StyleSheet, Text, View } from 'react-native'
 
+
 const PaymentSuccess = ({ navigation, route }) => {
+  useGuestScreenGuard();
   const [loading, setLoading] = useState(false);
   const { orderUuid } = route?.params || {};
 

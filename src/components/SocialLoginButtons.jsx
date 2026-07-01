@@ -36,7 +36,7 @@ const SocialLoginButtons = ({
 
   const checkProvidersAvailability = async () => {
     try {
-      const providers = socialLoginService.getAvailableProviders();
+      const providers = await socialLoginService.getAvailableProviders();
       setAvailableProviders(providers);
     } catch (error) {
       console.error("Failed to check providers availability:", error);
@@ -44,6 +44,9 @@ const SocialLoginButtons = ({
   };
 
   const handleSocialLogin = async (provider) => {
+    if (isLoading) return;
+
+    setIsLoading(true);
     try {
       const result = await socialLoginService.signIn(provider);
 
@@ -58,6 +61,8 @@ const SocialLoginButtons = ({
       console.error(`${provider} login error:`, error);
       onLoginError?.({ success: false, error: error.message, provider });
       Alert.alert("Login Error", error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,6 +91,22 @@ const SocialLoginButtons = ({
               resizeMode="contain"
             />
             <Text style={styles.googleFullText}>Continue with Google</Text>
+          </TouchableOpacity>
+        )}
+
+        {Platform.OS === "ios" && availableProviders.apple && (
+          <TouchableOpacity
+            style={styles.appleFullButton}
+            onPress={handleAppleLogin}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={imagePath.APPLE_ICON}
+              style={styles.googleFullIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.appleFullText}>Continue with Apple</Text>
           </TouchableOpacity>
         )}
 
@@ -182,6 +203,21 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(16),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
+  },
+  appleFullButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: getHeight(52),
+    borderRadius: getRadius(12),
+    backgroundColor: colors.black,
+    marginBottom: getVertiPadding(16),
+  },
+  appleFullText: {
+    fontSize: getFontSize(16),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.white,
   },
   orTextStacked: {
     marginHorizontal: getWidth(16),

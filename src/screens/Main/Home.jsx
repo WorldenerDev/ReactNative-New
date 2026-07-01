@@ -19,6 +19,7 @@ import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
+import useAuth from "@hooks/useAuth";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCategoriesTree } from "@redux/slices/authSlice";
 import imagePath from "@assets/icons";
@@ -43,12 +44,15 @@ const getTimeOfDayGreeting = (name) => {
 
 const Home = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
-  const { user, categories } = useSelector((state) => state.auth);
+  const { user, isGuest } = useAuth();
+  const { categories } = useSelector((state) => state.auth);
   const { city, eventForYou, eventForYouPreferencesKey } = useSelector(
     (state) => state.cityTrip
   );
   const dispatch = useDispatch();
-  const preferencesKey = JSON.stringify(user?.preferences ?? []);
+  const preferencesKey = isGuest
+    ? "__guest__"
+    : JSON.stringify(user?.preferences ?? []);
 
   const getCity = useCallback(async () => {
     try {
@@ -66,6 +70,8 @@ const Home = ({ navigation }) => {
     }
   }, [dispatch]);
 
+  const hasPreferences = !isGuest && (user?.preferences?.length ?? 0) > 0;
+
   const getForYou = useCallback(async () => {
     if (
       eventForYou.length > 0 &&
@@ -75,7 +81,15 @@ const Home = ({ navigation }) => {
     }
 
     try {
-      await dispatch(fetchEventForYou({ preferencesKey }));
+      await dispatch(
+        fetchEventForYou({
+          preferencesKey,
+          // Guests and users without interests get top-rated activities from Musement
+          ...(hasPreferences
+            ? {}
+            : { limit: 10, guestFallback: true }),
+        })
+      );
     } catch (error) {
       console.error("Failed to fetch Event For You on home Screen ", error);
     }
@@ -84,6 +98,7 @@ const Home = ({ navigation }) => {
     eventForYou.length,
     eventForYouPreferencesKey,
     preferencesKey,
+    hasPreferences,
   ]);
 
   useEffect(() => {
@@ -148,7 +163,9 @@ const Home = ({ navigation }) => {
   return (
     <MainContainer>
       <View style={styles.header}>
-        <Text style={styles.greeting}>{getTimeOfDayGreeting(user?.name)}</Text>
+        <Text style={styles.greeting}>
+          {getTimeOfDayGreeting(isGuest ? "Guest" : user?.name)}
+        </Text>
         <TouchableOpacity
           onPress={() =>
             navigation.navigate(navigationStrings.SEARCH_CITY, {
@@ -172,7 +189,9 @@ const Home = ({ navigation }) => {
             }
           />
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) =>
+          String(item?.id || item?.activity_id || index)
+        }
         numColumns={2}
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}

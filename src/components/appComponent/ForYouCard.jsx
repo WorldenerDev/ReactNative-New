@@ -21,9 +21,11 @@ import {
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
+import useAuth from "@hooks/useAuth";
 import { activityLikeUnlike } from "@api/services/mainServices";
 
 const ForYouCard = ({ item, onPress }) => {
+  const { requireAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [localIsLiked, setLocalIsLiked] = useState(item?.isLiked || false);
 
@@ -32,6 +34,9 @@ const ForYouCard = ({ item, onPress }) => {
   }, [item?.isLiked]);
 
   const handleLikePress = async () => {
+    if (!requireAuth("Sign in to save favorites")) {
+      return;
+    }
     if (isLoading) return;
     const newLikeState = !localIsLiked;
     setLocalIsLiked(newLikeState);
@@ -68,7 +73,10 @@ const ForYouCard = ({ item, onPress }) => {
           {item?.name}
         </Text>
         <TouchableOpacity
-          onPress={handleLikePress}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            handleLikePress();
+          }}
           style={[styles.likeButton, isLoading && styles.disabledButton]}
           activeOpacity={0.7}
           disabled={isLoading}

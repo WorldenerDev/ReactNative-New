@@ -54,19 +54,23 @@ class AppleSignInService {
       const { authorizationCode, identityToken, email, fullName, user } =
         appleAuthRequestResponse;
 
+      if (!user || !identityToken) {
+        throw new Error("Apple Sign-In did not return required credentials");
+      }
+
       // Create user data object
       const userData = {
-        id: user || "unknown",
-        email: email || "unknown",
+        id: user,
+        email: email || undefined,
         name: fullName
           ? `${fullName.givenName || ""} ${fullName.familyName || ""}`.trim()
-          : "unknown",
-        givenName: fullName?.givenName || "unknown",
-        familyName: fullName?.familyName || "unknown",
-        photo: null, // Apple doesn't provide profile photos
+          : undefined,
+        givenName: fullName?.givenName || undefined,
+        familyName: fullName?.familyName || undefined,
+        photo: null,
         hasPhoto: false,
-        idToken: identityToken || "missing",
-        authorizationCode: authorizationCode || "missing",
+        idToken: identityToken,
+        authorizationCode: authorizationCode || undefined,
         provider: "apple",
       };
 

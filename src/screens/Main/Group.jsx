@@ -19,9 +19,12 @@ import navigationStrings from "@navigation/navigationStrings";
 import { getGroups } from "@api/services/mainServices";
 import { formatDisplayDate } from "@utils/formatDate";
 import { cardGap, cardRadius, cardShadow, typography } from "@utils/theme";
+import GuestPrompt from "@components/GuestPrompt";
+import useAuth from "@hooks/useAuth";
 
 const Group = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
+  const { isGuest } = useAuth();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,14 +80,20 @@ const Group = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
+    if (!isGuest) {
+      fetchGroups();
+    } else {
+      setLoading(false);
+    }
+  }, [fetchGroups, isGuest]);
 
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchGroups();
-    }, [fetchGroups])
+      if (!isGuest) {
+        fetchGroups();
+      }
+    }, [fetchGroups, isGuest])
   );
 
   const handleCardPress = (item) => {
@@ -158,6 +167,18 @@ const Group = ({ navigation }) => {
       </Text>
     </View>
   );
+
+  if (isGuest) {
+    return (
+      <MainContainer>
+        <Header title="My Groups" showBack={false} />
+        <GuestPrompt
+          title="Sign in to join groups"
+          subtitle="Create an account to plan trips with friends, chat, and share activities."
+        />
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer loader={loading}>

@@ -75,7 +75,9 @@ apiClient.interceptors.response.use(
   (error) => {
     console.log(" error =>", error);
     console.error("API Error:", error?.response?.data || error.message);
-    showToast("error", error?.response?.data?.message || error.message);
+    if (!error?.config?.skipErrorToast) {
+      showToast("error", error?.response?.data?.message || error.message);
+    }
     throw error?.response?.data || { message: "Network error" };
   }
 );

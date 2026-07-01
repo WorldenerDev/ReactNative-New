@@ -14,13 +14,18 @@ import {
 } from "@screens/index";
 
 const Stack = createNativeStackNavigator();
-const AuthNavigator = () => {
+const AuthNavigator = ({ initialRouteName, onReady }) => {
   return (
     <>
       <Stack.Navigator
-        initialRouteName={navigationStrings.SPLASHSCREEN}
+        initialRouteName={initialRouteName || navigationStrings.SPLASHSCREEN}
         screenOptions={{
           headerShown: false,
+        }}
+        screenListeners={{
+          state: () => {
+            onReady?.();
+          },
         }}
       >
         <Stack.Screen

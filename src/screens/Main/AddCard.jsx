@@ -1,4 +1,5 @@
 import { saveStripePaymentMethod } from "@api/services/mainServices";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
@@ -14,7 +15,9 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { StyleSheet, Text, View } from "react-native";
 
+
 const AddCard = ({ navigation }) => {
+  useGuestScreenGuard();
   const bottomInset = useStickyBottomInset();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);

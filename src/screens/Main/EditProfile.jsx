@@ -1,3 +1,4 @@
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import {
   StyleSheet,
   Text,
@@ -59,7 +60,9 @@ const PencilIcon = () => (
   </Svg>
 );
 
+
 const EditProfile = ({ navigation }) => {
+  useGuestScreenGuard();
   const dispatch = useDispatch();
   const bottomInset = useStickyBottomInset();
   const scrollPadding = useStickyScrollPadding();
@@ -135,10 +138,12 @@ const EditProfile = ({ navigation }) => {
     try {
       const result = await pickImage();
 
-      if (result && result.uri) {
-        setProfileImage(result);
-        setImageUri(result.uri);
+      if (!result?.uri) {
+        return;
       }
+
+      setProfileImage(result);
+      setImageUri(result.uri);
     } catch (error) {
       console.error("Error picking image:", error);
       showToast("error", error?.message || "Failed to pick image");
@@ -185,11 +190,20 @@ const EditProfile = ({ navigation }) => {
           <View style={styles.profileImageContainer}>
             {imageUri ? (
               <View style={styles.profileImagePlaceholder}>
-                <OptimizedImage
-                  source={{ uri: imageUri }}
-                  style={styles.profileImage}
-                  resizeMode="cover"
-                />
+                {imageUri.startsWith("file://") ||
+                imageUri.startsWith("content://") ? (
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.profileImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <OptimizedImage
+                    source={{ uri: imageUri }}
+                    style={styles.profileImage}
+                    resizeMode="cover"
+                  />
+                )}
               </View>
             ) : (
               <View style={styles.profileImagePlaceholder}>

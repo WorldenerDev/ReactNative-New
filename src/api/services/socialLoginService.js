@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import googleSignInService from "./googleSignInService";
 import appleSignInService from "./appleSignInService";
 
@@ -9,15 +10,16 @@ class SocialLoginService {
     };
   }
 
-  // Get available providers
-  getAvailableProviders() {
-    const available = {};
+  // Get available providers (awaits async Apple availability on iOS)
+  async getAvailableProviders() {
+    const available = {
+      google: true,
+      apple: false,
+    };
 
-    // Google is always available on both platforms
-    available.google = true;
-
-    // Apple is only available on iOS
-    available.apple = appleSignInService.isAvailable;
+    if (Platform.OS === "ios") {
+      available.apple = await appleSignInService.checkAvailability();
+    }
 
     return available;
   }

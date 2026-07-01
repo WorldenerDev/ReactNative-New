@@ -31,7 +31,8 @@ const OTP_LENGTH = 6;
 
 const OtpScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
-  const { fromScreen, phoneNumber, fcm_Token } = route?.params || {};
+  const { fromScreen, phoneNumber, fcm_Token, deviceId, deviceType } =
+    route?.params || {};
   const [otp, setOtp] = useState("");
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -96,6 +97,8 @@ const OtpScreen = ({ navigation, route }) => {
         phone_number: phoneNumber,
         otp,
         fcm_token: fcm_Token || "not_available",
+        device_id: deviceId,
+        device_type: deviceType || Platform.OS,
       };
       const result = await dispatch(onOtp(sendData));
       console.log("signup Otp Verify result ", result);

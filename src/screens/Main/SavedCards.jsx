@@ -1,4 +1,5 @@
 import colors from "@assets/colors";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
@@ -21,7 +22,9 @@ import {
   View,
 } from "react-native";
 
+
 const SavedCards = ({ navigation }) => {
+  useGuestScreenGuard();
   const bottomInset = useStickyBottomInset();
   const [addingCard, setAddingCard] = useState(false);
   const { items, status } = useSelector((s) => s.payment);

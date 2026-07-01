@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from "react-native";
-import React, { useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
+import React, { useCallback, useEffect, useState } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import ToggleSwitch from "@components/ToggleSwitch";
@@ -15,17 +16,110 @@ import {
 import useStickyBottomInset, {
   useStickyScrollPadding,
 } from "@hooks/useStickyBottomInset";
+import {
+  getNotificationSettings,
+  updateNotificationSettings,
+} from "@api/services/mainServices";
+import { updateOnlineStatus } from "@api/services/onlineStatusService";
+import { showToast } from "@components/AppToast";
+import { getFCMToken } from "@utils/fcmToken";
+
 
 const NotificationSettings = () => {
+  useGuestScreenGuard();
   const bottomInset = useStickyBottomInset();
   const scrollPadding = useStickyScrollPadding();
   const [eventReminders, setEventReminders] = useState(true);
   const [newsAndAlerts, setNewsAndAlerts] = useState(true);
+  const [savedEventReminders, setSavedEventReminders] = useState(true);
+  const [savedNewsAndAlerts, setSavedNewsAndAlerts] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSaveChanges = () => {
-    // Handle save changes logic here
-    console.log("Event Reminders:", eventReminders);
-    console.log("News and Alerts:", newsAndAlerts);
+  const hasChanges =
+    eventReminders !== savedEventReminders ||
+    newsAndAlerts !== savedNewsAndAlerts;
+
+  const applySettings = useCallback((data) => {
+    const event = data?.event_reminders_notify ?? true;
+    const news = data?.news_alerts_notify ?? true;
+    setEventReminders(event);
+    setNewsAndAlerts(news);
+    setSavedEventReminders(event);
+    setSavedNewsAndAlerts(news);
+  }, []);
+
+  const syncDeviceToken = useCallback(async (settings) => {
+    const fcmToken = await getFCMToken();
+    if (!fcmToken || !settings) return;
+
+    const newsEnabled = settings?.news_alerts_notify ?? true;
+    const eventEnabled = settings?.event_reminders_notify ?? true;
+
+    if (!newsEnabled) {
+      await updateNotificationSettings({
+        event_reminders_notify: eventEnabled,
+        news_alerts_notify: false,
+        fcm_token: fcmToken,
+      });
+      return;
+    }
+
+    await updateOnlineStatus({ isOnline: true, fcm_token: fcmToken });
+  }, []);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getNotificationSettings();
+      const settings = response?.data;
+      applySettings(settings);
+      await syncDeviceToken(settings);
+    } catch (error) {
+      console.error("Error fetching notification settings:", error);
+      showToast(
+        "error",
+        error?.message || "Failed to load notification settings"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [applySettings, syncDeviceToken]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  const handleSaveChanges = async () => {
+    if (!hasChanges || saving) return;
+
+    try {
+      setSaving(true);
+      const fcmToken = await getFCMToken();
+      const payload = {
+        event_reminders_notify: eventReminders,
+        news_alerts_notify: newsAndAlerts,
+      };
+
+      if (fcmToken) {
+        payload.fcm_token = fcmToken;
+      }
+
+      const response = await updateNotificationSettings(payload);
+      applySettings(response?.data);
+      showToast(
+        "success",
+        response?.message || "Notification settings updated successfully"
+      );
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+      showToast(
+        "error",
+        error?.message || "Failed to update notification settings"
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -37,42 +131,46 @@ const NotificationSettings = () => {
           Choose what updates you want to receive.
         </Text>
 
-        <View style={styles.settingsContainer}>
-          {/* Event Reminders Card */}
-          <View style={styles.settingCard}>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingTitle}>Event Reminders</Text>
-              <Text style={styles.settingDescription}>
-                Daily reminders of upcoming booked events
-              </Text>
-            </View>
-            <ToggleSwitch
-              isEnabled={eventReminders}
-              onToggle={() => setEventReminders(!eventReminders)}
-            />
+        {loading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
+        ) : (
+          <View style={styles.settingsContainer}>
+            <View style={styles.settingCard}>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingTitle}>Event Reminders</Text>
+                <Text style={styles.settingDescription}>
+                  Daily reminders of upcoming booked events
+                </Text>
+              </View>
+              <ToggleSwitch
+                isEnabled={eventReminders}
+                onToggle={() => setEventReminders(!eventReminders)}
+              />
+            </View>
 
-          {/* News and Alerts Card */}
-          <View style={styles.settingCard}>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingTitle}>News and Alerts</Text>
-              <Text style={styles.settingDescription}>
-                Alerts from our special team
-              </Text>
+            <View style={styles.settingCard}>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingTitle}>News and Alerts</Text>
+                <Text style={styles.settingDescription}>
+                  Alerts from our special team
+                </Text>
+              </View>
+              <ToggleSwitch
+                isEnabled={newsAndAlerts}
+                onToggle={() => setNewsAndAlerts(!newsAndAlerts)}
+              />
             </View>
-            <ToggleSwitch
-              isEnabled={newsAndAlerts}
-              onToggle={() => setNewsAndAlerts(!newsAndAlerts)}
-            />
           </View>
-        </View>
+        )}
       </View>
 
       <View style={[styles.buttonContainer, { bottom: bottomInset }]}>
         <ButtonComp
-          title="Save Changes"
+          title={saving ? "Saving..." : "Save Changes"}
           onPress={handleSaveChanges}
-          disabled={false}
+          disabled={loading || saving || !hasChanges}
         />
       </View>
     </MainContainer>
@@ -92,6 +190,12 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginTop: getVertiPadding(20),
     marginBottom: getVertiPadding(30),
+  },
+  loaderContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: getVertiPadding(40),
   },
   settingsContainer: {
     gap: getVertiPadding(16),

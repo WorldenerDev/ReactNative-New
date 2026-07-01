@@ -20,9 +20,12 @@ import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserTrip, deleteUserTrip } from "@redux/slices/cityTripSlice";
+import GuestPrompt from "@components/GuestPrompt";
+import useAuth from "@hooks/useAuth";
 
 const Trips = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
+  const { isGuest } = useAuth();
   const { trip } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
@@ -37,14 +40,18 @@ const Trips = ({ navigation }) => {
   }, [dispatch]);
 
   useEffect(() => {
-    getAllTrips();
-  }, [getAllTrips]);
+    if (!isGuest) {
+      getAllTrips();
+    }
+  }, [getAllTrips, isGuest]);
 
   // Refresh data when screen comes into focus (e.g., returning from Create Trip)
   useFocusEffect(
     useCallback(() => {
-      getAllTrips();
-    }, [getAllTrips])
+      if (!isGuest) {
+        getAllTrips();
+      }
+    }, [getAllTrips, isGuest])
   );
 
   const onRefresh = async () => {
@@ -72,7 +79,6 @@ const Trips = ({ navigation }) => {
           setDeleteLoading(true);
           try {
             await dispatch(deleteUserTrip(tripId));
-            // Automatically refresh trips after successful deletion
             await getAllTrips();
           } catch (error) {
             Alert.alert("Error", "Failed to delete trip. Please try again.");
@@ -99,6 +105,18 @@ const Trips = ({ navigation }) => {
 
     return { members, activities };
   };
+
+  if (isGuest) {
+    return (
+      <MainContainer>
+        <Header showBack={false} title="My Trips" />
+        <GuestPrompt
+          title="Sign in to plan trips"
+          subtitle="Create an account to save destinations, build itineraries, and travel with friends."
+        />
+      </MainContainer>
+    );
+  }
 
   return (
     <MainContainer loader={deleteLoading}>
