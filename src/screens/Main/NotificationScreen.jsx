@@ -33,6 +33,12 @@ import {
   getNotifications,
   markNotificationRead,
 } from "@api/services/mainServices";
+import {
+  fetchCrewTripNotifications,
+  isReusableGroupsMockEnabled,
+} from "@api/services/crewGroupsService";
+import navigationStrings from "@navigation/navigationStrings";
+import { useNavigation } from "@react-navigation/native";
 import { showToast } from "@components/AppToast";
 
 
@@ -54,6 +60,8 @@ const getNotificationTypeLabel = (item) => {
       return "Trip Reminder";
     case "admin_broadcast":
       return "News & Alert";
+    case "trip_created_in_group":
+      return "New Crew Trip";
     default:
       return "Notification";
   }
@@ -61,6 +69,8 @@ const getNotificationTypeLabel = (item) => {
 
 const NotificationScreen = () => {
   useGuestScreenGuard();
+  const navigation = useNavigation();
+  const mockEnabled = isReusableGroupsMockEnabled();
   const scrollPadding = useStickyScrollPadding();
   const [activeTab, setActiveTab] = useState("Notifications");
   const [notifications, setNotifications] = useState([]);
@@ -158,7 +168,18 @@ const NotificationScreen = () => {
     try {
       setLoading(true);
       const response = await getNotifications();
-      setNotifications(response?.data?.notifications || []);
+      let items = response?.data?.notifications || [];
+
+      if (mockEnabled) {
+        const mockRes = await fetchCrewTripNotifications();
+        const mockItems = (mockRes?.data || []).map((n) => ({
+          ...n,
+          body: n.message,
+        }));
+        items = [...mockItems, ...items];
+      }
+
+      setNotifications(items);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       showToast("error", error?.message || "Failed to fetch notifications");
@@ -241,6 +262,20 @@ const NotificationScreen = () => {
     );
   };
 
+  const handleNotificationPress = async (item) => {
+    await markAsRead(item);
+
+    if (
+      mockEnabled &&
+      item?.notifictaion_type === "trip_created_in_group" &&
+      item?.tripId
+    ) {
+      navigation.navigate(navigationStrings.TRIP_BRIEF, {
+        canonicalTripId: item.tripId,
+      });
+    }
+  };
+
   const renderNotificationItem = ({ item, index }) => {
     const currentData = getCurrentData();
     const message = item?.body || item?.title || "";
@@ -251,7 +286,7 @@ const NotificationScreen = () => {
       <View>
         <TouchableOpacity
           style={styles.notificationItem}
-          onPress={() => markAsRead(item)}
+          onPress={() => handleNotificationPress(item)}
         >
           <View style={styles.notificationContent}>
             <View style={styles.iconContainer}>

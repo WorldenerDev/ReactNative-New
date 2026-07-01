@@ -16,6 +16,7 @@ module.exports = {
           "@api": "./src/api",
           "@redux": "./src/redux",
           "@hooks": "./src/hooks",
+          "@mocks": "./src/mocks",
           "@services": "./src/services",
         },
       },

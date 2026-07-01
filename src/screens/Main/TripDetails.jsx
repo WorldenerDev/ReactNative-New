@@ -1,4 +1,14 @@
-import { checkoutTrip, getTripBuddies, getTripDetails } from "@api/services/mainServices";
+import { checkoutTrip, getTripBuddies } from "@api/services/mainServices";
+import {
+  fetchTripDetailsWithMock,
+  isReusableGroupsMockEnabled,
+  optInToTrip,
+  optOutOfTrip,
+} from "@api/services/crewGroupsService";
+import TopTab from "@components/TopTab";
+import TripCompareTab from "./tripDetails/TripCompareTab";
+import TripWishlistTab from "./tripDetails/TripWishlistTab";
+import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
@@ -44,6 +54,9 @@ const TripDetails = ({ navigation, route }) => {
     trip ? normalizeTripDetails(trip) : null
   );
   const [loading, setLoading] = useState(true);
+  const [detailTab, setDetailTab] = useState("Itinerary");
+  const mockEnabled = isReusableGroupsMockEnabled();
+  const showCrewTabs = mockEnabled && Boolean(tripData?.groupId);
   const { requestContactsPermission } = usePermissions();
   const insets = useSafeAreaInsets();
   const scrollContentBottomPadding =
@@ -60,7 +73,7 @@ const TripDetails = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      const response = await getTripDetails(currentTripId);
+      const response = await fetchTripDetailsWithMock(currentTripId);
       const normalized = normalizeTripDetails(response);
 
       if (normalized) {
@@ -89,7 +102,45 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const handleViewGroup = () => {
-    // TODO: Navigate to group details
+    if (!tripData?.groupId) {
+      showToast("error", "No crew linked to this trip");
+      return;
+    }
+    navigation.navigate(navigationStrings.GROUP_DETAILS, {
+      groupId: tripData.groupId,
+    });
+  };
+
+  const handleOptOut = async () => {
+    const canonicalId = tripData?.canonicalTripId || tripData?._id;
+    if (!canonicalId) return;
+    try {
+      setLoading(true);
+      await optOutOfTrip(canonicalId);
+      showToast("success", "You opted out of this trip");
+      navigation.goBack();
+    } catch (error) {
+      showToast("error", error?.message || "Failed to opt out");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejoinTrip = async () => {
+    const canonicalId = tripData?.canonicalTripId || tripData?._id;
+    if (!canonicalId) return;
+    try {
+      setLoading(true);
+      const res = await optInToTrip(canonicalId);
+      if (res?.success) {
+        showToast("success", "Welcome back!");
+        fetchTripDetails();
+      }
+    } catch (error) {
+      showToast("error", error?.message || "Failed to rejoin");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExploreMore = () => {
@@ -240,6 +291,99 @@ const TripDetails = ({ navigation, route }) => {
     return new Date(a) - new Date(b);
   });
 
+  const renderItineraryContent = () => (
+    <View style={styles.activitiesContainer}>
+      <View style={styles.activitiesHeader}>
+        <Text style={styles.activitiesTitle}>Activities</Text>
+        <View style={styles.activitiesHeaderIcons}>
+          <TouchableOpacity
+            style={styles.calendarButton}
+            onPress={handleCheckout}
+          >
+            <Image
+              source={imagePath.CART_ICON}
+              style={styles.calendarIcon1}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.calendarButton}
+            onPress={handleCalendarView}
+          >
+            <Image
+              source={imagePath.CALENDER_ICON}
+              style={styles.calendarIcon1}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {activityDates.length > 0 ? (
+        <FlatList
+          data={activityDates}
+          keyExtractor={(item, index) => `date-${index}-${item}`}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!showCrewTabs}
+          contentContainerStyle={[
+            styles.activitiesListContent,
+            { paddingBottom: scrollContentBottomPadding },
+          ]}
+          renderItem={({ item: date, index: dateIndex }) => {
+            const activitiesForDate = groupedActivities[date] || [];
+
+            return (
+              <View style={styles.dateGroup} key={`date-${dateIndex}-${date}`}>
+                <Text style={styles.dateHeader}>
+                  {formatGroupDate(date)}
+                </Text>
+                {activitiesForDate.map((activity, index) => (
+                  <TouchableOpacity
+                    key={`activity-${dateIndex}-${index}-${activity.product_id || activity.id || activity._id || index}`}
+                    style={styles.activityCard}
+                    onPress={handleActivityPress}
+                  >
+                    <OptimizedImage
+                      source={{
+                        uri:
+                          activity.image ||
+                          activity.product_image ||
+                          activity.thumbnail ||
+                          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
+                      }}
+                      style={styles.activityImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.activityInfo}>
+                      <Text style={styles.activityTitle}>
+                        {activity.title ||
+                          activity.name ||
+                          activity.product_name ||
+                          "Activity"}
+                      </Text>
+                      <Text style={styles.activityDetails}>
+                        {formatActivityDate(
+                          activity.date || activity.time || "TBD"
+                        )}{" "}
+                        • Qty: {activity.quantity || 1} • $
+                        {activity.total_price ||
+                          activity.price ||
+                          activity.retail_price ||
+                          0}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            );
+          }}
+        />
+      ) : (
+        <View style={styles.noActivitiesContainer}>
+          <Text style={styles.noActivitiesText}>No activities found</Text>
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <MainContainer loader={loading}>
       <Header
@@ -313,7 +457,24 @@ const TripDetails = ({ navigation, route }) => {
 
                 {/* Participants Section */}
                 <View style={styles.participantsSection}>
-                  {(tripData?.participants ||
+                  {tripData?.groupId ? (
+                    <>
+                      <View style={styles.participantsInfo}>
+                        <Text style={styles.participantsCount}>
+                          {tripData?.groupName
+                            ? `${tripData.groupName} · `
+                            : ""}
+                          {tripData?.participants || 0} joined
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.viewGroupButton}
+                        onPress={handleViewGroup}
+                      >
+                        <Text style={styles.viewGroupText}>View Group</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (tripData?.participants ||
                     tripData?.participantsList?.length ||
                     0) > 0 ? (
                     // Show participants info and View Group button when participants are available
@@ -426,98 +587,47 @@ const TripDetails = ({ navigation, route }) => {
               </View>
             </View>
 
-            {/* Activities Section */}
-            <View style={styles.activitiesContainer}>
-              <View style={styles.activitiesHeader}>
-                <Text style={styles.activitiesTitle}>Activities</Text>
-                <View style={styles.activitiesHeaderIcons}>
-                  <TouchableOpacity
-                    style={styles.calendarButton}
-                    onPress={handleCheckout}
-                  >
-                    <Image
-                      source={imagePath.CART_ICON}
-                      style={styles.calendarIcon1}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.calendarButton}
-                    onPress={handleCalendarView}
-                  >
-                    <Image
-                      source={imagePath.CALENDER_ICON}
-                      style={styles.calendarIcon1}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {activityDates.length > 0 ? (
-                <FlatList
-                  data={activityDates}
-                  keyExtractor={(item, index) => `date-${index}-${item}`}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={[
-                    styles.activitiesListContent,
-                    { paddingBottom: scrollContentBottomPadding },
-                  ]}
-                  renderItem={({ item: date, index: dateIndex }) => {
-                    const activitiesForDate = groupedActivities[date] || [];
-
-                    return (
-                      <View style={styles.dateGroup} key={`date-${dateIndex}-${date}`}>
-                        <Text style={styles.dateHeader}>
-                          {formatGroupDate(date)}
-                        </Text>
-                        {activitiesForDate.map((activity, index) => (
-                          <TouchableOpacity
-                            key={`activity-${dateIndex}-${index}-${activity.product_id || activity.id || activity._id || index}`}
-                            style={styles.activityCard}
-                            onPress={handleActivityPress}
-                          >
-                            <OptimizedImage
-                              source={{
-                                uri:
-                                  activity.image ||
-                                  activity.product_image ||
-                                  activity.thumbnail ||
-                                  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
-                              }}
-                              style={styles.activityImage}
-                              resizeMode="cover"
-                            />
-                            <View style={styles.activityInfo}>
-                              <Text style={styles.activityTitle}>
-                                {activity.title ||
-                                  activity.name ||
-                                  activity.product_name ||
-                                  "Activity"}
-                              </Text>
-                              <Text style={styles.activityDetails}>
-                                {formatActivityDate(
-                                  activity.date || activity.time || "TBD"
-                                )}{" "}
-                                • Qty: {activity.quantity || 1} • $
-                                {activity.total_price ||
-                                  activity.price ||
-                                  activity.retail_price ||
-                                  0}
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    );
-                  }}
+            {showCrewTabs && tripData?.participationStatus === "joined" ? (
+              <View style={styles.optOutRow}>
+                <ButtonComp
+                  title="Not this time (opt out)"
+                  onPress={handleOptOut}
+                  containerStyle={styles.optOutBtn}
+                  textStyle={styles.optOutBtnText}
                 />
-              ) : (
-                <View style={styles.noActivitiesContainer}>
-                  <Text style={styles.noActivitiesText}>
-                    No activities found
-                  </Text>
-                </View>
-              )}
-            </View>
+              </View>
+            ) : null}
+
+            {showCrewTabs && tripData?.participationStatus === "opted_out" ? (
+              <View style={styles.optOutRow}>
+                <ButtonComp
+                  title="Rejoin trip"
+                  onPress={handleRejoinTrip}
+                  containerStyle={styles.rejoinBtn}
+                />
+              </View>
+            ) : null}
+
+            {showCrewTabs ? (
+              <TopTab
+                tabs={["Itinerary", "Compare", "Wishlist"]}
+                activeTab={detailTab}
+                onTabChange={setDetailTab}
+                containerStyle={styles.detailTabs}
+              />
+            ) : null}
+
+            {(!showCrewTabs || detailTab === "Itinerary") && renderItineraryContent()}
+            {showCrewTabs && detailTab === "Compare" ? (
+              <TripCompareTab />
+            ) : null}
+            {showCrewTabs && detailTab === "Wishlist" ? (
+              <TripWishlistTab
+                canonicalTripId={
+                  tripData?.canonicalTripId || tripData?._id
+                }
+              />
+            ) : null}
 
             {/* Floating Checkout Button */}
             {/* <View style={styles.floatingButtonContainer}>
@@ -820,5 +930,24 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.lightText,
     textAlign: "center",
+  },
+  detailTabs: {
+    marginHorizontal: getWidth(16),
+    marginBottom: getHeight(8),
+  },
+  optOutRow: {
+    paddingHorizontal: getWidth(16),
+    marginBottom: getHeight(8),
+  },
+  optOutBtn: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  optOutBtnText: {
+    color: colors.black,
+  },
+  rejoinBtn: {
+    backgroundColor: colors.secondary,
   },
 });

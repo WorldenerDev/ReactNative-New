@@ -22,22 +22,44 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchUserTrip, deleteUserTrip } from "@redux/slices/cityTripSlice";
 import GuestPrompt from "@components/GuestPrompt";
 import useAuth from "@hooks/useAuth";
+import {
+  fetchMyTripsWithMock,
+  isReusableGroupsMockEnabled,
+  optInToTrip,
+  subscribeReusableGroupsMock,
+} from "@api/services/crewGroupsService";
+import { showToast } from "@components/AppToast";
 
 const Trips = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
   const { isGuest } = useAuth();
+  const mockEnabled = isReusableGroupsMockEnabled();
   const { trip } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
+  const [tripList, setTripList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(false);
 
   const getAllTrips = useCallback(async () => {
     try {
-      await dispatch(fetchUserTrip());
+      if (mockEnabled) {
+        setListLoading(true);
+        const response = await fetchMyTripsWithMock(() =>
+          dispatch(fetchUserTrip()).unwrap()
+        );
+        if (response?.success) {
+          setTripList(response.data || []);
+        }
+      } else {
+        await dispatch(fetchUserTrip());
+      }
     } catch (error) {
       console.error("Failed to fetch trips: ", error);
+    } finally {
+      setListLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, mockEnabled]);
 
   useEffect(() => {
     if (!isGuest) {
@@ -45,7 +67,6 @@ const Trips = ({ navigation }) => {
     }
   }, [getAllTrips, isGuest]);
 
-  // Refresh data when screen comes into focus (e.g., returning from Create Trip)
   useFocusEffect(
     useCallback(() => {
       if (!isGuest) {
@@ -53,6 +74,11 @@ const Trips = ({ navigation }) => {
       }
     }, [getAllTrips, isGuest])
   );
+
+  useEffect(() => {
+    if (!mockEnabled || isGuest) return undefined;
+    return subscribeReusableGroupsMock(getAllTrips);
+  }, [mockEnabled, isGuest, getAllTrips]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -70,6 +96,10 @@ const Trips = ({ navigation }) => {
   };
 
   const handleDelete = (tripId) => {
+    if (mockEnabled) {
+      showToast("info", "Delete is not available in mock mode");
+      return;
+    }
     Alert.alert("Delete Trip", "Are you sure you want to delete this trip?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -90,6 +120,22 @@ const Trips = ({ navigation }) => {
     ]);
   };
 
+  const handleRejoin = async (item) => {
+    const canonicalId = item.canonicalTripId || item._id;
+    try {
+      setListLoading(true);
+      const res = await optInToTrip(canonicalId);
+      if (res?.success) {
+        showToast("success", "Welcome back!");
+        await getAllTrips();
+      }
+    } catch (error) {
+      showToast("error", error?.message || "Failed to rejoin");
+    } finally {
+      setListLoading(false);
+    }
+  };
+
   const getTripMeta = (item) => {
     const members =
       typeof item?.participants === "number"
@@ -106,6 +152,8 @@ const Trips = ({ navigation }) => {
     return { members, activities };
   };
 
+  const displayTrips = mockEnabled ? tripList : trip || [];
+
   if (isGuest) {
     return (
       <MainContainer>
@@ -119,7 +167,7 @@ const Trips = ({ navigation }) => {
   }
 
   return (
-    <MainContainer loader={deleteLoading}>
+    <MainContainer loader={deleteLoading || listLoading}>
       <Header
         showBack={false}
         title="My Trips"
@@ -128,9 +176,10 @@ const Trips = ({ navigation }) => {
       />
 
       <FlatList
-        data={trip || []}
+        data={displayTrips}
         renderItem={({ item }) => {
           const { members, activities } = getTripMeta(item);
+          const isOptedOut = item?.participationStatus === "opted_out";
 
           return (
             <TripCard
@@ -140,6 +189,10 @@ const Trips = ({ navigation }) => {
               endDate={item?.end_at}
               memberCount={members}
               activityCount={activities}
+              groupName={item?.groupName}
+              participationStatus={item?.participationStatus}
+              dimmed={isOptedOut}
+              showCrewButton={!!item?.groupId}
               onItineraryPress={() =>
                 navigation.navigate(navigationStrings.TRIP_DETAILS, {
                   tripId: item?._id,
@@ -151,15 +204,21 @@ const Trips = ({ navigation }) => {
                   ? navigation.navigate(navigationStrings.GROUP_DETAILS, {
                       groupId: item?.groupId,
                     })
-                  : Alert.alert("Group not available");
+                  : Alert.alert("Crew not available");
               }}
+              onRejoinPress={
+                isOptedOut
+                  ? () => handleRejoin(item)
+                  : undefined
+              }
               onDeletePress={() => handleDelete(item._id)}
-              onPressCard={() =>
+              onPressCard={() => {
+                if (isOptedOut) return;
                 navigation.navigate(navigationStrings.TRIP_DETAILS, {
                   tripId: item?._id,
                   trip: item,
-                })
-              }
+                });
+              }}
             />
           );
         }}
@@ -173,10 +232,10 @@ const Trips = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary]} // Android
-            tintColor={colors.primary} // iOS
-            title="Pull to refresh" // iOS
-            titleColor={colors.lightText} // iOS
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            title="Pull to refresh"
+            titleColor={colors.lightText}
           />
         }
         ListEmptyComponent={() => (

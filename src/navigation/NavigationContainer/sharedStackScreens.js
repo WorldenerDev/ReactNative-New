@@ -11,6 +11,7 @@ import {
   EditProfile,
   EditTrip,
   GroupDetails,
+  GroupTripsOnboarding,
   MemberProfile,
   NotificationScreen,
   NotificationSettings,
@@ -23,6 +24,7 @@ import {
   TransactionDetail,
   TransactionHistory,
   TripDetails,
+  TripBrief,
   UpdateInterests,
   ViewAiChat,
 } from "@screens/index";
@@ -45,6 +47,11 @@ export const sharedStackScreens = [
     component: CalendarViewTripDetail,
   },
   { name: navigationStrings.GROUP_DETAILS, component: GroupDetails },
+  { name: navigationStrings.TRIP_BRIEF, component: TripBrief },
+  {
+    name: navigationStrings.GROUP_TRIPS_ONBOARDING,
+    component: GroupTripsOnboarding,
+  },
   { name: navigationStrings.MEMBER_PROFILE, component: MemberProfile },
   { name: navigationStrings.NOTIFICATION_SCREEN, component: NotificationScreen },
   { name: navigationStrings.BOOKING_DETAILS, component: BookingDetails },

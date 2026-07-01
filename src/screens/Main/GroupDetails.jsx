@@ -11,7 +11,7 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TopTab from "@components/TopTab";
@@ -47,6 +47,13 @@ import { showToast } from "@components/AppToast";
 import usePermissions from "@hooks/usePermissions";
 import Contacts from "react-native-contacts";
 import { getImageUrl } from "@api/apiClient";
+import CrewTripCard from "@components/crew/CrewTripCard";
+import {
+  fetchCrewDetails,
+  fetchCrewTrips,
+  isReusableGroupsMockEnabled,
+  subscribeReusableGroupsMock,
+} from "@api/services/crewGroupsService";
 
 // Dummy image URL for users without images
 const DUMMY_USER_IMAGE =
@@ -77,9 +84,16 @@ const GroupDetails = () => {
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [showLikedByModal, setShowLikedByModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
-  // const tabs = ["Members", "Compare Itinernary", "Wishlisted", "Settings"];
-  const tabs = ["Members", "Compare", "Wishlisted"];
-  const [activeTab, setActiveTab] = useState(tabs[0]);
+  const mockEnabled = isReusableGroupsMockEnabled();
+  const tabs = useMemo(
+    () => (mockEnabled ? ["Trips", "Members"] : ["Members", "Compare", "Wishlisted"]),
+    [mockEnabled]
+  );
+  const [activeTab, setActiveTab] = useState(() =>
+    mockEnabled ? "Trips" : "Members"
+  );
+  const [crewTrips, setCrewTrips] = useState([]);
+  const [tripSegment, setTripSegment] = useState("active");
   const [compareUser, setCompareUser] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [comparisonLoading, setComparisonLoading] = useState(false);
@@ -206,7 +220,9 @@ const GroupDetails = () => {
           groupId
         );
         setLoading(true);
-        const response = await getGroupDetails(groupId);
+        const response = mockEnabled
+          ? await fetchCrewDetails(groupId)
+          : await getGroupDetails(groupId);
         console.log("GroupDetails: API response:", response);
         if (response?.success && response?.data) {
           setGroupData(response.data);
@@ -225,7 +241,35 @@ const GroupDetails = () => {
     };
 
     fetchGroupDetails();
-  }, [groupId]);
+  }, [groupId, mockEnabled]);
+
+  useEffect(() => {
+    if (!mockEnabled || !groupId) return undefined;
+    return subscribeReusableGroupsMock(() => {
+      fetchCrewDetails(groupId).then((res) => {
+        if (res?.success) setGroupData(res.data);
+      });
+      if (activeTab === "Trips") {
+        fetchCrewTrips(groupId, { status: tripSegment }).then((res) => {
+          if (res?.success) setCrewTrips(res.data || []);
+        });
+      }
+    });
+  }, [mockEnabled, groupId, activeTab, tripSegment]);
+
+  useEffect(() => {
+    const loadCrewTrips = async () => {
+      if (!mockEnabled || !groupId || activeTab !== "Trips") return;
+      try {
+        setLoading(true);
+        const res = await fetchCrewTrips(groupId, { status: tripSegment });
+        if (res?.success) setCrewTrips(res.data || []);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCrewTrips();
+  }, [mockEnabled, groupId, activeTab, tripSegment]);
 
   // Fetch wishlist data when Wishlisted tab is active
   useEffect(() => {
@@ -926,6 +970,80 @@ const GroupDetails = () => {
     );
   };
 
+  const handleCrewTripPress = (trip) => {
+    const status = trip.participationStatus;
+    if (status === "joined" && trip.memberTripId) {
+      navigation.navigate(navigationStrings.TRIP_DETAILS, {
+        tripId: trip.memberTripId,
+      });
+    } else {
+      navigation.navigate(navigationStrings.TRIP_BRIEF, {
+        canonicalTripId: trip._id,
+      });
+    }
+  };
+
+  const handleCreateCrewTrip = () => {
+    navigation.navigate(navigationStrings.CREATE_TRIP, {
+      groupId,
+      groupName: groupData?.groupName,
+    });
+  };
+
+  const renderTripsContent = () => (
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={[
+        styles.tripsContainer,
+        { paddingBottom: scrollPadding + getHeight(80) },
+      ]}
+    >
+      <View style={styles.segmentRow}>
+        {["active", "past"].map((seg) => (
+          <TouchableOpacity
+            key={seg}
+            style={[
+              styles.segmentBtn,
+              tripSegment === seg && styles.segmentBtnActive,
+            ]}
+            onPress={() => setTripSegment(seg)}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                tripSegment === seg && styles.segmentTextActive,
+              ]}
+            >
+              {seg === "active" ? "Active" : "Past"}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ButtonComp
+        title="Create Trip"
+        onPress={handleCreateCrewTrip}
+        containerStyle={styles.createTripBtn}
+      />
+
+      {crewTrips.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            No {tripSegment} trips in this crew
+          </Text>
+        </View>
+      ) : (
+        crewTrips.map((trip) => (
+          <CrewTripCard
+            key={trip._id}
+            trip={trip}
+            onPress={handleCrewTripPress}
+          />
+        ))
+      )}
+    </ScrollView>
+  );
+
   return (
     <MainContainer>
       <Header title="Group Details" showBack={true} />
@@ -936,12 +1054,13 @@ const GroupDetails = () => {
         <Loader />
       ) : (
         <View style={styles.contentContainer}>
+          {activeTab === "Trips" && renderTripsContent()}
           {activeTab === "Members" && renderMembersContent()}
-          {activeTab === "Compare" &&
+          {!mockEnabled && activeTab === "Compare" &&
             (compareUser
               ? renderComparisonDetails()
               : renderCompareSelection())}
-          {activeTab === "Wishlisted" && renderWishlistedContent()}
+          {!mockEnabled && activeTab === "Wishlisted" && renderWishlistedContent()}
           {activeTab === "Settings" && (
             <Text style={styles.contentText}>Settings content</Text>
           )}
@@ -951,8 +1070,9 @@ const GroupDetails = () => {
       {/* Fixed bottom Chat button - only on Members tab */}
       {!loading &&
         (activeTab === "Members" ||
-          activeTab === "Compare" ||
-          activeTab === "Wishlisted") && (
+          activeTab === "Trips" ||
+          (!mockEnabled &&
+            (activeTab === "Compare" || activeTab === "Wishlisted"))) && (
           <View style={[styles.fixedChatContainer, { bottom: bottomInset }]}>
             <ButtonComp
               title={"Chat"}
@@ -1504,5 +1624,38 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
     flex: 1,
+  },
+  tripsContainer: {
+    paddingHorizontal: getHoriPadding(16),
+    paddingTop: getHeight(8),
+  },
+  segmentRow: {
+    flexDirection: "row",
+    marginBottom: getHeight(12),
+    gap: getWidth(8),
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: getHeight(8),
+    borderRadius: getRadius(8),
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+  },
+  segmentBtnActive: {
+    backgroundColor: colors.secondary,
+    borderColor: colors.secondary,
+  },
+  segmentText: {
+    fontFamily: fonts.RobotoMedium,
+    fontSize: getFontSize(13),
+    color: colors.lightText,
+  },
+  segmentTextActive: {
+    color: colors.black,
+  },
+  createTripBtn: {
+    backgroundColor: colors.black,
+    marginBottom: getHeight(16),
   },
 });

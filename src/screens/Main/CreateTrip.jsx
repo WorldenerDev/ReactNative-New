@@ -26,6 +26,11 @@ import {
   validateTripMembers,
 } from "@utils/validators";
 import { createTrip, getTripBuddies } from "@api/services/mainServices";
+import {
+  createSoloTripWithMock,
+  createTripForCrew,
+  isReusableGroupsMockEnabled,
+} from "@api/services/crewGroupsService";
 import usePermissions from "@hooks/usePermissions";
 import { resetToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import Contacts from "react-native-contacts";
@@ -44,6 +49,11 @@ const CreateTrip = ({ navigation, route }) => {
   // Get city name directly from route params
   const city = route?.params?.cityData || "";
   const selectedBuddyPhones = route?.params?.selectedBuddyPhones || [];
+  const groupId = route?.params?.groupId;
+  const groupName = route?.params?.groupName;
+  const mockEnabled = isReusableGroupsMockEnabled();
+  const isCrewMode = Boolean(groupId);
+  const isSoloMode = mockEnabled && !groupId;
 
   // Sync state with route params when navigating back from AddToTrip
   useEffect(() => {
@@ -72,6 +82,35 @@ const CreateTrip = ({ navigation, route }) => {
       }
 
       setIsLoading(true);
+
+      if (isCrewMode) {
+        const response = await createTripForCrew({
+          groupId,
+          city: city?.name,
+          cityId: String(city?.city_id),
+          image: city?.image,
+          start_at: fromDate,
+          end_at: toDate,
+        });
+        showToast("success", "Trip created for your crew!");
+        resetToTripDetails(navigation, {
+          tripId: response?.data?.memberTripId || response?.data?._id,
+        });
+        return;
+      }
+
+      if (isSoloMode) {
+        const response = await createSoloTripWithMock({
+          city: city?.name,
+          cityId: String(city?.city_id),
+          image: city?.image,
+          start_at: fromDate,
+          end_at: toDate,
+        });
+        showToast("success", "Solo trip created!");
+        resetToTripDetails(navigation, { tripId: response?.data?._id });
+        return;
+      }
 
       // Prepare API payload
       const tripData = {
@@ -194,8 +233,12 @@ const CreateTrip = ({ navigation, route }) => {
     <MainContainer loader={isLoading}>
       <Header />
       <StepTitle
-        title="Create Trip"
-        subtitle="Create a trip to manage all your itineraries and events."
+        title={isCrewMode ? "Create crew trip" : "Create Trip"}
+        subtitle={
+          isCrewMode
+            ? `Add a new trip for ${groupName || "your crew"}.`
+            : "Create a trip to manage all your itineraries and events."
+        }
       />
 
       {/* Where Section */}
@@ -242,7 +285,23 @@ const CreateTrip = ({ navigation, route }) => {
         </View>
       </View>
 
-      {/* Who Section */}
+      {isCrewMode ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Image source={imagePath.GROUP} style={styles.icon} />
+            <Text style={styles.sectionTitle}>Crew</Text>
+          </View>
+          <View style={styles.lockedCrewBox}>
+            <Text style={styles.lockedCrewText}>{groupName || "Your crew"}</Text>
+            <Text style={styles.lockedCrewHint}>
+              All crew members will be notified
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
+      {/* Who Section — legacy flow only */}
+      {!isCrewMode && !isSoloMode ? (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Image source={imagePath.GROUP} style={styles.icon} />
@@ -260,6 +319,7 @@ const CreateTrip = ({ navigation, route }) => {
           )}
         </TouchableOpacity>
       </View>
+      ) : null}
 
       {/* Continue Button */}
       <ButtonComp
@@ -390,6 +450,22 @@ const styles = StyleSheet.create({
     marginBottom: getHeight(20),
     width: "100%",
     backgroundColor: colors.black,
+  },
+  lockedCrewBox: {
+    backgroundColor: "#F2F4F7",
+    borderRadius: 10,
+    paddingVertical: getHeight(14),
+    paddingHorizontal: getWidth(12),
+  },
+  lockedCrewText: {
+    fontSize: getHeight(16),
+    fontWeight: "600",
+    color: colors.black,
+  },
+  lockedCrewHint: {
+    fontSize: getHeight(12),
+    color: colors.lightText,
+    marginTop: getHeight(4),
   },
   modalOverlay: {
     flex: 1,

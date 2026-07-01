@@ -15,6 +15,8 @@ const cardColors = {
   secondaryBtnText: "#0F5EA8",
   deleteBtnBg: "#FFF0F3",
   deleteBtnText: "#D92D20",
+  rejoinBtnBg: "#ECFDF3",
+  rejoinBtnText: "#027A48",
 };
 
 const TripCard = ({
@@ -24,13 +26,22 @@ const TripCard = ({
   endDate,
   memberCount,
   activityCount,
+  groupName,
+  participationStatus,
+  dimmed = false,
+  showCrewButton = true,
   onItineraryPress,
   onGroupPress,
   onDeletePress,
+  onRejoinPress,
   onPressCard,
 }) => {
   const dateLabel = formatCompactDateRange(startDate, endDate);
   const metaParts = [];
+
+  if (groupName) {
+    metaParts.push(groupName);
+  }
 
   if (memberCount != null && memberCount > 0) {
     metaParts.push(
@@ -45,65 +56,88 @@ const TripCard = ({
   }
 
   const metaLabel = metaParts.join(" • ");
+  const isOptedOut = participationStatus === "opted_out" || dimmed;
 
   return (
-    <View style={styles.cardContainer}>
+    <View style={[styles.cardContainer, isOptedOut && styles.dimmedCard]}>
       <TouchableOpacity
         onPress={onPressCard}
         style={styles.cardInner}
         activeOpacity={0.92}
+        disabled={isOptedOut && !onRejoinPress}
       >
         <View style={styles.hero}>
           <OptimizedImage
             source={{ uri: image }}
-            style={styles.heroImage}
+            style={[styles.heroImage, isOptedOut && styles.dimmedImage]}
             resizeMode="cover"
           />
+          {isOptedOut ? (
+            <View style={styles.optedOutBadge}>
+              <Text style={styles.optedOutText}>Opted out</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.tripName} numberOfLines={1}>
+          <Text style={[styles.tripName, isOptedOut && styles.dimmedText]} numberOfLines={1}>
             {city}
           </Text>
           {dateLabel ? (
-            <Text style={styles.dates} numberOfLines={1}>
+            <Text style={[styles.dates, isOptedOut && styles.dimmedText]} numberOfLines={1}>
               {dateLabel}
             </Text>
           ) : null}
           {metaLabel ? (
-            <Text style={styles.meta} numberOfLines={1}>
+            <Text style={[styles.meta, isOptedOut && styles.dimmedText]} numberOfLines={1}>
               {metaLabel}
             </Text>
           ) : null}
 
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={[styles.btn, styles.primaryBtn]}
-              onPress={onItineraryPress}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.primaryBtnText} numberOfLines={1}>
-                View Itinerary
-              </Text>
-            </TouchableOpacity>
+            {isOptedOut && onRejoinPress ? (
+              <TouchableOpacity
+                style={[styles.btn, styles.rejoinBtn]}
+                onPress={onRejoinPress}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.rejoinBtnText} numberOfLines={1}>
+                  Rejoin
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.btn, styles.primaryBtn]}
+                  onPress={onItineraryPress}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.primaryBtnText} numberOfLines={1}>
+                    View Itinerary
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.btn, styles.secondaryBtn]}
-              onPress={onGroupPress}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.secondaryBtnText} numberOfLines={1}>
-                Group
-              </Text>
-            </TouchableOpacity>
+                {showCrewButton ? (
+                  <TouchableOpacity
+                    style={[styles.btn, styles.secondaryBtn]}
+                    onPress={onGroupPress}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.secondaryBtnText} numberOfLines={1}>
+                      Crew
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
 
-            <TouchableOpacity
-              style={[styles.btn, styles.deleteBtn]}
-              onPress={onDeletePress}
-              activeOpacity={0.85}
-            >
-              <Image source={imagePath.DELETE_ICON} style={styles.deleteIcon} />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btn, styles.deleteBtn]}
+                  onPress={onDeletePress}
+                  activeOpacity={0.85}
+                >
+                  <Image source={imagePath.DELETE_ICON} style={styles.deleteIcon} />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -118,6 +152,9 @@ const styles = StyleSheet.create({
   cardContainer: {
     marginBottom: getHeight(12),
     position: "relative",
+  },
+  dimmedCard: {
+    opacity: 0.72,
   },
   cardInner: {
     borderRadius: getRadius(16),
@@ -150,10 +187,28 @@ const styles = StyleSheet.create({
   },
   hero: {
     height: getHeight(96),
+    position: "relative",
   },
   heroImage: {
     width: "100%",
     height: "100%",
+  },
+  dimmedImage: {
+    opacity: 0.55,
+  },
+  optedOutBadge: {
+    position: "absolute",
+    top: getHeight(8),
+    right: getWidth(8),
+    backgroundColor: "rgba(0,0,0,0.65)",
+    paddingHorizontal: getWidth(8),
+    paddingVertical: getHeight(4),
+    borderRadius: getRadius(6),
+  },
+  optedOutText: {
+    color: colors.white,
+    fontSize: getHeight(10),
+    fontFamily: fonts.RobotoMedium,
   },
   content: {
     paddingHorizontal: getWidth(12),
@@ -165,6 +220,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.black,
     lineHeight: getHeight(20),
+  },
+  dimmedText: {
+    color: colors.lightText,
   },
   dates: {
     marginTop: getHeight(2),
@@ -215,6 +273,19 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     fontWeight: "600",
     color: cardColors.secondaryBtnText,
+    textAlign: "center",
+  },
+  rejoinBtn: {
+    flex: 1,
+    backgroundColor: cardColors.rejoinBtnBg,
+    paddingHorizontal: getWidth(12),
+    paddingVertical: getHeight(8),
+  },
+  rejoinBtnText: {
+    fontSize: getHeight(12),
+    fontFamily: fonts.RobotoMedium,
+    fontWeight: "600",
+    color: cardColors.rejoinBtnText,
     textAlign: "center",
   },
   deleteBtn: {
