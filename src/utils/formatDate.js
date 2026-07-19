@@ -1,4 +1,18 @@
 /**
+ * Normalize a date-like value to YYYY-MM-DD for comparisons / calendars.
+ */
+export const toYmd = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+};
+
+/**
  * Shared date formatting for tab screens (Groups, Trips, Booking).
  * Format: "Jun 4, 2026"
  */

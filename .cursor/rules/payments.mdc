@@ -1,0 +1,32 @@
+---
+description: Stripe payments — config, bridge, payment service and slice
+globs: src/services/payment/**/*,src/config/stripe.js,src/redux/slices/paymentSlice.js,src/context/PaymentStripeContext.js,src/components/StripeAppBridge.jsx,src/screens/Main/Payment*/**/*,src/screens/Main/AddCard*,src/screens/Main/SaveCard*,src/screens/Main/SavedCards*,src/screens/Main/Cart*/**/*
+alwaysApply: false
+---
+
+# Payments (Stripe)
+
+## Prefer existing layers
+
+| Layer | Path |
+|-------|------|
+| Publishable key | `src/config/stripe.js` (follows `API_ENV`) |
+| Provider | `StripeAppBridge` + `PaymentStripeContext` |
+| API façade | `src/services/payment/` |
+| State | `paymentSlice` |
+
+## Env
+
+- Production vs UAT keys via `API_ENV` and `STRIPE_PUBLISHABLE_KEY_*` in `.env`
+- Optional local intents: `npm run stripe-server` + `STRIPE_PAYMENT_BACKEND_URL`
+
+## Do
+
+- Gate payment/cart screens for guests (`GUEST_RESTRICTED_SCREENS` / `requireAuth`)
+- Reuse payment contracts in `src/services/payment/contracts.js`
+
+## Do not
+
+- Hardcode secret keys or live publishable keys in source
+- Bypass `StripeAppBridge` / invent a second Stripe provider
+- Call Stripe REST from screens without going through the payment service + backend intents

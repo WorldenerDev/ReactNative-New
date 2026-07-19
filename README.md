@@ -1,5 +1,14 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+## Project knowledgebase
+
+| Doc | Purpose |
+|-----|---------|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Developer/agent map: entry points, nav, API/Redux, auth, payments, change checklists |
+| [`docs/API.md`](docs/API.md) | `src/api/` layer: client, endpoints, services, conventions |
+| [`APP_FEATURES.md`](APP_FEATURES.md) | Product features and user flows |
+| [`.cursor/rules/`](.cursor/rules/) | Cursor agent rules (auto-applied when editing matching files) |
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.

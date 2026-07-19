@@ -254,13 +254,9 @@ const authSlice = createSlice({
         state.token = action.payload?.accessToken || action.payload?.token || null;
       },
     });
-    handleAsyncCases(builder, googleAppleSignIn, {
-      onFulfilled: (state, action) => {
-        state.user = action.payload;
-        state.token = action.payload?.accessToken || action.payload?.token || null;
-        state.pendingAuthRedirect = false;
-      },
-    });
+    // Do not set user here — screens finalize after optional name prompt
+    // so Auth stays mounted when social login returns an empty name.
+    handleAsyncCases(builder, googleAppleSignIn);
     handleAsyncCases(builder, guestLoginUser, {
       onFulfilled: (state, action) => {
         state.user = action.payload;

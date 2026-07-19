@@ -236,7 +236,9 @@ const TripDetails = ({ navigation, route }) => {
       const response = await checkoutTrip(checkoutData);
 
       if (response?.success) {
-        navigation.navigate(navigationStrings.CART);
+        navigation.navigate(navigationStrings.CART, {
+          tripId: tripData?._id,
+        });
       } else {
         showToast("error", response?.message);
       }

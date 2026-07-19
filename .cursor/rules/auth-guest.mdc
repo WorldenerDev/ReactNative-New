@@ -1,0 +1,38 @@
+---
+description: Auth, guest mode, and session expiry patterns
+globs: src/hooks/**/*,src/utils/authHelpers.js,src/utils/sessionHandler.js,src/utils/storage.js,src/utils/storageKeys.js,src/screens/Auth/**/*,src/redux/slices/authSlice.js,src/navigation/Routes.jsx
+alwaysApply: false
+---
+
+# Auth & guest
+
+## Session restore
+
+`Routes.jsx` loads `STORAGE_KEYS.USER_DATA`. Presence of `accessToken` selects Main vs Auth.
+
+## Gate actions / screens
+
+```js
+// Action-level
+const { requireAuth, isGuest } = useAuth();
+if (!requireAuth("Sign in to continue")) return;
+
+// Screen-level
+useGuestScreenGuard();
+```
+
+Or `requireAuth(dispatch, isGuest, message)` from `utils/authHelpers.js`.
+
+## Guest restrictions
+
+Guests have a token but cannot open routes in `GUEST_RESTRICTED_SCREENS`. `Routes` also bounces guests via `onStateChange` → `exitGuestForSignIn`.
+
+**When adding a gated screen:** add its `navigationStrings` name to that Set.
+
+## Session expiry
+
+Handled in `apiClient` → `handleSessionExpired` / `expireSession`. Do not invent a parallel logout path for 401s.
+
+## Storage keys
+
+Use `STORAGE_KEYS` from `utils/storageKeys.js` (`USER_DATA`, `TOKEN`, onboarding flags, etc.).

@@ -59,12 +59,13 @@ class AppleSignInService {
       }
 
       // Create user data object
+      const rawName = fullName
+        ? `${fullName.givenName || ""} ${fullName.familyName || ""}`.trim()
+        : "";
       const userData = {
         id: user,
         email: email || undefined,
-        name: fullName
-          ? `${fullName.givenName || ""} ${fullName.familyName || ""}`.trim()
-          : undefined,
+        name: rawName || undefined,
         givenName: fullName?.givenName || undefined,
         familyName: fullName?.familyName || undefined,
         photo: null,

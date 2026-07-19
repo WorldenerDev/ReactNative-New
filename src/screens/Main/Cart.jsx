@@ -9,6 +9,7 @@ import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import OptimizedImage from "@components/OptimizedImage";
 import navigationStrings from "@navigation/navigationStrings";
+import { useRoute } from "@react-navigation/native";
 import {
   getFontSize,
   getHeight,
@@ -17,7 +18,7 @@ import {
   getWidth,
 } from "@utils/responsive";
 import { formattedDate, getActivityDurationLabel } from "@utils/uiUtils";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -35,17 +36,23 @@ const EXTRA_SCROLL_PADDING = 18;
 
 const Cart = ({ navigation }) => {
   useGuestScreenGuard();
+  const route = useRoute();
+  const tripId = route?.params?.tripId || route?.params?.trip_id || null;
   const [cartList, setCartList] = useState([]);
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
   const scrollContentBottomPadding =
     insets.bottom + getHeight(BOTTOM_MARGIN) + NEXT_BUTTON_HEIGHT + getHeight(EXTRA_SCROLL_PADDING);
 
-  // Function to fetch cart list from API
-  const fetchCartList = async () => {
+  const fetchCartList = useCallback(async () => {
+    if (!tripId) {
+      setCartList([]);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await getCartList();
+      const response = await getCartList({ trip_id: tripId });
       console.log("Cart list response:", response);
       setCartList(response?.data?.carts || []);
     } catch (error) {
@@ -53,10 +60,13 @@ const Cart = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tripId]);
 
-  // Function to handle cart checkout
   const handleCheckout = async () => {
+    if (!tripId) {
+      showToast("error", "Trip is missing. Open cart from trip checkout.");
+      return;
+    }
     if (cartList.length === 0) {
       showToast("error", "Cart is empty");
       return;
@@ -64,20 +74,12 @@ const Cart = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const tripIds = cartList
-        .map((item) => item?.trip_id)
-        .filter(Boolean);
-      if (tripIds.length === 0) {
-        showToast("error", "No valid trip IDs found");
-        return;
-      }
-      console.log("tripIds", tripIds);
-      const response = await cartCheckout({ trip_ids: tripIds });
+      const response = await cartCheckout({ trip_ids: [String(tripId)] });
       console.log("Checkout response:", response);
       showToast("success", "Checkout successful!");
       navigation.navigate(navigationStrings.CART_CUSTOMER_INFO, {
         cart_id: response?.data?.cart_id,
-        trip_id: tripIds[0],
+        trip_id: tripId,
       });
     } catch (error) {
       showToast("error", error?.message || "Checkout failed");
@@ -86,12 +88,11 @@ const Cart = ({ navigation }) => {
     }
   };
 
-  // Function to handle remove item from cart
   const handleRemoveItem = async (item) => {
     try {
       setLoading(true);
-      const response = await removeItemFromCart({
-        trip_id: item?.trip_id,
+      await removeItemFromCart({
+        trip_id: item?.trip_id || tripId,
         event_id: item?.event_id,
         date: item?.date
 
@@ -104,10 +105,14 @@ const Cart = ({ navigation }) => {
     }
   };
 
-  // Call API when component mounts
   useEffect(() => {
+    if (!tripId) {
+      showToast("error", "Trip is missing. Open cart from trip checkout.");
+      navigation.goBack();
+      return;
+    }
     fetchCartList();
-  }, []);
+  }, [tripId, fetchCartList, navigation]);
 
   // Function to format tickets display like "1x Adult (12+), 1x Child (4-12)"
   const formatTicketsDisplay = (activities) => {
@@ -195,6 +200,9 @@ const Cart = ({ navigation }) => {
                   cityId: item?.city?.city_id,
                   selectedDate: item?.activities?.[0]?.date,
                   cart_id: item?._id,
+                  tripId: item?.trip_id || tripId,
+                  tripStartAt: item?.start_at,
+                  tripEndAt: item?.end_at,
                 };
 
                 navigation.navigate(navigationStrings.ACTIVITY_DETAILS_CHECK_AVAILABILITY, {
@@ -238,7 +246,7 @@ const Cart = ({ navigation }) => {
       <View style={styles.floatingButtonContainer}>
         <ButtonComp
           title="Next"
-          disabled={loading || cartList.length === 0}
+          disabled={loading || cartList.length === 0 || !tripId}
           onPress={handleCheckout}
           loading={loading}
         />

@@ -69,7 +69,7 @@ const GroupDetails = () => {
   const bottomInset = useStickyBottomInset();
   const scrollPadding = useStickyScrollPadding();
   const { user } = useSelector((state) => state.auth);
-  const { groupId, cityId } = route?.params || {};
+  const { groupId, cityId, tripId: tripIdFromRoute } = route?.params || {};
 
   // Debug: Log route params
   useEffect(() => {
@@ -459,7 +459,15 @@ const GroupDetails = () => {
       console.warn("GroupDetails: groupId is missing, cannot navigate to Chat");
       return;
     }
-    navigation.navigate(navigationStrings.CHAT, { groupId });
+    const tripId =
+      groupData?.tripId ||
+      groupData?.trip_id ||
+      tripIdFromRoute ||
+      null;
+    if (!tripId) {
+      showToast("error", "Trip not found for this group. Cannot open chat AI.");
+    }
+    navigation.navigate(navigationStrings.CHAT, { groupId, tripId });
   };
 
   const renderMemberItem = ({ item }) => {

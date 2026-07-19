@@ -122,6 +122,7 @@ const Group = ({ navigation }) => {
     navigation.navigate(navigationStrings.GROUP_DETAILS, {
       groupId: item?.id,
       cityId: item?.cityId,
+      tripId: item?.tripId || null,
     });
   };
 

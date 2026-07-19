@@ -5,11 +5,29 @@ const isValidEmail = (email) =>
   email.includes("@") &&
   email !== "unknown";
 
+/** Resolve a display name from social SDK userData (Apple / Google). */
+export const extractSocialDisplayName = (userData = {}) => {
+  const fromParts = [userData.givenName, userData.familyName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const candidate =
+    (typeof userData.name === "string" && userData.name.trim()) ||
+    fromParts ||
+    (typeof userData.givenName === "string" && userData.givenName.trim()) ||
+    "";
+  return candidate || undefined;
+};
+
+export const hasUsableName = (name) =>
+  typeof name === "string" && name.trim().length > 0;
+
 export const buildSocialLoginPayload = ({
   provider,
   result,
   deviceId,
   fcmToken,
+  nameOverride,
 }) => {
   const userData = result?.userData || {};
   const base = {
@@ -18,15 +36,14 @@ export const buildSocialLoginPayload = ({
     fcm_token: fcmToken || "not_available",
   };
 
-  if (provider === "apple") {
-    const name =
-      userData.name ||
-      [userData.givenName, userData.familyName].filter(Boolean).join(" ").trim() ||
-      undefined;
+  const resolvedName = hasUsableName(nameOverride)
+    ? nameOverride.trim()
+    : extractSocialDisplayName(userData);
 
+  if (provider === "apple") {
     return {
       ...base,
-      ...(name ? { name } : {}),
+      ...(resolvedName ? { name: resolvedName } : {}),
       ...(isValidEmail(userData.email) ? { email: userData.email } : {}),
       social_id: userData.id,
       isIdentityToken: true,
@@ -36,7 +53,7 @@ export const buildSocialLoginPayload = ({
 
   return {
     ...base,
-    name: userData.givenName || userData.name,
+    ...(resolvedName ? { name: resolvedName } : {}),
     ...(isValidEmail(userData.email) ? { email: userData.email } : {}),
     social_id: userData.id,
   };

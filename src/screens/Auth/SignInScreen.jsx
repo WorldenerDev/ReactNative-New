@@ -16,13 +16,14 @@ import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import { validateForm, validateMobileNumber } from "@utils/validators";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
-import { googleAppleSignIn, guestLoginUser, loginUser, setUser } from "@redux/slices/authSlice";
+import { guestLoginUser, loginUser } from "@redux/slices/authSlice";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
+import SocialNamePromptModal from "@components/SocialNamePromptModal";
 import { getDeviceId } from "@utils/uiUtils";
 import { logAuthToken } from "@utils/devAuthTokenLog";
 import { getFCMToken } from "@utils/fcmToken";
-import { buildSocialLoginPayload, isSocialLoginPayloadValid } from "@utils/socialLoginPayload";
+import useSocialLogin from "@hooks/useSocialLogin";
 
 const SignInScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -30,6 +31,15 @@ const SignInScreen = ({ navigation }) => {
     countryCode: "+91",
     phoneNumber: "",
   });
+  const {
+    handleSocialLoginSuccess,
+    handleSocialLoginError,
+    namePromptVisible,
+    namePromptLoading,
+    handleNameSubmit,
+    handleNameCancel,
+  } = useSocialLogin({ logContext: "SignIn" });
+
   const handlePhoneNumberChange = (text) => {
     setData((prev) => ({ ...prev, phoneNumber: text }));
   };
@@ -91,44 +101,6 @@ const SignInScreen = ({ navigation }) => {
         error?.message || "An error occurred during login. Please try again.";
       showToast("error", errorMessage);
     }
-  };
-
-  const handleSocialLoginSuccess = async (result, provider) => {
-    console.log("Social login result receiveddd:", result, provider);
-
-    const deviceId = await getDeviceId();
-    const fcmToken = await getFCMTokenForAuth();
-    try {
-      const payload = buildSocialLoginPayload({
-        provider: result?.provider || provider,
-        result,
-        deviceId,
-        fcmToken,
-      });
-      if (!isSocialLoginPayloadValid(payload)) {
-        showToast("error", "Social sign-in did not return a valid account id.");
-        return;
-      }
-      const loginResult = await dispatch(googleAppleSignIn(payload));
-      if (googleAppleSignIn.rejected.match(loginResult)) {
-        showToast("error", loginResult.payload || "Login failed");
-        return;
-      }
-      console.log(`${provider} login result in signin`, loginResult);
-      logAuthToken(`SignIn ${provider}`, loginResult?.payload);
-      const userInfo = {
-        ...loginResult?.payload,
-        token: loginResult?.payload?.accessToken,
-      };
-      dispatch(setUser(userInfo));
-    } catch (error) {
-      console.error("Social login error:", error);
-      showToast("error", error.message || "Login failed");
-    }
-  };
-
-  const handleSocialLoginError = (error) => {
-    showToast("error", error.error || "Social login failed");
   };
 
   const handleGuestPress = async () => {
@@ -220,6 +192,13 @@ const SignInScreen = ({ navigation }) => {
           </Text>
         </Text>
       </View>
+
+      <SocialNamePromptModal
+        visible={namePromptVisible}
+        loading={namePromptLoading}
+        onSubmit={handleNameSubmit}
+        onCancel={handleNameCancel}
+      />
     </ResponsiveContainer>
   );
 };
