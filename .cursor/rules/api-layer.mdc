@@ -1,0 +1,46 @@
+---
+description: src/api layer — client, endpoints, services, conventions
+globs: src/api/**/*
+alwaysApply: false
+---
+
+# API layer (`src/api`)
+
+**Deep reference:** `docs/API.md`.
+
+## Stack
+
+`endpoints.js` → service (`authService` / `mainServices` / façade) → `apiHelpers` → `apiClient` → `{URL}/api/v1/user`.
+
+Success responses are already unwrapped (`response.data`). Token: Redux, else AsyncStorage `TOKEN`.
+
+## Add a call
+
+1. Constant in `endpoints.auth` or `endpoints.main` (leading `/`)
+2. Named export in the right service file
+3. Use `apiGet` / `apiPost` / `apiDelete` — no new HTTP client
+4. Wire slice thunk and/or screen
+
+```js
+// ✅
+export const getThing = (id) =>
+  apiGet(`${endpoints.main.getThing}/${id}`);
+
+// ❌ raw axios/fetch for user API
+```
+
+## Flags
+
+`apiGet(url, params, { skipErrorToast: true })` or `skipSessionExpiry` when needed. `apiDelete` has no config arg today.
+
+## Facades
+
+- Reusable groups → `crewGroupsService` (not `@mocks` from callers)
+- Social native → `socialLoginService` → then `authService.SocialLogin`
+
+## Do not
+
+- Import `@api/services/cityTripService` (missing; use `mainServices`)
+- Rely on `services/index.js` barrel for REST modules (broken defaults)
+- Add `endpoints.auth.resendOtp` usage without defining the constant first
+- Duplicate Google client IDs in a third file without consolidating `googleSignIn.js`

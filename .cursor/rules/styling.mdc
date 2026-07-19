@@ -1,0 +1,33 @@
+---
+description: UI styling — StyleSheet, colors, theme, responsive, containers
+globs: src/components/**/*,src/screens/**/*
+alwaysApply: false
+---
+
+# Styling
+
+No NativeWind / styled-components. Use `StyleSheet` + shared tokens.
+
+## Tokens
+
+| Need | Source |
+|------|--------|
+| Colors | `@assets/colors` |
+| Radii / shadows / type presets | `@utils/theme` |
+| Scaled size/padding | `@utils/responsive` (`getWidth`, `getHeight`, …) |
+| Icons / fonts / Lottie | `@assets/icons`, `@assets/fonts`, `@assets/animations` |
+
+## Layout
+
+Prefer existing shells: `MainContainer`, `ScreenWapper`, `ResponsiveContainer` — they handle safe area / padding / shared loaders where applicable.
+
+## Do
+
+- Match nearby screen StyleSheet patterns
+- Reuse `AppButton`, `Header`, `CustomInput`, cards under `appComponent/` when they fit
+
+## Do not
+
+- Introduce a new CSS-in-JS or utility-class styling system
+- Hard-code one-off hex values when `colors.js` already has the token
+- Bypass responsive helpers for layout that must match other screens

@@ -15,6 +15,7 @@
     "stripe-server": "node scripts/stripe-dev-server.js"
   },
   "dependencies": {
+    "@bam.tech/react-native-image-resizer": "^3.0.11",
     "@invertase/react-native-apple-authentication": "^2.4.1",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-firebase/app": "^23.4.1",

@@ -1,0 +1,39 @@
+---
+description: API and Redux — wire endpoints/services into slices
+globs: src/api/**/*,src/redux/**/*
+alwaysApply: false
+---
+
+# API & Redux
+
+**API details:** `docs/API.md`. **Folder rules:** `api-layer.mdc`.
+
+## Add an API call
+
+1. Path in `src/api/endpoints.js`
+2. Function in `mainServices.js`, `authService.js`, or dedicated service
+3. `createAsyncThunk` in the matching slice **or** call service from screen
+4. Prefer `handleAsyncCases` from `utils/reduxHelpers.js` when matching slice style
+
+## Client (`apiClient.js`)
+
+- Base: `URL + "/api/v1/user"`
+- Bearer from Redux / AsyncStorage
+- Returns body only; 401 → `handleSessionExpired` unless `skipSessionExpiry`
+- Opt out of toast: `skipErrorToast`
+
+## Slice → service
+
+| Slice | Service |
+|-------|---------|
+| `auth` | `authService` (+ `getCategoriesTree`) |
+| `cityTrip` | `mainServices` only |
+| `chat` | `getGroupMessages` |
+| `onlineStatus` | `onlineStatusService` |
+| `payment` | cards via `mainServices`; intents via `src/services/payment` |
+
+## Do not
+
+- Create a second user-API HTTP client
+- Reintroduce `@api/services/cityTripService`
+- Import `@mocks` from slices — use `crewGroupsService`

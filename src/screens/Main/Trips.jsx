@@ -150,6 +150,7 @@ const Trips = ({ navigation }) => {
                 item?.groupId
                   ? navigation.navigate(navigationStrings.GROUP_DETAILS, {
                       groupId: item?.groupId,
+                      tripId: item?._id,
                     })
                   : Alert.alert("Group not available");
               }}

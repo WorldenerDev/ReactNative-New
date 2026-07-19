@@ -122,5 +122,7 @@ export const toSelectedTripOption = (trip) => {
   return {
     label: getTripName(trip),
     value: id,
+    start_at: trip?.start_at || trip?.startDate || null,
+    end_at: trip?.end_at || trip?.endDate || null,
   };
 };

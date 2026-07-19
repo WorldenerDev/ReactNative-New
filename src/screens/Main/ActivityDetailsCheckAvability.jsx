@@ -14,9 +14,10 @@ import CustomDropdown from "@components/CustomDropdown";
 import Header from "@components/Header";
 import { navigateToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import navigationStrings from "@navigation/navigationStrings";
+import { toYmd } from "@utils/formatDate";
 import { getFontSize, getHeight, getRadius, getWidth } from "@utils/responsive";
 import { getTripId, normalizeTripDetails } from "@utils/tripHelpers";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   Image,
@@ -41,6 +42,26 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [ticketQuantities, setTicketQuantities] = useState({});
+
+  const tripStartYmd = useMemo(
+    () => toYmd(eventData?.tripStartAt || eventData?.start_at),
+    [eventData?.tripStartAt, eventData?.start_at],
+  );
+  const tripEndYmd = useMemo(
+    () => toYmd(eventData?.tripEndAt || eventData?.end_at),
+    [eventData?.tripEndAt, eventData?.end_at],
+  );
+
+  // Musement dates that fall within the associated trip window (when known).
+  const selectableDates = useMemo(() => {
+    if (!tripStartYmd || !tripEndYmd) {
+      return eventDate;
+    }
+    return eventDate.filter((event) => {
+      const day = toYmd(event?.day);
+      return day && day >= tripStartYmd && day <= tripEndYmd;
+    });
+  }, [eventDate, tripStartYmd, tripEndYmd]);
 
   console.log("Event Data:", eventData);
   // API call to get event dates
@@ -67,16 +88,15 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   };
 
   // API call to get event dates details
-  const fetchEventDatesDetails = async (selectedDate) => {
+  const fetchEventDatesDetails = async (dateValue) => {
     try {
       setIsLoading(true);
 
       // Format date to YYYY-MM-DD when coming from cart
-      let formattedDate = selectedDate;
-      if (from === "cart" && selectedDate) {
+      let formattedDate = dateValue;
+      if (from === "cart" && dateValue) {
         // Convert ISO string or any date format to YYYY-MM-DD
-        const date = new Date(selectedDate);
-        formattedDate = date.toISOString().split("T")[0];
+        formattedDate = toYmd(dateValue) || dateValue;
       }
 
       const requestData = {
@@ -99,23 +119,51 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    if (!selectedDate && eventDate.length > 0) {
-      // If coming from cart, use the selectedDate from eventData (item?.activities?.[0]?.date from Cart.jsx)
-      if (from === "cart" && eventData?.selectedDate) {
-        console.log(
-          "📅 Setting selectedDate from cart:",
-          eventData.selectedDate,
-        );
-        setSelectedDate(eventData.selectedDate);
-        // Call the API with the selected date from cart
-        fetchEventDatesDetails(eventData.selectedDate);
-      } else {
-        setSelectedDate(eventDate[0].day);
-        // Call the API with the first available date
-        fetchEventDatesDetails(eventDate[0].day);
+    if (selectableDates.length === 0) {
+      return;
+    }
+
+    const selectedYmd = toYmd(selectedDate);
+    const isStillSelectable =
+      selectedYmd &&
+      selectableDates.some((event) => toYmd(event.day) === selectedYmd);
+
+    if (isStillSelectable) {
+      fetchEventDatesDetails(selectedYmd);
+      return;
+    }
+
+    // Prefer cart date when it is still within the trip window
+    if (from === "cart" && eventData?.selectedDate) {
+      const cartDay = toYmd(eventData.selectedDate);
+      const cartStillValid = selectableDates.some(
+        (event) => toYmd(event.day) === cartDay,
+      );
+      if (cartStillValid && cartDay) {
+        setSelectedDate(cartDay);
+        fetchEventDatesDetails(cartDay);
+        return;
       }
     }
-  }, [eventDate, from, eventData?.selectedDate]);
+
+    const firstDay = selectableDates[0].day;
+    setSelectedDate(firstDay);
+    fetchEventDatesDetails(firstDay);
+  }, [selectableDates, from, eventData?.selectedDate]);
+
+  useEffect(() => {
+    if (
+      eventDate.length > 0 &&
+      tripStartYmd &&
+      tripEndYmd &&
+      selectableDates.length === 0
+    ) {
+      showToast(
+        "error",
+        "No available dates fall within your trip dates",
+      );
+    }
+  }, [eventDate, selectableDates, tripStartYmd, tripEndYmd]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -130,30 +178,15 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     fetchEventDates();
   }, []);
 
-  // Additional effect to handle cart navigation - set date immediately if coming from cart
+  // Normalize cart selected date early (before Musement list loads)
   useEffect(() => {
     if (from === "cart" && eventData?.selectedDate && !selectedDate) {
-      // Set the selected date from cart immediately (from item?.activities?.[0]?.date in Cart.jsx)
-      console.log(
-        "📅 Initializing selectedDate from cart (early):",
-        eventData.selectedDate,
-      );
-      setSelectedDate(eventData.selectedDate);
+      const cartDay = toYmd(eventData.selectedDate);
+      if (cartDay) {
+        setSelectedDate(cartDay);
+      }
     }
   }, [from, eventData?.selectedDate]);
-
-  // Fetch event dates details when date is available and eventDate list is loaded
-  useEffect(() => {
-    if (
-      from === "cart" &&
-      eventData?.selectedDate &&
-      selectedDate &&
-      eventDate.length > 0
-    ) {
-      // Fetch details for the selected date from cart
-      fetchEventDatesDetails(selectedDate);
-    }
-  }, [from, selectedDate, eventDate]);
 
   // Get time slots from selected group
   const getTimeSlotsForSelectedGroup = () => {
@@ -259,13 +292,13 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   };
 
   const onDayPress = async (day) => {
-    // Check if the selected date is available in the API data
-    const isAvailable = eventDate.some((event) => event.day === day.dateString);
+    const isAvailable = selectableDates.some(
+      (event) => event.day === day.dateString,
+    );
 
     if (isAvailable) {
       setSelectedDate(day.dateString);
       setShowCalendar(false);
-      // Call the new API when a date is selected from calendar
       await fetchEventDatesDetails(day.dateString);
     } else {
       showToast("error", "This date is not available for booking");
@@ -276,8 +309,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   const getMarkedDates = () => {
     const markedDates = {};
 
-    // Mark available dates
-    eventDate.forEach((event) => {
+    selectableDates.forEach((event) => {
       markedDates[event.day] = {
         marked: true,
         dotColor: colors.primary,
@@ -287,8 +319,9 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
     // Mark selected date
     if (selectedDate) {
-      markedDates[selectedDate] = {
-        ...markedDates[selectedDate],
+      const selectedYmd = toYmd(selectedDate) || selectedDate;
+      markedDates[selectedYmd] = {
+        ...markedDates[selectedYmd],
         selected: true,
         selectedColor: colors.primary,
       };
@@ -397,7 +430,14 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         showToast("success", response?.message || "Cart updated successfully");
         navigation.reset({
           index: 0,
-          routes: [{ name: navigationStrings.CART }],
+          routes: [
+            {
+              name: navigationStrings.CART,
+              params: {
+                tripId: eventData?.tripId || eventData?.trip_id,
+              },
+            },
+          ],
         });
       } else {
         if (!eventData?.tripId) {
@@ -443,24 +483,21 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   };
 
   // Render function for FlatList date items
-  const renderDateItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.dateItem,
-        selectedDate === item.day && styles.selectedDateItem,
-      ]}
-      onPress={() => handleDateSelect(item.day)}
-    >
-      <Text
-        style={[
-          styles.dateText,
-          selectedDate === item.day && styles.selectedDateText,
-        ]}
+  const renderDateItem = ({ item }) => {
+    const isSelected = (toYmd(selectedDate) || selectedDate) === item.day;
+    return (
+      <TouchableOpacity
+        style={[styles.dateItem, isSelected && styles.selectedDateItem]}
+        onPress={() => handleDateSelect(item.day)}
       >
-        {formatDate(item.day)}
-      </Text>
-    </TouchableOpacity>
-  );
+        <Text
+          style={[styles.dateText, isSelected && styles.selectedDateText]}
+        >
+          {formatDate(item.day)}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   // Separator component for FlatList
   const ItemSeparator = () => <View style={{ width: getWidth(2) }} />;
@@ -475,7 +512,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           <Text style={styles.dateSectionTitle}>Select a date</Text>
           <View style={styles.dateContainer}>
             <FlatList
-              data={eventDate.slice(0, 10)}
+              data={selectableDates}
               renderItem={renderDateItem}
               keyExtractor={(item, index) => item.day || index.toString()}
               horizontal
@@ -614,8 +651,13 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.calendarContainer}>
             <Calendar
+              current={toYmd(selectedDate) || tripStartYmd || undefined}
               onDayPress={onDayPress}
               markedDates={getMarkedDates()}
+              minDate={tripStartYmd || undefined}
+              maxDate={tripEndYmd || undefined}
+              disableAllTouchEventsForDisabledDays={true}
+              enableSwipeMonths={true}
               theme={{
                 backgroundColor: colors.white,
                 calendarBackground: colors.white,

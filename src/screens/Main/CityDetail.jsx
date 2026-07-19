@@ -253,10 +253,12 @@ const CityDetail = ({ route, navigation }) => {
                   }))}
                   selectedValue={selectedTrip}
                   onValueChange={(item) => {
-                    // When selected, show only city name but keep full trip object with _id
+                    // When selected, show only city name but keep trip id + dates
                     const selectedTripObj = {
-                      label: getCityName(item), // Display only city name
-                      value: item._id, // Ensure _id is at root level for easy access
+                      label: getCityName(item),
+                      value: item._id || item.value,
+                      start_at: item.start_at,
+                      end_at: item.end_at,
                     };
                     console.log("Selected Trip Object:", selectedTripObj);
                     setSelectedTrip(selectedTripObj);

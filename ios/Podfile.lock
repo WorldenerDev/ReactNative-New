@@ -160,6 +160,7 @@ PODS:
     - React-RCTText (= 0.81.1)
     - React-RCTVibration (= 0.81.1)
   - React-callinvoker (0.81.1)
+  - React-Codegen (0.1.0)
   - React-Core (0.81.1):
     - boost
     - DoubleConversion
@@ -1945,6 +1946,35 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-image-resizer (3.0.11):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Codegen
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-keyboard-controller (1.21.8):
     - boost
     - DoubleConversion
@@ -3215,6 +3245,7 @@ DEPENDENCIES:
   - react-native-blurhash (from `../node_modules/react-native-blurhash`)
   - react-native-contacts (from `../node_modules/react-native-contacts`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
+  - "react-native-image-resizer (from `../node_modules/@bam.tech/react-native-image-resizer`)"
   - react-native-keyboard-controller (from `../node_modules/react-native-keyboard-controller`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
@@ -3281,6 +3312,7 @@ SPEC REPOS:
     - nanopb
     - PromisesObjC
     - PromisesSwift
+    - React-Codegen
     - RecaptchaInterop
     - SocketRocket
     - Stripe
@@ -3383,6 +3415,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-contacts"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
+  react-native-image-resizer:
+    :path: "../node_modules/@bam.tech/react-native-image-resizer"
   react-native-keyboard-controller:
     :path: "../node_modules/react-native-keyboard-controller"
   react-native-safe-area-context:
@@ -3506,6 +3540,7 @@ SPEC CHECKSUMS:
   RCTTypeSafety: 720403058b7c1380c6a3ae5706981d6362962c89
   React: f1486d005993b0af01943af1850d3d4f3b597545
   React-callinvoker: 133f69368c8559e744efa345223625d412f5dfbe
+  React-Codegen: 4b8b4817cea7a54b83851d4c1f91f79aa73de30a
   React-Core: 559823921b4f294c2840fa8238ca958a29ddc211
   React-CoreModules: c41e7bbfabbc420783bb926f45837a0d5e53341e
   React-cxxreact: 9cb9fa738274a1b36b97ede09c8a6717dec1a20b
@@ -3536,6 +3571,7 @@ SPEC CHECKSUMS:
   react-native-blurhash: 5fa2d35a0d2c983f07800a82edc9b7bbb286b563
   react-native-contacts: f80240625ff135a1f395b30e51279a4a851c6218
   react-native-image-picker: 6051cfd030121b880a58f1cc0e5e33e9887804e4
+  react-native-image-resizer: a889f67073804003f19da3721ef5593df569b45b
   react-native-keyboard-controller: abffbf82e535211d46796cff1e5880ff72f8b94d
   react-native-safe-area-context: 7794f18549493f369e4ca4b3cd66843bd050ac66
   React-NativeModulesApple: be767e4e204802b135c68a81024f5b758bc0653e
@@ -3593,6 +3629,6 @@ SPEC CHECKSUMS:
   StripeUICore: fb5f1c2f7d702b2879f706e3db3a7b793125256e
   Yoga: f95f7e60346fa6828def95fbe5017346ccc8940e
 
-PODFILE CHECKSUM: 7c6e8c35a01a8d33e6c733aaf8a6b8904dfb88e9
+PODFILE CHECKSUM: 1e806d4e53e22897bfd20b87ece41f2a84fb081a
 
 COCOAPODS: 1.16.2

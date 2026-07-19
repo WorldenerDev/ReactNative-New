@@ -650,9 +650,16 @@ const Chat = ({ navigation, route }) => {
       <Header
         title="Group Chat"
         rightIconImage={imagePath.AI_ICON}
-        onRightIconPress={() =>
-          navigation.navigate(navigationStrings.AI_CHAT, { tripId })
-        }
+        onRightIconPress={() => {
+          if (!tripId) {
+            showToast(
+              "error",
+              "Trip is missing. Open this chat from a group with a linked trip."
+            );
+            return;
+          }
+          navigation.navigate(navigationStrings.AI_CHAT, { groupId, tripId });
+        }}
       />
 
       <GiftedChat

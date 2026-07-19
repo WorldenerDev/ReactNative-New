@@ -107,9 +107,29 @@ const ActivityDetails = ({ navigation, route }) => {
 
   useEffect(() => {
     if (selectedTripFromRoute) {
-      setSelectedTrip(selectedTripFromRoute);
+      // Ensure trip window dates are present when coming from CityDetail / elsewhere
+      if (
+        selectedTripFromRoute.start_at &&
+        selectedTripFromRoute.end_at
+      ) {
+        setSelectedTrip(selectedTripFromRoute);
+        return;
+      }
+
+      const matched = currentCityTrips.find(
+        (trip) => String(trip._id) === String(selectedTripFromRoute.value),
+      );
+      if (matched) {
+        setSelectedTrip({
+          ...selectedTripFromRoute,
+          start_at: matched.start_at,
+          end_at: matched.end_at,
+        });
+      } else {
+        setSelectedTrip(selectedTripFromRoute);
+      }
     }
-  }, [selectedTripFromRoute]);
+  }, [selectedTripFromRoute, currentCityTrips]);
 
   useEffect(() => {
     if (cityId && !isGuest) {
@@ -207,6 +227,8 @@ const ActivityDetails = ({ navigation, route }) => {
       free_cancellation: eventDetail?.bookingPolicies?.freeCancellation,
       duration: eventDetail?.tourDetails?.duration?.[0],
       tripId: isGuest ? undefined : selectedTrip?.value,
+      tripStartAt: isGuest ? undefined : selectedTrip?.start_at,
+      tripEndAt: isGuest ? undefined : selectedTrip?.end_at,
       // Pass price/currency (wishlist has these; getEventsForYou has price)
       price: eventData?.price ?? eventDetail?.price,
       currency: eventData?.currency ?? "USD",
@@ -494,9 +516,18 @@ const ActivityDetails = ({ navigation, route }) => {
               options={currentCityTrips.map((trip) => ({
                 label: formatTripLabel(trip),
                 value: trip._id,
+                start_at: trip.start_at,
+                end_at: trip.end_at,
               }))}
               selectedValue={selectedTrip}
-              onValueChange={setSelectedTrip}
+              onValueChange={(item) => {
+                setSelectedTrip({
+                  label: item.label,
+                  value: item.value,
+                  start_at: item.start_at,
+                  end_at: item.end_at,
+                });
+              }}
               containerStyle={styles.tripSelectorWrapper}
               dropdownWrapperStyle={styles.tripSelectorDropdown}
               textStyle={styles.tripSelectorText}

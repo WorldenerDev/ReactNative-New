@@ -1,0 +1,43 @@
+---
+description: Navigation — register screens, shared vs root stacks, trip helpers
+globs: src/navigation/**/*,src/screens/**/*
+alwaysApply: false
+---
+
+# Navigation
+
+React Navigation 7: Auth stack vs Main stack with 5-tab shell.
+
+## Register a screen
+
+1. Constant in `src/navigation/navigationStrings.js`
+2. Export from `src/screens/index.js`
+3. Add to the right stack:
+   - **With tab bar:** `sharedStackScreens.js` (each tab stack)
+   - **Full-screen (hide tabs):** `rootStackScreens.js`
+   - **Pre-login:** `AuthNavigator.jsx`
+
+## Shared vs root
+
+- Discovery / trip details / profile-adjacent → shared (tab bar visible)
+- Chat, CreateTrip/Group, Payment*, Cart* → root
+
+## Trip details
+
+Prefer helpers in `src/navigation/helpers/nestedTabNavigation.js`:
+
+```js
+navigateToTripDetails(navigation, params);
+resetToTripDetails(navigation, params);
+```
+
+Keeps TripDetails inside the Trips tab so the custom tab bar stays visible.
+
+## Guest screens
+
+If guests must not open the route, add it to `GUEST_RESTRICTED_SCREENS` in `utils/authHelpers.js`.
+
+## Do not
+
+- Add React Navigation linking config unless product asks for deep links (none today)
+- Navigate to TripDetails on the root stack when the tab bar should remain visible

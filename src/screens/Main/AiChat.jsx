@@ -2,6 +2,7 @@ import { chatbot, getChatbotHistory, getGroups } from "@api/services/mainService
 import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import { showToast } from "@components/AppToast";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import { navigateToTripDetails } from "@navigation/helpers/nestedTabNavigation";
@@ -54,7 +55,6 @@ const createTextMessage = ({ id, text, createdAt, user, indexOffset = 0 }) => ({
 
 const ACTIVITY_BUBBLE_WIDTH = 280;
 
-
 const AiChat = ({ navigation }) => {
   useGuestScreenGuard();
   const route = useRoute();
@@ -75,6 +75,15 @@ const AiChat = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasBotResponse, setHasBotResponse] = useState(false);
   const [tripTitle, setTripTitle] = useState("Trip");
+  const [activeConversationId, setActiveConversationId] = useState(
+    conversation_id || null
+  );
+
+  useEffect(() => {
+    if (conversation_id) {
+      setActiveConversationId(conversation_id);
+    }
+  }, [conversation_id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -114,7 +123,9 @@ const AiChat = ({ navigation }) => {
 
       setIsLoading(true);
       try {
-        const response = await getChatbotHistory(conversation_id, { trip_id: tripId });
+        const response = await getChatbotHistory(conversation_id, {
+          trip_id: tripId,
+        });
         const historyItems = Array.isArray(response?.data) ? response.data : [];
 
         let extractedActivities = [];
@@ -140,7 +151,11 @@ const AiChat = ({ navigation }) => {
           }
 
           const assistantActivities = item?.payload?.activities?.data;
-          if (!isUserRole && Array.isArray(assistantActivities) && assistantActivities.length > 0) {
+          if (
+            !isUserRole &&
+            Array.isArray(assistantActivities) &&
+            assistantActivities.length > 0
+          ) {
             extractedActivities = assistantActivities;
           }
         });
@@ -151,7 +166,8 @@ const AiChat = ({ navigation }) => {
         );
 
         const combinedMessages = [...mappedMessages, ...activityMessages].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
         if (isMounted) {
@@ -165,7 +181,10 @@ const AiChat = ({ navigation }) => {
           setMessages([
             {
               _id: `ai-history-error-${Date.now()}`,
-              text: error?.message || "Unable to load AI chat history.",
+              text:
+                error?.message ||
+                error?.error ||
+                "Unable to load AI chat history.",
               createdAt: new Date(),
               user: BOT_USER,
             },
@@ -185,32 +204,49 @@ const AiChat = ({ navigation }) => {
     };
   }, [fromHistoryList, conversation_id, tripId, currentUser]);
 
-  const onSend = useCallback(
-    async () => {
-      const prompt = text.trim();
-    if (!prompt || !tripId || isLoading || fromHistoryList) return;
+  const onSend = useCallback(async () => {
+    const prompt = text.trim();
+    if (!prompt || isLoading) return;
 
-      const userMessage = {
-        _id: `user-${Date.now()}`,
-        text: prompt,
-        createdAt: new Date(),
-        user: currentUser,
-      };
-      setMessages((prev) => GiftedChat.append(prev, [userMessage]));
-      setText("");
-      setIsLoading(true);
+    if (!tripId) {
+      showToast(
+        "error",
+        "Trip is missing. Open AI chat from a trip or group chat."
+      );
+      return;
+    }
 
-      try {
-        const response = await chatbot({ prompt, trip_id: tripId });
-        const activities = response?.activities?.data || [];
-        const firstBatch = activities.slice(0, 5);
-        const activityMessages = firstBatch.map((item, index) =>
-          createActivityMessage(item, index + 1)
-        );
-        const nextMessages =
-          activityMessages.length > 0
-            ? activityMessages
-            : [
+    const userMessage = {
+      _id: `user-${Date.now()}`,
+      text: prompt,
+      createdAt: new Date(),
+      user: currentUser,
+    };
+    setMessages((prev) => GiftedChat.append(prev, [userMessage]));
+    setText("");
+    setIsLoading(true);
+
+    try {
+      const response = await chatbot({
+        prompt,
+        trip_id: tripId,
+        ...(activeConversationId && { conversation_id: activeConversationId }),
+      });
+
+      if (response?.conversation_id) {
+        setActiveConversationId(response.conversation_id);
+      }
+
+      const activities =
+        response?.activities?.data || response?.data?.activities?.data || [];
+      const firstBatch = activities.slice(0, 5);
+      const activityMessages = firstBatch.map((item, index) =>
+        createActivityMessage(item, index + 1)
+      );
+      const nextMessages =
+        activityMessages.length > 0
+          ? activityMessages
+          : [
               {
                 _id: `ai-empty-${Date.now()}`,
                 text: "No activities found for your query.",
@@ -218,28 +254,32 @@ const AiChat = ({ navigation }) => {
                 user: BOT_USER,
               },
             ];
-        setMessages((prev) => GiftedChat.append(prev, nextMessages));
-        setAllActivities(activities);
-        setVisibleActivities(firstBatch.length);
-        setHasBotResponse(true);
-      } catch (error) {
-        const fallbackMessage = {
-          _id: `ai-error-${Date.now()}`,
-          text: error?.message || "Unable to fetch activities right now.",
-          createdAt: new Date(),
-          user: BOT_USER,
-        };
-        setMessages((prev) => GiftedChat.append(prev, [fallbackMessage]));
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [text, tripId, isLoading, currentUser]
-  );
+      setMessages((prev) => GiftedChat.append(prev, nextMessages));
+      setAllActivities(activities);
+      setVisibleActivities(firstBatch.length);
+      setHasBotResponse(true);
+    } catch (error) {
+      const fallbackMessage = {
+        _id: `ai-error-${Date.now()}`,
+        text:
+          error?.message ||
+          error?.error ||
+          "Unable to fetch activities right now.",
+        createdAt: new Date(),
+        user: BOT_USER,
+      };
+      setMessages((prev) => GiftedChat.append(prev, [fallbackMessage]));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [text, tripId, isLoading, currentUser, activeConversationId]);
 
   const handleLoadMore = useCallback(() => {
     if (visibleActivities >= allActivities.length) return;
-    const nextSlice = allActivities.slice(visibleActivities, visibleActivities + 5);
+    const nextSlice = allActivities.slice(
+      visibleActivities,
+      visibleActivities + 5
+    );
     const newMessages = nextSlice.map((item, index) =>
       createActivityMessage(item, index + visibleActivities + 1)
     );
@@ -252,7 +292,11 @@ const AiChat = ({ navigation }) => {
     return (
       <TouchableOpacity
         style={[styles.sendButton, !hasText && styles.sendButtonDisabled]}
-        onPress={onSend}
+        onPress={() => {
+          if (hasText) {
+            onSend();
+          }
+        }}
         disabled={!hasText}
       >
         <Text style={styles.sendButtonIcon}>{isLoading ? "..." : "→"}</Text>
@@ -260,30 +304,34 @@ const AiChat = ({ navigation }) => {
     );
   };
 
-  const renderInputToolbar = () =>
-    hasBotResponse ? null : (
-      <View style={styles.inputToolbar}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your message"
-            placeholderTextColor="#999"
-            value={text}
-            onChangeText={setText}
-            multiline
-          />
-          {renderSend()}
-        </View>
+  const renderInputToolbar = () => (
+    <View style={styles.inputToolbar}>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Type you message"
+          placeholderTextColor="#999"
+          value={text}
+          onChangeText={setText}
+          multiline
+          editable={!isLoading}
+        />
+        {renderSend()}
       </View>
-    );
+    </View>
+  );
 
   const renderChatFooter = () => {
-    const canLoadMore = hasBotResponse && visibleActivities < allActivities.length;
+    const canLoadMore =
+      hasBotResponse && visibleActivities < allActivities.length;
     if (!canLoadMore) return <View style={{ height: getHeight(10) }} />;
 
     return (
       <View style={styles.loadMoreContainer}>
-        <TouchableOpacity style={styles.loadMoreButton} onPress={handleLoadMore}>
+        <TouchableOpacity
+          style={styles.loadMoreButton}
+          onPress={handleLoadMore}
+        >
           <Text style={styles.loadMoreButtonText}>Load More</Text>
         </TouchableOpacity>
       </View>
@@ -295,18 +343,20 @@ const AiChat = ({ navigation }) => {
   }, [navigation, groupId, tripId]);
 
   const handleViewTrip = useCallback(() => {
-    if (!tripId) return;
+    if (!tripId) {
+      showToast("error", "Trip is missing for this chat.");
+      return;
+    }
     navigateToTripDetails(navigation, { tripId });
   }, [navigation, tripId]);
 
   const handleGroupChat = useCallback(() => {
     if (!groupId) {
-      console.warn("AiChat: groupId is missing, cannot navigate to Chat");
-      // Optionally show an alert or toast to the user
+      showToast("error", "Group chat is unavailable from this screen.");
       return;
     }
-    navigation.navigate(navigationStrings.CHAT, { groupId });
-  }, [navigation, groupId]);
+    navigation.navigate(navigationStrings.CHAT, { groupId, tripId });
+  }, [navigation, groupId, tripId]);
 
   const handleActivityPress = useCallback(
     (activityUuid, activityName, activityImage) => {
@@ -326,34 +376,41 @@ const AiChat = ({ navigation }) => {
     [navigation]
   );
 
-  const renderBubble = useCallback((props) => {
-    const currentMessage = props?.currentMessage;
-    const hasActivityImage = Boolean(currentMessage?.image);
-    const canOpenActivity =
-      String(currentMessage?.user?._id) === String(BOT_USER._id) &&
-      Boolean(currentMessage?.activityUuid);
+  const renderBubble = useCallback(
+    (props) => {
+      const currentMessage = props?.currentMessage;
+      const hasActivityImage = Boolean(currentMessage?.image);
+      const canOpenActivity =
+        String(currentMessage?.user?._id) === String(BOT_USER._id) &&
+        Boolean(currentMessage?.activityUuid);
 
-    return (
-      <Bubble
-        {...props}
-        onPress={() => {
-          if (!canOpenActivity) return;
-          handleActivityPress(
-            currentMessage?.activityUuid,
-            currentMessage?.activityName,
-            currentMessage?.activityImage
-          );
-        }}
-        wrapperStyle={{
-          left: [
-            styles.leftBubble,
-            hasActivityImage ? styles.bubbleWithActivity : null,
-          ],
-          right: [styles.rightBubble],
-        }}
-      />
-    );
-  }, [handleActivityPress]);
+      return (
+        <Bubble
+          {...props}
+          onPress={() => {
+            if (!canOpenActivity) return;
+            handleActivityPress(
+              currentMessage?.activityUuid,
+              currentMessage?.activityName,
+              currentMessage?.activityImage
+            );
+          }}
+          wrapperStyle={{
+            left: [
+              styles.leftBubble,
+              hasActivityImage ? styles.bubbleWithActivity : null,
+            ],
+            right: [styles.rightBubble],
+          }}
+          textStyle={{
+            left: styles.leftBubbleText,
+            right: styles.rightBubbleText,
+          }}
+        />
+      );
+    },
+    [handleActivityPress]
+  );
 
   const renderMessageImage = useCallback(
     (props) => <MessageImage {...props} imageStyle={styles.activityImage} />,
@@ -361,12 +418,21 @@ const AiChat = ({ navigation }) => {
   );
 
   const renderMessageText = useCallback(
-    (props) => <MessageText {...props} textStyle={{ left: styles.activityText, right: styles.activityText }} />,
+    (props) => (
+      <MessageText
+        {...props}
+        textStyle={{
+          left: styles.leftBubbleText,
+          right: styles.rightBubbleText,
+        }}
+      />
+    ),
     []
   );
 
   const renderAvatar = useCallback((props) => {
-    const isBot = String(props?.currentMessage?.user?._id) === String(BOT_USER._id);
+    const isBot =
+      String(props?.currentMessage?.user?._id) === String(BOT_USER._id);
     if (!isBot) {
       return <Avatar {...props} />;
     }
@@ -379,10 +445,9 @@ const AiChat = ({ navigation }) => {
   }, []);
 
   return (
-      <MainContainer loader={isLoading && messages.length === 0}>
+    <MainContainer loader={isLoading && messages.length === 0}>
       <Header title="Plan with AI" />
 
-      {/* Trip Title and Action Buttons */}
       <View style={styles.tripSection}>
         <Text style={styles.tripTitle}>{tripTitle}</Text>
         <View style={styles.actionButtonsContainer}>
@@ -464,7 +529,6 @@ const styles = StyleSheet.create({
   },
   inputToolbar: {
     backgroundColor: "#fff",
-    paddingHorizontal: 10,
     paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
@@ -513,30 +577,37 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
   },
-  // Keep activity cards consistent so image spans same width as text bubble.
   bubbleWithActivity: {
     width: ACTIVITY_BUBBLE_WIDTH,
   },
+  // Match GiftedChat defaults used by Chat.jsx Message bubbles
   leftBubble: {
-    backgroundColor: "#f4f4f4",
+    backgroundColor: "#f0f0f0",
     overflow: "hidden",
   },
   rightBubble: {
-    backgroundColor: "#87CEEB",
+    backgroundColor: "#0084ff",
     overflow: "hidden",
+  },
+  leftBubbleText: {
+    paddingHorizontal: getHoriPadding(10),
+    paddingVertical: getVertiPadding(8),
+    fontSize: getFontSize(13),
+    color: "#000",
+    lineHeight: getFontSize(18),
+  },
+  rightBubbleText: {
+    paddingHorizontal: getHoriPadding(10),
+    paddingVertical: getVertiPadding(8),
+    fontSize: getFontSize(13),
+    color: "#fff",
+    lineHeight: getFontSize(18),
   },
   activityImage: {
     width: "100%",
     height: 160,
     borderTopLeftRadius: 14,
     borderTopRightRadius: 14,
-  },
-  activityText: {
-    paddingHorizontal: getHoriPadding(10),
-    paddingVertical: getVertiPadding(8),
-    fontSize: getFontSize(13),
-    color: colors.black,
-    lineHeight: getFontSize(18),
   },
   botAvatar: {
     width: 40,

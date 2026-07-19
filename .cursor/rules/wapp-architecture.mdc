@@ -1,0 +1,35 @@
+---
+description: WApp architecture map — where code lives and how to change it
+alwaysApply: true
+---
+
+# WApp architecture
+
+Travel app (Worldener). Stack: RN 0.81, Redux Toolkit, React Navigation 7, Axios → `{URL}/api/v1/user`, Stripe, FCM, Socket.IO.
+
+**Deep reference:** `docs/ARCHITECTURE.md`. **API layer:** `docs/API.md`. Product flows: `APP_FEATURES.md`.
+
+## Entry
+
+`index.js` → `App.js` (Provider, StripeAppBridge, push, Routes, toast) → `src/navigation/Routes.jsx` (Auth vs Main by `user.accessToken`).
+
+## Where to put code
+
+| Change | Location |
+|--------|----------|
+| Screen | `src/screens/` + export `screens/index.js` + `navigationStrings` + stack registration |
+| API | `endpoints.js` → `api/services/*` → slice thunk |
+| Shared UI | `src/components/` |
+| Config / flags | `src/config/` |
+| Guest gate | `GUEST_RESTRICTED_SCREENS` in `utils/authHelpers.js` |
+
+## Imports
+
+Use Babel aliases: `@api`, `@assets`, `@components`, `@config`, `@context`, `@hooks`, `@mocks`, `@navigation`, `@redux`, `@screens`, `@services`, `@utils`.
+
+## Do not
+
+- Invent a second HTTP client (use `apiClient`)
+- Call reusable-group mocks from screens (use `crewGroupsService`)
+- Skip `pod install` in `ios/` after native deps (`automaticPodsInstallation: false`)
+- Change `.env` without restarting Metro (`babel-plugin-inline-dotenv`)
