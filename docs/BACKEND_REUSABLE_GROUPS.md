@@ -4,6 +4,11 @@
 **App status:** React Native UI implemented with **mock data** (`REUSABLE_GROUPS_MOCK_ENABLED = true`) until these APIs exist.  
 **Repo:** `Worldener-Api`
 
+**Stakeholder review (locked decisions, checklists):**  
+`Worldener-Api/docs/REUSABLE_GROUPS_BACKEND_PLAN.md` · App: [`REUSABLE_GROUPS_APP_PLAN.md`](./REUSABLE_GROUPS_APP_PLAN.md) · Admin: `Worldener-Api/docs/REUSABLE_GROUPS_ADMIN_FEATURES.md`
+
+This file remains the **field-level API contract**. Product sign-off lives in the review plans above.
+
 ---
 
 ## Summary
@@ -17,6 +22,12 @@ Shift from **1 trip = 1 group** to **1 persistent crew = many trips**, with **pe
 | Solo trips | **No group** — `createTrip` without `groupId` creates Trip only |
 | Trip storage | **Canonical trip + per-user member trip on opt-in** |
 | Who creates crew trips | **Any crew member** |
+| Leave a trip (opt-out) | **Allowed** — stay in crew; rejoin later; My Trips shows greyed + Rejoin |
+| Leave a crew | Removes user from **all** that crew’s trips |
+| Late joiner onboarding | **MVP** (accept-invite returns `activeTrips`) |
+| Booked status | Per-user trip only; do not set Group Booked on one member’s payment |
+| Data migration | **Skip** (dummy/test data) |
+| Cart isolation | Abandon trip A checkout → trip B cart must not include A items |
 | Opted-out on My Trips | **Greyed + Rejoin** (still returned by API) |
 
 ---
@@ -314,9 +325,9 @@ App opens **Trip Brief** ("You're invited") screen.
 
 ## Migration
 
-1. Existing group + single trip → one canonical trip; all `addedUsers` → `joined` participation.
-2. Deprecate reliance on `Group.tripId` for listing; use `Trip.find({ groupId, isCanonical: true })`.
-3. Member trips created by old `accept-invite` → backfill `TripParticipation` where possible.
+**Skip for this push** (dummy/test data). No backfill script. New code paths only; stale test groups can be deleted/recreated.
+
+When/if production data ever needs conversion: mark creator trip canonical, add `joined` participation for members, stop relying on singular `Group.tripId` for listing.
 
 ---
 
@@ -336,14 +347,15 @@ When implementing APIs, use the same field names: `participationStatus`, `canoni
 
 ## Suggested implementation order
 
-1. `TripParticipation` model + migration  
+1. `TripParticipation` model (no historical migration)  
 2. `POST /createGroup`  
 3. `POST /createTrip` solo vs crew split  
 4. `GET /groups/:id/trips`, opt-in, opt-out  
 5. `GET /getTrips` + `GET /getTripDetails` participation fields  
-6. `accept-invite` change + `activeTrips` in response  
+6. `accept-invite` change + `activeTrips` in response (late joiner MVP)  
 7. Notifications `trip_created_in_group`  
 8. Compare + wishlist trip scoping  
+9. Stop Group-level Booked on payment; cart isolation (abandon A → checkout B)  
 
 ---
 

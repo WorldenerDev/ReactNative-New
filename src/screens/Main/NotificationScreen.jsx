@@ -70,7 +70,6 @@ const getNotificationTypeLabel = (item) => {
 const NotificationScreen = () => {
   useGuestScreenGuard();
   const navigation = useNavigation();
-  const mockEnabled = isReusableGroupsMockEnabled();
   const scrollPadding = useStickyScrollPadding();
   const [activeTab, setActiveTab] = useState("Notifications");
   const [notifications, setNotifications] = useState([]);
@@ -112,6 +111,14 @@ const NotificationScreen = () => {
       if (response?.success) {
         showToast("success", "Invitation accepted successfully");
         await fetchInvitations();
+        const activeTrips = response?.data?.activeTrips || [];
+        const gid = item?.groupId || response?.data?.group?._id;
+        if (gid) {
+          navigation.navigate(navigationStrings.GROUP_TRIPS_ONBOARDING, {
+            groupId: gid,
+            activeTrips,
+          });
+        }
       }
     } catch (error) {
       console.error("Error accepting invitation:", error);
@@ -170,7 +177,7 @@ const NotificationScreen = () => {
       const response = await getNotifications();
       let items = response?.data?.notifications || [];
 
-      if (mockEnabled) {
+      if (isReusableGroupsMockEnabled()) {
         const mockRes = await fetchCrewTripNotifications();
         const mockItems = (mockRes?.data || []).map((n) => ({
           ...n,
@@ -266,12 +273,11 @@ const NotificationScreen = () => {
     await markAsRead(item);
 
     if (
-      mockEnabled &&
       item?.notifictaion_type === "trip_created_in_group" &&
-      item?.tripId
+      (item?.tripId || item?.trip_id)
     ) {
       navigation.navigate(navigationStrings.TRIP_BRIEF, {
-        canonicalTripId: item.tripId,
+        canonicalTripId: item.tripId || item.trip_id,
       });
     }
   };

@@ -11,22 +11,32 @@ import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { fetchTripCompare } from "@api/services/crewGroupsService";
+import { useSelector } from "react-redux";
 
-const TripCompareTab = () => {
+const TripCompareTab = ({ groupId, tripId }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const user = useSelector((state) => state.auth?.user);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetchTripCompare();
+        const members = []; // compare needs two users — keep mock-like empty if no second user
+        const currentUserId = user?._id || user?.id;
+        const res = await fetchTripCompare({
+          groupId,
+          tripId,
+          userId1: currentUserId,
+          userId2: currentUserId,
+        });
         if (res?.success) setData(res.data);
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, []);
+    if (groupId && tripId) load();
+    else setLoading(false);
+  }, [groupId, tripId, user]);
 
   if (loading) {
     return (

@@ -51,9 +51,8 @@ const CreateTrip = ({ navigation, route }) => {
   const selectedBuddyPhones = route?.params?.selectedBuddyPhones || [];
   const groupId = route?.params?.groupId;
   const groupName = route?.params?.groupName;
-  const mockEnabled = isReusableGroupsMockEnabled();
   const isCrewMode = Boolean(groupId);
-  const isSoloMode = mockEnabled && !groupId;
+  const isSoloMode = !groupId;
 
   // Sync state with route params when navigating back from AddToTrip
   useEffect(() => {
@@ -92,6 +91,10 @@ const CreateTrip = ({ navigation, route }) => {
           start_at: fromDate,
           end_at: toDate,
         });
+        if (!response?.success || !response?.data?._id) {
+          showToast("error", response?.message || "Failed to create crew trip");
+          return;
+        }
         showToast("success", "Trip created for your crew!");
         resetToTripDetails(navigation, {
           tripId: response?.data?.memberTripId || response?.data?._id,
@@ -190,6 +193,8 @@ const CreateTrip = ({ navigation, route }) => {
       selectedBuddyPhones: selectedBuddyPhones,
       fromDate: fromDate,
       toDate: toDate,
+      groupId,
+      groupName,
     });
   };
 

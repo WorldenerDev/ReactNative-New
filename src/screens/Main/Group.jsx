@@ -30,36 +30,9 @@ import {
 const Group = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
   const { isGuest } = useAuth();
-  const mockEnabled = isReusableGroupsMockEnabled();
+  const useCrewUi = true; // crew list UI always on; fetchCrews uses real API when mocks off
   const [crews, setCrews] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const transformLegacyGroupData = (groupsData) => {
-    return groupsData.map((group) => {
-      const peopleCount = group.addedUsers?.length || 0;
-      const totalPeople = peopleCount + 1;
-
-      const status = group.status
-        ? group.status.charAt(0).toUpperCase() + group.status.slice(1)
-        : "Active";
-
-      return {
-        id: group._id,
-        tripId: group.trip_id || group.tripId || "",
-        cityId: group?.cityId?.city_id,
-        title: group.groupName || group.cityId?.name || "Trip",
-        location: group.cityId?.name || "",
-        status,
-        startDate: formatDisplayDate(group.startDate),
-        endDate: formatDisplayDate(group.endDate),
-        people: `${totalPeople} ${totalPeople === 1 ? "person" : "people"}`,
-        image:
-          group.groupImage ||
-          group.cityId?.image ||
-          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
-      };
-    });
-  };
 
   const transformCrewData = (groupsData) =>
     groupsData.map((group) => {
@@ -79,13 +52,11 @@ const Group = ({ navigation }) => {
   const fetchGroups = useCallback(async () => {
     try {
       setLoading(true);
-      const response = mockEnabled ? await fetchCrews() : await getGroups();
+      const response = await fetchCrews();
 
       if (response?.success && response?.data) {
         const data = Array.isArray(response.data) ? response.data : [];
-        setCrews(
-          mockEnabled ? transformCrewData(data) : transformLegacyGroupData(data)
-        );
+        setCrews(transformCrewData(data));
       } else {
         setCrews([]);
       }
@@ -95,7 +66,7 @@ const Group = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, [mockEnabled]);
+  }, []);
 
   useEffect(() => {
     if (!isGuest) {
@@ -114,9 +85,9 @@ const Group = ({ navigation }) => {
   );
 
   useEffect(() => {
-    if (!mockEnabled || isGuest) return undefined;
+    if (!isReusableGroupsMockEnabled() || isGuest) return undefined;
     return subscribeReusableGroupsMock(fetchGroups);
-  }, [mockEnabled, isGuest, fetchGroups]);
+  }, [isGuest, fetchGroups]);
 
   const handleCardPress = (item) => {
     navigation.navigate(navigationStrings.GROUP_DETAILS, {
@@ -225,10 +196,10 @@ const Group = ({ navigation }) => {
   const renderEmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>
-        {mockEnabled ? "No Crews Yet" : "No Groups Yet"}
+        {useCrewUi ? "No Crews Yet" : "No Groups Yet"}
       </Text>
       <Text style={styles.emptySubtitle}>
-        {mockEnabled
+        {useCrewUi
           ? "Create a crew to plan multiple trips with the same friends."
           : "Join or create a group to start planning together."}
       </Text>
@@ -238,7 +209,7 @@ const Group = ({ navigation }) => {
   if (isGuest) {
     return (
       <MainContainer>
-        <Header title={mockEnabled ? "My Crews" : "My Groups"} showBack={false} />
+        <Header title={useCrewUi ? "My Crews" : "My Groups"} showBack={false} />
         <GuestPrompt
           title="Sign in to join groups"
           subtitle="Create an account to plan trips with friends, chat, and share activities."
@@ -250,14 +221,14 @@ const Group = ({ navigation }) => {
   return (
     <MainContainer loader={loading}>
       <Header
-        title={mockEnabled ? "My Crews" : "My Groups"}
+        title={useCrewUi ? "My Crews" : "My Groups"}
         showBack={false}
         rightIconImage={imagePath.NOTIFICATION_ICON}
         onRightIconPress={handleNotificationIcon}
         rightIconSize={38}
       />
 
-      {mockEnabled ? (
+      {useCrewUi ? (
         <TouchableOpacity
           style={styles.createCrewBar}
           onPress={handleCreateCrew}
@@ -270,7 +241,7 @@ const Group = ({ navigation }) => {
 
       <FlatList
         data={crews}
-        renderItem={mockEnabled ? renderCrewCard : renderLegacyCard}
+        renderItem={useCrewUi ? renderCrewCard : renderLegacyCard}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.listContainer,

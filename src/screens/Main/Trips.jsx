@@ -18,8 +18,8 @@ import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchUserTrip, deleteUserTrip } from "@redux/slices/cityTripSlice";
+import { useDispatch } from "react-redux";
+import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import GuestPrompt from "@components/GuestPrompt";
 import useAuth from "@hooks/useAuth";
 import {
@@ -33,8 +33,6 @@ import { showToast } from "@components/AppToast";
 const Trips = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
   const { isGuest } = useAuth();
-  const mockEnabled = isReusableGroupsMockEnabled();
-  const { trip } = useSelector((state) => state.cityTrip);
   const dispatch = useDispatch();
   const [tripList, setTripList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,23 +41,21 @@ const Trips = ({ navigation }) => {
 
   const getAllTrips = useCallback(async () => {
     try {
-      if (mockEnabled) {
-        setListLoading(true);
-        const response = await fetchMyTripsWithMock(() =>
-          dispatch(fetchUserTrip()).unwrap()
-        );
-        if (response?.success) {
-          setTripList(response.data || []);
-        }
+      setListLoading(true);
+      const response = await fetchMyTripsWithMock();
+      if (response?.success) {
+        const trips = response.data?.trips || response.data || [];
+        setTripList(Array.isArray(trips) ? trips : []);
       } else {
-        await dispatch(fetchUserTrip());
+        setTripList([]);
       }
     } catch (error) {
       console.error("Failed to fetch trips: ", error);
+      setTripList([]);
     } finally {
       setListLoading(false);
     }
-  }, [dispatch, mockEnabled]);
+  }, []);
 
   useEffect(() => {
     if (!isGuest) {
@@ -76,9 +72,9 @@ const Trips = ({ navigation }) => {
   );
 
   useEffect(() => {
-    if (!mockEnabled || isGuest) return undefined;
+    if (!isReusableGroupsMockEnabled() || isGuest) return undefined;
     return subscribeReusableGroupsMock(getAllTrips);
-  }, [mockEnabled, isGuest, getAllTrips]);
+  }, [isGuest, getAllTrips]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -96,10 +92,6 @@ const Trips = ({ navigation }) => {
   };
 
   const handleDelete = (tripId) => {
-    if (mockEnabled) {
-      showToast("info", "Delete is not available in mock mode");
-      return;
-    }
     Alert.alert("Delete Trip", "Are you sure you want to delete this trip?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -152,7 +144,7 @@ const Trips = ({ navigation }) => {
     return { members, activities };
   };
 
-  const displayTrips = mockEnabled ? tripList : trip || [];
+  const displayTrips = tripList;
 
   if (isGuest) {
     return (

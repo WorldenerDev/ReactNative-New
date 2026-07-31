@@ -1,7 +1,9 @@
 # Reusable Groups — App implementation guide
 
-**Status:** Ready to implement in Agent mode (Plan mode blocked code edits).  
-**Backend:** Not started — app uses mock data until APIs land.
+**Status:** UI + mocks landed on `feature/trip-group-change` (`63cfbf9`). This file is a **wiring/reference** checklist.  
+**Stakeholder review / production remaining work:** [`REUSABLE_GROUPS_APP_PLAN.md`](./REUSABLE_GROUPS_APP_PLAN.md)  
+**Backend review:** `Worldener-Api/docs/REUSABLE_GROUPS_BACKEND_PLAN.md`  
+**Backend:** APIs not started — app uses mock data until APIs land. **Late joiner onboarding is MVP** (not Phase 2).
 
 ---
 
@@ -120,7 +122,7 @@ GROUP_TRIPS_ONBOARDING: "GroupTripsOnboarding",
 
 ### `GroupTripsOnboarding.jsx`
 
-- After accept invite (mock: manual nav with `groupId`)
+- **MVP:** after accept invite → navigate here with `groupId` + `activeTrips`
 - List active trips, Join/Skip per row → `GROUP_DETAILS`
 
 ---

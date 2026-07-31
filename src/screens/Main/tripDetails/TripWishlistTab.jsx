@@ -12,7 +12,7 @@ import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { fetchTripWishlist } from "@api/services/crewGroupsService";
 
-const TripWishlistTab = ({ canonicalTripId }) => {
+const TripWishlistTab = ({ canonicalTripId, groupId, cityId }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +23,7 @@ const TripWishlistTab = ({ canonicalTripId }) => {
         return;
       }
       try {
-        const res = await fetchTripWishlist(canonicalTripId);
+        const res = await fetchTripWishlist(canonicalTripId, groupId, cityId);
         if (res?.success) {
           setItems(res.data?.wishlisted_items || []);
         }
@@ -32,7 +32,7 @@ const TripWishlistTab = ({ canonicalTripId }) => {
       }
     };
     load();
-  }, [canonicalTripId]);
+  }, [canonicalTripId, groupId, cityId]);
 
   if (loading) {
     return (

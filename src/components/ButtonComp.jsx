@@ -12,7 +12,7 @@ import { TouchableOpacity, Text, StyleSheet } from "react-native";
 const ButtonComp = ({
   title,
   onPress,
-  disabled = true,
+  disabled = false,
   containerStyle = {},
   textStyle = {},
 }) => {

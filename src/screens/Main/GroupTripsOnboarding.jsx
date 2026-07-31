@@ -33,7 +33,11 @@ const GroupTripsOnboarding = ({ navigation, route }) => {
       const res = await fetchOnboardingTrips(groupId);
       if (res?.success) {
         setTrips(
-          (res.data || []).filter((t) => t.participationStatus === "not_joined")
+          (res.data || []).filter(
+            (t) =>
+              t.participationStatus === "not_joined" ||
+              t.participationStatus === "invited"
+          )
         );
       }
     } finally {

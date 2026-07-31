@@ -69,6 +69,15 @@ export const getTripBuddies = (data) =>
 export const getTripBycity = (cityId) =>
   apiGet(`${endpoints?.main?.getTripBycity}/${cityId}`);
 export const getGroups = () => apiGet(endpoints?.main?.getGroups);
+export const createGroup = (data) => apiPost(endpoints?.main?.createGroup, data);
+export const getGroupTrips = (groupId, params) =>
+  apiGet(`${endpoints?.main?.getGroupTrips}/${groupId}/trips`, params);
+export const getTripBrief = (tripId) =>
+  apiGet(`${endpoints?.main?.tripBrief}/${tripId}/brief`);
+export const optInToTripApi = (tripId) =>
+  apiPost(`${endpoints?.main?.tripOptIn}/${tripId}/opt-in`);
+export const optOutOfTripApi = (tripId) =>
+  apiPost(`${endpoints?.main?.tripOptOut}/${tripId}/opt-out`);
 export const getGroupList = (data) => apiPost(endpoints?.main?.getGroupList, data);
 export const shareActivityWithGroups = (data) =>
   apiPost(endpoints?.main?.shareActivityWithGroups, data);
@@ -95,8 +104,14 @@ export const addUpdateEmoji = (data) => apiPost(endpoints?.main?.addUpdateEmoji,
 export const removeUserFromGroup = (data) => apiPost(endpoints?.main?.removeUserFromGroup, data);
 export const getCityActivities = (params) => apiGet(endpoints?.main?.getCityActivities, params);
 export const compareUsersInGroup = (data) => apiPost(endpoints?.main?.compareUsersInGroup, data);
-export const getGroupWishlisted = (groupId, cityId) =>
-  apiGet(`${endpoints?.main?.getGroupWishlisted}/${groupId}/wishlisted`, cityId ? { cityId } : {});
+export const getGroupWishlisted = (groupId, cityId, tripId) =>
+  apiGet(
+    `${endpoints?.main?.getGroupWishlisted}/${groupId}/wishlisted`,
+    {
+      ...(cityId ? { cityId } : {}),
+      ...(tripId ? { tripId } : {}),
+    }
+  );
 export const updateProfile = (formData) =>
   apiPost(endpoints?.main?.updateProfile, formData);
 export const addCard = (data) => apiPost(endpoints?.main?.addCard, data);

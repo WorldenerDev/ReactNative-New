@@ -55,8 +55,7 @@ const TripDetails = ({ navigation, route }) => {
   );
   const [loading, setLoading] = useState(true);
   const [detailTab, setDetailTab] = useState("Itinerary");
-  const mockEnabled = isReusableGroupsMockEnabled();
-  const showCrewTabs = mockEnabled && Boolean(tripData?.groupId);
+  const showCrewTabs = Boolean(tripData?.groupId);
   const { requestContactsPermission } = usePermissions();
   const insets = useSafeAreaInsets();
   const scrollContentBottomPadding =
@@ -586,29 +585,31 @@ const TripDetails = ({ navigation, route }) => {
                     </Text>
                   </View>
                 </View>
+
+                {showCrewTabs && tripData?.participationStatus === "joined" ? (
+                  <TouchableOpacity
+                    style={styles.optOutLink}
+                    onPress={handleOptOut}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.optOutLinkText}>
+                      Not this time — opt out of this trip
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {showCrewTabs &&
+                tripData?.participationStatus === "opted_out" ? (
+                  <TouchableOpacity
+                    style={styles.rejoinLink}
+                    onPress={handleRejoinTrip}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.rejoinLinkText}>Rejoin this trip</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             </View>
-
-            {showCrewTabs && tripData?.participationStatus === "joined" ? (
-              <View style={styles.optOutRow}>
-                <ButtonComp
-                  title="Not this time (opt out)"
-                  onPress={handleOptOut}
-                  containerStyle={styles.optOutBtn}
-                  textStyle={styles.optOutBtnText}
-                />
-              </View>
-            ) : null}
-
-            {showCrewTabs && tripData?.participationStatus === "opted_out" ? (
-              <View style={styles.optOutRow}>
-                <ButtonComp
-                  title="Rejoin trip"
-                  onPress={handleRejoinTrip}
-                  containerStyle={styles.rejoinBtn}
-                />
-              </View>
-            ) : null}
 
             {showCrewTabs ? (
               <TopTab
@@ -621,13 +622,18 @@ const TripDetails = ({ navigation, route }) => {
 
             {(!showCrewTabs || detailTab === "Itinerary") && renderItineraryContent()}
             {showCrewTabs && detailTab === "Compare" ? (
-              <TripCompareTab />
+              <TripCompareTab
+                groupId={tripData?.groupId}
+                tripId={tripData?.canonicalTripId || tripData?._id}
+              />
             ) : null}
             {showCrewTabs && detailTab === "Wishlist" ? (
               <TripWishlistTab
                 canonicalTripId={
                   tripData?.canonicalTripId || tripData?._id
                 }
+                groupId={tripData?.groupId}
+                cityId={tripData?.city_id || tripData?.city?.city_id}
               />
             ) : null}
 
@@ -935,21 +941,31 @@ const styles = StyleSheet.create({
   },
   detailTabs: {
     marginHorizontal: getWidth(16),
+    marginTop: getHeight(12),
     marginBottom: getHeight(8),
   },
-  optOutRow: {
-    paddingHorizontal: getWidth(16),
-    marginBottom: getHeight(8),
+  optOutLink: {
+    marginTop: getHeight(14),
+    alignItems: "center",
+    paddingVertical: getHeight(6),
   },
-  optOutBtn: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
+  optOutLinkText: {
+    fontSize: getHeight(13),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.lightText,
+    textDecorationLine: "underline",
   },
-  optOutBtnText: {
-    color: colors.black,
-  },
-  rejoinBtn: {
+  rejoinLink: {
+    marginTop: getHeight(14),
+    alignItems: "center",
     backgroundColor: colors.secondary,
+    borderRadius: getRadius(20),
+    paddingVertical: getHeight(10),
+    paddingHorizontal: getWidth(16),
+  },
+  rejoinLinkText: {
+    fontSize: getHeight(14),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
   },
 });

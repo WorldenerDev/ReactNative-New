@@ -139,11 +139,17 @@ const SearchCity = ({ navigation, route }) => {
               }
               // If in cityOnly mode, navigate back to the screen we came from
               if (fromScreen === "CreateTrip") {
-                navigation.navigate(navigationStrings.CREATE_TRIP, {
-                  cityData: item,
-                  selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
-                  fromDate: route?.params?.fromDate,
-                  toDate: route?.params?.toDate,
+                navigation.navigate({
+                  name: navigationStrings.CREATE_TRIP,
+                  params: {
+                    cityData: item,
+                    selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
+                    fromDate: route?.params?.fromDate,
+                    toDate: route?.params?.toDate,
+                    groupId: route?.params?.groupId,
+                    groupName: route?.params?.groupName,
+                  },
+                  merge: true,
                 });
               } else if (fromScreen === "CityDetail") {
                 navigation.navigate(navigationStrings.CITY_DETAIL, {
@@ -151,11 +157,17 @@ const SearchCity = ({ navigation, route }) => {
                 });
               } else {
                 // Default fallback - go back to CreateTrip
-                navigation.navigate(navigationStrings.CREATE_TRIP, {
-                  cityData: item,
-                  selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
-                  fromDate: route?.params?.fromDate,
-                  toDate: route?.params?.toDate,
+                navigation.navigate({
+                  name: navigationStrings.CREATE_TRIP,
+                  params: {
+                    cityData: item,
+                    selectedBuddyPhones: route?.params?.selectedBuddyPhones || [],
+                    fromDate: route?.params?.fromDate,
+                    toDate: route?.params?.toDate,
+                    groupId: route?.params?.groupId,
+                    groupName: route?.params?.groupName,
+                  },
+                  merge: true,
                 });
               }
             } else {

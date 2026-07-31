@@ -85,12 +85,13 @@ const GroupDetails = () => {
   const [showLikedByModal, setShowLikedByModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const mockEnabled = isReusableGroupsMockEnabled();
+  const crewFeature = true;
   const tabs = useMemo(
-    () => (mockEnabled ? ["Trips", "Members"] : ["Members", "Compare", "Wishlisted"]),
-    [mockEnabled]
+    () => (crewFeature ? ["Trips", "Members"] : ["Members", "Compare", "Wishlisted"]),
+    [crewFeature]
   );
   const [activeTab, setActiveTab] = useState(() =>
-    mockEnabled ? "Trips" : "Members"
+    crewFeature ? "Trips" : "Members"
   );
   const [crewTrips, setCrewTrips] = useState([]);
   const [tripSegment, setTripSegment] = useState("active");
@@ -220,9 +221,7 @@ const GroupDetails = () => {
           groupId
         );
         setLoading(true);
-        const response = mockEnabled
-          ? await fetchCrewDetails(groupId)
-          : await getGroupDetails(groupId);
+        const response = await fetchCrewDetails(groupId);
         console.log("GroupDetails: API response:", response);
         if (response?.success && response?.data) {
           setGroupData(response.data);
@@ -241,7 +240,7 @@ const GroupDetails = () => {
     };
 
     fetchGroupDetails();
-  }, [groupId, mockEnabled]);
+  }, [groupId]);
 
   useEffect(() => {
     if (!mockEnabled || !groupId) return undefined;
@@ -259,7 +258,7 @@ const GroupDetails = () => {
 
   useEffect(() => {
     const loadCrewTrips = async () => {
-      if (!mockEnabled || !groupId || activeTab !== "Trips") return;
+      if (!groupId || activeTab !== "Trips") return;
       try {
         setLoading(true);
         const res = await fetchCrewTrips(groupId, { status: tripSegment });
@@ -269,7 +268,7 @@ const GroupDetails = () => {
       }
     };
     loadCrewTrips();
-  }, [mockEnabled, groupId, activeTab, tripSegment]);
+  }, [groupId, activeTab, tripSegment]);
 
   // Fetch wishlist data when Wishlisted tab is active
   useEffect(() => {
@@ -992,6 +991,10 @@ const GroupDetails = () => {
   };
 
   const handleCreateCrewTrip = () => {
+    if (!groupId) {
+      showToast("error", "Missing group. Open the crew again and try.");
+      return;
+    }
     navigation.navigate(navigationStrings.CREATE_TRIP, {
       groupId,
       groupName: groupData?.groupName,
@@ -1031,6 +1034,7 @@ const GroupDetails = () => {
       <ButtonComp
         title="Create Trip"
         onPress={handleCreateCrewTrip}
+        disabled={false}
         containerStyle={styles.createTripBtn}
       />
 
