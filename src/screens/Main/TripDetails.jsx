@@ -323,7 +323,7 @@ const TripDetails = ({ navigation, route }) => {
           data={activityDates}
           keyExtractor={(item, index) => `date-${index}-${item}`}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={!showCrewTabs}
+          style={styles.activitiesList}
           contentContainerStyle={[
             styles.activitiesListContent,
             { paddingBottom: scrollContentBottomPadding },
@@ -459,7 +459,7 @@ const TripDetails = ({ navigation, route }) => {
                 {/* Participants Section */}
                 <View style={styles.participantsSection}>
                   {tripData?.groupId ? (
-                    <>
+                    <View style={styles.participantsBlock}>
                       <View style={styles.participantsInfo}>
                         <Text style={styles.participantsCount}>
                           {tripData?.groupName
@@ -468,18 +468,28 @@ const TripDetails = ({ navigation, route }) => {
                           {tripData?.participants || 0} joined
                         </Text>
                       </View>
-                      <TouchableOpacity
-                        style={styles.viewGroupButton}
-                        onPress={handleViewGroup}
-                      >
-                        <Text style={styles.viewGroupText}>View Group</Text>
-                      </TouchableOpacity>
-                    </>
+                      <View style={styles.buttonsContainer}>
+                        <TouchableOpacity
+                          style={styles.viewGroupButton}
+                          onPress={handleViewGroup}
+                        >
+                          <Text style={styles.viewGroupText}>View Group</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.exploreMoreButton}
+                          onPress={handleExploreMore}
+                        >
+                          <Text style={styles.exploreMoreButtonText}>
+                            Explore More
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   ) : (tripData?.participants ||
                     tripData?.participantsList?.length ||
                     0) > 0 ? (
-                    // Show participants info and View Group button when participants are available
-                    <>
+                    // Show participants info, View Group, and Explore More
+                    <View style={styles.participantsBlock}>
                       <View style={styles.participantsInfo}>
                         <View style={styles.avatarContainer}>
                           {(tripData?.participantsList || []).map(
@@ -528,13 +538,23 @@ const TripDetails = ({ navigation, route }) => {
                           people
                         </Text>
                       </View>
-                      <TouchableOpacity
-                        style={styles.viewGroupButton}
-                        onPress={handleViewGroup}
-                      >
-                        <Text style={styles.viewGroupText}>View Group</Text>
-                      </TouchableOpacity>
-                    </>
+                      <View style={styles.buttonsContainer}>
+                        <TouchableOpacity
+                          style={styles.viewGroupButton}
+                          onPress={handleViewGroup}
+                        >
+                          <Text style={styles.viewGroupText}>View Group</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.exploreMoreButton}
+                          onPress={handleExploreMore}
+                        >
+                          <Text style={styles.exploreMoreButtonText}>
+                            Explore More
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   ) : (
                     // Show Invite Participants and Explore More buttons when no participants
                     <View style={styles.buttonsContainer}>
@@ -753,6 +773,10 @@ const styles = StyleSheet.create({
     marginBottom: getHeight(16),
     borderRadius: getRadius(8),
   },
+  participantsBlock: {
+    width: "100%",
+    gap: getHeight(10),
+  },
   participantsInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -788,10 +812,12 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   viewGroupButton: {
+    flex: 1,
     backgroundColor: colors.secondary,
     paddingHorizontal: getWidth(12),
-    paddingVertical: getHeight(6),
+    paddingVertical: getHeight(10),
     borderRadius: getRadius(6),
+    alignItems: "center",
   },
   viewGroupText: {
     fontSize: getHeight(11),
@@ -850,6 +876,9 @@ const styles = StyleSheet.create({
   activitiesContainer: {
     flex: 1,
     marginTop: getHeight(20),
+  },
+  activitiesList: {
+    flex: 1,
   },
   activitiesListContent: {
     paddingTop: getHeight(8),
