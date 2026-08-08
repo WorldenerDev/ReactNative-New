@@ -113,12 +113,11 @@ const GroupDetails = () => {
   }, [groupData]);
 
   const crewAvatarUri = useMemo(() => {
-    if (!groupData) return DUMMY_USER_IMAGE;
+    const fallback =
+      "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop";
+    if (!groupData) return fallback;
     const fromGroup = getImageUrl(groupData.groupImage);
-    if (fromGroup) return fromGroup;
-    const creatorImg = getImageUrl(groupData.createdBy?.image);
-    if (creatorImg) return creatorImg;
-    return DUMMY_USER_IMAGE;
+    return fromGroup || groupData.groupImage || fallback;
   }, [groupData]);
 
   // Always show selection list when switching to Compare tab
@@ -1096,13 +1095,13 @@ const GroupDetails = () => {
       <View style={styles.crewHeader}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.crewHeaderBack}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.crewHeaderBackBtn}
+          activeOpacity={0.7}
         >
           <Image
+            tintColor={colors.black}
             source={icons.BACK_ICON}
             style={styles.crewHeaderBackIcon}
-            tintColor={colors.black}
           />
         </TouchableOpacity>
         <OptimizedImage
@@ -1110,12 +1109,14 @@ const GroupDetails = () => {
           style={styles.crewHeaderAvatar}
           resizeMode="cover"
         />
-        <Text style={styles.crewHeaderName} numberOfLines={1}>
-          {groupData?.groupName || "Crew"}
-        </Text>
-        <Text style={styles.crewHeaderMeta}>
-          {memberCount} member{memberCount === 1 ? "" : "s"}
-        </Text>
+        <View style={styles.crewHeaderText}>
+          <Text style={styles.crewHeaderName} numberOfLines={1}>
+            {groupData?.groupName || "Crew"}
+          </Text>
+          <Text style={styles.crewHeaderMeta}>
+            {memberCount} member{memberCount === 1 ? "" : "s"}
+          </Text>
+        </View>
       </View>
       <TopTab tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -1159,7 +1160,13 @@ const GroupDetails = () => {
                   </Text>
                 ) : null}
               </View>
-              <Image source={icons.RIGHT_ICON} style={styles.chatBarChevron} />
+              <View style={styles.chatBarChevronWrap}>
+                <Image
+                  source={icons.RIGHT_ICON}
+                  style={styles.chatBarChevron}
+                  resizeMode="contain"
+                />
+              </View>
             </TouchableOpacity>
           </View>
         )}
@@ -1760,41 +1767,47 @@ const styles = StyleSheet.create({
   },
   crewHeader: {
     backgroundColor: colors.white,
+    flexDirection: "row",
     alignItems: "center",
-    paddingTop: getVertiPadding(8),
-    paddingBottom: getVertiPadding(16),
-    paddingHorizontal: getHoriPadding(16),
-    position: "relative",
+    paddingTop: getVertiPadding(12),
+    paddingBottom: getVertiPadding(12),
+    paddingHorizontal: getHoriPadding(12),
+    gap: getWidth(10),
   },
-  crewHeaderBack: {
-    position: "absolute",
-    left: getHoriPadding(12),
-    top: getVertiPadding(8),
-    width: getWidth(40),
-    height: getWidth(40),
+  crewHeaderBackBtn: {
+    width: getWidth(32),
+    height: getHeight(32),
+    borderRadius: getRadius(16),
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 2,
+    backgroundColor: colors.border,
+    flexShrink: 0,
   },
   crewHeaderBackIcon: {
-    width: getWidth(22),
-    height: getHeight(22),
+    height: getHeight(20),
+    width: getWidth(20),
+    resizeMode: "contain",
   },
   crewHeaderAvatar: {
-    width: getWidth(88),
-    height: getWidth(88),
-    borderRadius: getWidth(44),
-    marginBottom: getHeight(12),
+    width: getWidth(48),
+    height: getWidth(48),
+    borderRadius: getWidth(24),
     backgroundColor: colors.lightGray,
+    flexShrink: 0,
+  },
+  crewHeaderText: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
   },
   crewHeaderName: {
-    fontSize: getFontSize(22),
+    fontSize: getFontSize(18),
     fontFamily: fonts.RobotoBold,
     color: colors.black,
   },
   crewHeaderMeta: {
-    marginTop: getHeight(4),
-    fontSize: getFontSize(14),
+    marginTop: getHeight(2),
+    fontSize: getFontSize(13),
     fontFamily: fonts.RobotoRegular,
     color: colors.lightText,
   },
@@ -1806,6 +1819,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: getWidth(12),
+    overflow: "visible",
   },
   chatBarIconWrap: {
     width: getWidth(40),
@@ -1814,6 +1828,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.55)",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   chatBarIcon: {
     width: getWidth(22),
@@ -1834,9 +1849,16 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoRegular,
     color: colors.lightText,
   },
+  chatBarChevronWrap: {
+    width: getWidth(32),
+    height: getHeight(32),
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
   chatBarChevron: {
-    width: getWidth(16),
-    height: getWidth(16),
-    opacity: 0.45,
+    width: getWidth(20),
+    height: getHeight(20),
+    resizeMode: "contain",
   },
 });

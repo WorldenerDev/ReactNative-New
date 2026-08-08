@@ -29,6 +29,20 @@ const statusLabels = {
   opted_out: "Opted out",
 };
 
+const StatColumn = ({ icon, value, label }) => (
+  <View style={styles.stat}>
+    <View style={styles.statIconWrap}>
+      <Image
+        source={icon}
+        style={styles.statIcon}
+        resizeMode="contain"
+      />
+    </View>
+    <Text style={styles.statValue}>{value}</Text>
+    <Text style={styles.statLabel}>{label}</Text>
+  </View>
+);
+
 const CrewTripCard = ({ trip, onPress }) => {
   const dateLabel = formatCompactDateRange(trip.start_at, trip.end_at);
   const status = trip.participationStatus || "not_joined";
@@ -36,6 +50,8 @@ const CrewTripCard = ({ trip, onPress }) => {
   const memberCount = trip.joinedMemberCount ?? members.length;
   const overflow =
     memberCount > members.length ? memberCount - members.length : 0;
+  const savedCount = trip.savedCount || 0;
+  const activityCount = trip.activityCount || 0;
 
   return (
     <TouchableOpacity
@@ -49,59 +65,66 @@ const CrewTripCard = ({ trip, onPress }) => {
         resizeMode="cover"
       />
       <View style={styles.content}>
-        <Text style={styles.city} numberOfLines={1}>
-          {trip.city}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.city} numberOfLines={1}>
+            {trip.city}
+          </Text>
+          <View
+            style={[
+              styles.badge,
+              status === "joined" && styles.badgeJoined,
+              (status === "not_joined" || status === "invited") &&
+                styles.badgePending,
+              status === "opted_out" && styles.badgeOptedOut,
+            ]}
+          >
+            <Text style={styles.badgeText}>
+              {statusLabels[status] || status}
+            </Text>
+          </View>
+        </View>
+
         {dateLabel ? <Text style={styles.dates}>{dateLabel}</Text> : null}
 
         {members.length > 0 ? (
           <View style={styles.avatars}>
             {members.map((m, index) => (
-              <OptimizedImage
+              <View
                 key={m._id || index}
-                source={{
-                  uri: getImageUrl(m.image) || DUMMY_USER_IMAGE,
-                }}
-                style={[styles.avatar, index > 0 && styles.avatarOverlap]}
-              />
+                style={[styles.avatarWrap, index > 0 && styles.avatarOverlap]}
+              >
+                <OptimizedImage
+                  source={{
+                    uri: getImageUrl(m.image) || DUMMY_USER_IMAGE,
+                  }}
+                  style={styles.avatar}
+                />
+              </View>
             ))}
             {overflow > 0 ? (
-              <Text style={styles.avatarMore}>+{overflow}</Text>
+              <View style={styles.avatarMoreBadge}>
+                <Text style={styles.avatarMore}>+{overflow}</Text>
+              </View>
             ) : null}
           </View>
         ) : null}
 
-        <View
-          style={[
-            styles.badge,
-            status === "joined" && styles.badgeJoined,
-            (status === "not_joined" || status === "invited") &&
-              styles.badgePending,
-            status === "opted_out" && styles.badgeOptedOut,
-          ]}
-        >
-          <Text style={styles.badgeText}>
-            {statusLabels[status] || status}
-          </Text>
-        </View>
-
         <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Image source={imagePath.GROUP} style={styles.statIcon} />
-            <Text style={styles.statText}>
-              {memberCount} Member{memberCount === 1 ? "" : "s"}
-            </Text>
-          </View>
-          <View style={styles.stat}>
-            <Image source={imagePath.LIKE_ICON} style={styles.statIcon} />
-            <Text style={styles.statText}>{trip.savedCount || 0} Saved</Text>
-          </View>
-          <View style={styles.stat}>
-            <Image source={imagePath.CALENDER_ICON} style={styles.statIcon} />
-            <Text style={styles.statText}>
-              {trip.activityCount || 0} Activities
-            </Text>
-          </View>
+          <StatColumn
+            icon={imagePath.ACCOUNT}
+            value={memberCount}
+            label="Members"
+          />
+          <StatColumn
+            icon={imagePath.LIKE_ICON}
+            value={savedCount}
+            label="Saved"
+          />
+          <StatColumn
+            icon={imagePath.CALENDER_ICON}
+            value={activityCount}
+            label="Activities"
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -123,15 +146,23 @@ const styles = StyleSheet.create({
   },
   image: {
     width: getWidth(92),
-    height: getHeight(110),
+    height: getHeight(118),
     borderRadius: getRadius(12),
   },
   content: {
     flex: 1,
     marginLeft: getWidth(12),
     justifyContent: "flex-start",
+    minWidth: 0,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getWidth(8),
   },
   city: {
+    flex: 1,
+    minWidth: 0,
     fontSize: getFontSize(17),
     fontFamily: fonts.RobotoBold,
     color: colors.black,
@@ -147,25 +178,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: getHeight(10),
   },
-  avatar: {
+  avatarWrap: {
     width: getWidth(28),
     height: getWidth(28),
     borderRadius: getWidth(14),
     borderWidth: 2,
     borderColor: colors.white,
+    overflow: "hidden",
+    backgroundColor: colors.lightGray,
+  },
+  avatar: {
+    width: "100%",
+    height: "100%",
+    borderRadius: getWidth(14),
   },
   avatarOverlap: {
     marginLeft: -getWidth(8),
   },
-  avatarMore: {
+  avatarMoreBadge: {
     marginLeft: getWidth(4),
-    fontSize: getFontSize(12),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.lightText,
+    minWidth: getWidth(28),
+    height: getWidth(28),
+    borderRadius: getWidth(14),
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: getWidth(4),
+  },
+  avatarMore: {
+    fontSize: getFontSize(11),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
   },
   badge: {
-    alignSelf: "flex-start",
-    marginTop: getHeight(8),
+    flexShrink: 0,
     paddingHorizontal: getWidth(8),
     paddingVertical: getHeight(3),
     borderRadius: getRadius(6),
@@ -181,30 +227,41 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3F2",
   },
   badgeText: {
-    fontSize: getFontSize(11),
+    fontSize: getFontSize(10),
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
   },
   stats: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: getWidth(12),
-    marginTop: getHeight(10),
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginTop: getHeight(12),
   },
   stat: {
-    flexDirection: "row",
+    flex: 1,
     alignItems: "center",
+  },
+  statIconWrap: {
+    width: getWidth(14),
+    height: getWidth(14),
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: getHeight(4),
   },
   statIcon: {
     width: getWidth(14),
     height: getWidth(14),
-    marginRight: getWidth(5),
     tintColor: colors.lightText,
-    opacity: 0.75,
   },
-  statText: {
-    fontSize: getFontSize(12),
-    fontFamily: fonts.RobotoMedium,
+  statValue: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
+  },
+  statLabel: {
+    marginTop: getHeight(2),
+    fontSize: getFontSize(11),
+    fontFamily: fonts.RobotoRegular,
     color: colors.lightText,
   },
 });
