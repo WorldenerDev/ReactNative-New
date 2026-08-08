@@ -96,8 +96,8 @@ export const updateNotificationSettings = (data) =>
 export const getRefundPolicies = (data) =>
   apiPost(endpoints?.main?.getRefundPolicies, data, { skipErrorToast: true });
 export const cancelOrderItem = (data) => apiPost(endpoints?.main?.cancelOrderItem, data);
-export const getGroupMessages = (groupId) =>
-  apiGet(`${endpoints?.main?.getGroupMessages}/${groupId}`);
+export const getGroupMessages = (groupId, params, config = {}) =>
+  apiGet(`${endpoints?.main?.getGroupMessages}/${groupId}`, params, config);
 export const reportUser = (data) => apiPost(endpoints?.main?.reportUser, data);
 export const blockUser = (data) => apiPost(endpoints?.main?.blockUser, data);
 export const addUpdateEmoji = (data) => apiPost(endpoints?.main?.addUpdateEmoji, data);

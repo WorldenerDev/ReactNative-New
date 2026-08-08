@@ -50,14 +50,32 @@ export const mockGetCrewDetails = async (groupId) => {
 
 export const mockGetCrewTrips = async (groupId, { status = "active" } = {}) => {
   await delay();
+  const group = state.groups.find((g) => g._id === groupId);
+  const roster = [
+    group?.createdBy,
+    ...(group?.addedUsers || []),
+  ].filter(Boolean);
   const trips = state.canonicalTrips
     .filter((t) => t.groupId === groupId && t.status === status)
     .map((t) => {
       const p = getParticipation(t._id);
+      const joined = roster.filter((u) => {
+        if (u._id === MOCK_CURRENT_USER_ID) {
+          return p?.status === "joined";
+        }
+        return true;
+      });
       return {
         ...t,
         participationStatus: p?.status || "not_joined",
         memberTripId: p?.memberTripId,
+        joinedMemberCount: joined.length,
+        joinedMembers: joined.slice(0, 4).map((u) => ({
+          _id: u._id,
+          name: u.name,
+          image: u.image || "",
+        })),
+        savedCount: t.savedCount ?? Math.min(t.activityCount || 0, 8),
       };
     });
   return { success: true, data: trips };

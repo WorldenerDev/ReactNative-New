@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import React, { useState, useEffect, useMemo } from "react";
 import MainContainer from "@components/container/MainContainer";
-import Header from "@components/Header";
 import TopTab from "@components/TopTab";
 import OptimizedImage from "@components/OptimizedImage";
 import ButtonComp from "@components/ButtonComp";
@@ -51,6 +50,7 @@ import CrewTripCard from "@components/crew/CrewTripCard";
 import {
   fetchCrewDetails,
   fetchCrewTrips,
+  fetchGroupChatPreview,
   isReusableGroupsMockEnabled,
   subscribeReusableGroupsMock,
 } from "@api/services/crewGroupsService";
@@ -95,9 +95,31 @@ const GroupDetails = () => {
   );
   const [crewTrips, setCrewTrips] = useState([]);
   const [tripSegment, setTripSegment] = useState("active");
+  const [chatPreview, setChatPreview] = useState(null);
   const [compareUser, setCompareUser] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [comparisonLoading, setComparisonLoading] = useState(false);
+
+  const memberCount = useMemo(() => {
+    if (!groupData) return 0;
+    const ids = new Set();
+    const creatorId = groupData.createdBy?._id || groupData.createdBy;
+    if (creatorId) ids.add(String(creatorId));
+    (groupData.addedUsers || []).forEach((u) => {
+      const id = u?._id || u;
+      if (id) ids.add(String(id));
+    });
+    return ids.size;
+  }, [groupData]);
+
+  const crewAvatarUri = useMemo(() => {
+    if (!groupData) return DUMMY_USER_IMAGE;
+    const fromGroup = getImageUrl(groupData.groupImage);
+    if (fromGroup) return fromGroup;
+    const creatorImg = getImageUrl(groupData.createdBy?.image);
+    if (creatorImg) return creatorImg;
+    return DUMMY_USER_IMAGE;
+  }, [groupData]);
 
   // Always show selection list when switching to Compare tab
   useEffect(() => {
@@ -240,6 +262,15 @@ const GroupDetails = () => {
     };
 
     fetchGroupDetails();
+  }, [groupId]);
+
+  useEffect(() => {
+    const loadChatPreview = async () => {
+      if (!groupId) return;
+      const res = await fetchGroupChatPreview(groupId);
+      setChatPreview(res?.data?.preview || null);
+    };
+    loadChatPreview();
   }, [groupId]);
 
   useEffect(() => {
@@ -1006,37 +1037,41 @@ const GroupDetails = () => {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[
         styles.tripsContainer,
-        { paddingBottom: scrollPadding + getHeight(80) },
+        { paddingBottom: scrollPadding + getHeight(100) },
       ]}
     >
-      <View style={styles.segmentRow}>
-        {["active", "past"].map((seg) => (
-          <TouchableOpacity
-            key={seg}
-            style={[
-              styles.segmentBtn,
-              tripSegment === seg && styles.segmentBtnActive,
-            ]}
-            onPress={() => setTripSegment(seg)}
-          >
-            <Text
+      <View style={styles.tripsToolbar}>
+        <View style={styles.segmentRow}>
+          {["active", "past"].map((seg) => (
+            <TouchableOpacity
+              key={seg}
               style={[
-                styles.segmentText,
-                tripSegment === seg && styles.segmentTextActive,
+                styles.segmentBtn,
+                tripSegment === seg && styles.segmentBtnActive,
               ]}
+              onPress={() => setTripSegment(seg)}
             >
-              {seg === "active" ? "Active" : "Past"}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.segmentText,
+                  tripSegment === seg && styles.segmentTextActive,
+                ]}
+              >
+                {seg === "active" ? "Active" : "Past"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <ButtonComp
-        title="Create Trip"
-        onPress={handleCreateCrewTrip}
-        disabled={false}
-        containerStyle={styles.createTripBtn}
-      />
+        <TouchableOpacity
+          style={styles.createTripBtn}
+          onPress={handleCreateCrewTrip}
+          activeOpacity={0.85}
+        >
+          <Image source={icons.PLUS_ICON_BORDER} style={styles.createTripIcon} />
+          <Text style={styles.createTripText}>Create Trip</Text>
+        </TouchableOpacity>
+      </View>
 
       {crewTrips.length === 0 ? (
         <View style={styles.emptyState}>
@@ -1058,7 +1093,30 @@ const GroupDetails = () => {
 
   return (
     <MainContainer>
-      <Header title="Group Details" showBack={true} />
+      <View style={styles.crewHeader}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.crewHeaderBack}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Image
+            source={icons.BACK_ICON}
+            style={styles.crewHeaderBackIcon}
+            tintColor={colors.black}
+          />
+        </TouchableOpacity>
+        <OptimizedImage
+          source={{ uri: crewAvatarUri }}
+          style={styles.crewHeaderAvatar}
+          resizeMode="cover"
+        />
+        <Text style={styles.crewHeaderName} numberOfLines={1}>
+          {groupData?.groupName || "Crew"}
+        </Text>
+        <Text style={styles.crewHeaderMeta}>
+          {memberCount} member{memberCount === 1 ? "" : "s"}
+        </Text>
+      </View>
       <TopTab tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Content per tab */}
@@ -1079,23 +1137,30 @@ const GroupDetails = () => {
         </View>
       )}
 
-      {/* Fixed bottom Chat button - only on Members tab */}
       {!loading &&
         (activeTab === "Members" ||
           activeTab === "Trips" ||
           (!mockEnabled &&
             (activeTab === "Compare" || activeTab === "Wishlisted"))) && (
           <View style={[styles.fixedChatContainer, { bottom: bottomInset }]}>
-            <ButtonComp
-              title={"Chat"}
+            <TouchableOpacity
+              style={styles.chatBar}
               onPress={handleChat}
-              disabled={false}
-              containerStyle={{
-                backgroundColor: colors.secondary,
-                borderRadius: getRadius(30),
-              }}
-              textStyle={{ color: colors.black, fontFamily: fonts.RobotoBold }}
-            />
+              activeOpacity={0.85}
+            >
+              <View style={styles.chatBarIconWrap}>
+                <Image source={icons.CHAT_ICON} style={styles.chatBarIcon} />
+              </View>
+              <View style={styles.chatBarText}>
+                <Text style={styles.chatBarTitle}>Group Chat</Text>
+                {chatPreview ? (
+                  <Text style={styles.chatBarPreview} numberOfLines={1}>
+                    {chatPreview}
+                  </Text>
+                ) : null}
+              </View>
+              <Image source={icons.RIGHT_ICON} style={styles.chatBarChevron} />
+            </TouchableOpacity>
           </View>
         )}
 
@@ -1641,18 +1706,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: getHoriPadding(16),
     paddingTop: getHeight(8),
   },
+  tripsToolbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: getHeight(14),
+    gap: getWidth(10),
+  },
   segmentRow: {
     flexDirection: "row",
-    marginBottom: getHeight(12),
     gap: getWidth(8),
+    flexShrink: 1,
   },
   segmentBtn: {
-    flex: 1,
     paddingVertical: getHeight(8),
-    borderRadius: getRadius(8),
+    paddingHorizontal: getWidth(16),
+    borderRadius: getRadius(20),
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: "center",
+    backgroundColor: colors.white,
   },
   segmentBtnActive: {
     backgroundColor: colors.secondary,
@@ -1668,6 +1741,102 @@ const styles = StyleSheet.create({
   },
   createTripBtn: {
     backgroundColor: colors.black,
-    marginBottom: getHeight(16),
+    borderRadius: getRadius(22),
+    paddingVertical: getHeight(10),
+    paddingHorizontal: getWidth(14),
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getWidth(6),
+  },
+  createTripIcon: {
+    width: getWidth(14),
+    height: getWidth(14),
+    tintColor: colors.white,
+  },
+  createTripText: {
+    color: colors.white,
+    fontFamily: fonts.RobotoBold,
+    fontSize: getFontSize(13),
+  },
+  crewHeader: {
+    backgroundColor: colors.white,
+    alignItems: "center",
+    paddingTop: getVertiPadding(8),
+    paddingBottom: getVertiPadding(16),
+    paddingHorizontal: getHoriPadding(16),
+    position: "relative",
+  },
+  crewHeaderBack: {
+    position: "absolute",
+    left: getHoriPadding(12),
+    top: getVertiPadding(8),
+    width: getWidth(40),
+    height: getWidth(40),
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  crewHeaderBackIcon: {
+    width: getWidth(22),
+    height: getHeight(22),
+  },
+  crewHeaderAvatar: {
+    width: getWidth(88),
+    height: getWidth(88),
+    borderRadius: getWidth(44),
+    marginBottom: getHeight(12),
+    backgroundColor: colors.lightGray,
+  },
+  crewHeaderName: {
+    fontSize: getFontSize(22),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
+  },
+  crewHeaderMeta: {
+    marginTop: getHeight(4),
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+  },
+  chatBar: {
+    backgroundColor: colors.secondary,
+    borderRadius: getRadius(16),
+    paddingVertical: getVertiPadding(14),
+    paddingHorizontal: getHoriPadding(16),
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getWidth(12),
+  },
+  chatBarIconWrap: {
+    width: getWidth(40),
+    height: getWidth(40),
+    borderRadius: getRadius(12),
+    backgroundColor: "rgba(255,255,255,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatBarIcon: {
+    width: getWidth(22),
+    height: getWidth(22),
+  },
+  chatBarText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  chatBarTitle: {
+    fontSize: getFontSize(15),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
+  },
+  chatBarPreview: {
+    marginTop: getHeight(2),
+    fontSize: getFontSize(12),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+  },
+  chatBarChevron: {
+    width: getWidth(16),
+    height: getWidth(16),
+    opacity: 0.45,
   },
 });

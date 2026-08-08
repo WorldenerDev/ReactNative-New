@@ -52,8 +52,16 @@ target 'WApp' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  # Enable modular headers for Firebase
-  use_modular_headers!
+  # Prefer targeted modular headers for Firebase only.
+  # Global `use_modular_headers!` breaks Swift `import React` on Archive/Release.
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseInstallations', :modular_headers => true
+  pod 'FirebaseMessaging', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'GoogleDataTransport', :modular_headers => true
+  pod 'nanopb', :modular_headers => true
 
   target 'WApp UAT' do
     inherit! :complete
@@ -68,11 +76,22 @@ target 'WApp' do
       # :ccache_enabled => true
     )
 
+    # Archive/Release must build all arches so Swift can resolve React.framework.
+    installer.pods_project.build_configurations.each do |config|
+      if config.name == 'Release'
+        config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+      end
+    end
+
     # Optimize build performance
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         # Enable build active architecture only for debug builds
-        config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES' if config.name == 'Debug'
+        if config.name == 'Debug'
+          config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
+        else
+          config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
+        end
 
         # Set debug information format to DWARF for faster builds
         config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf' if config.name == 'Debug'
@@ -85,6 +104,10 @@ target 'WApp' do
         config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone' if config.name == 'Debug'
         # Xcode 26.x tightens framework-module checks for generated Pods.
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        # Xcode 26 explicit module scanning breaks Firebase umbrella imports
+        # (`FirebaseCore/FirebaseCore.h` not found while building module `Firebase`).
+        config.build_settings['CLANG_ENABLE_EXPLICIT_MODULES'] = 'NO'
+        config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
       end
 
       # Xcode 26.x + fmt can fail on consteval format checks under some RN dependency graphs.

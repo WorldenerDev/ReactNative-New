@@ -31,6 +31,7 @@ import {
   getGroupWishlisted,
   compareUsersInGroup,
   getTrip,
+  getGroupMessages,
 } from "@api/services/mainServices";
 
 export { REUSABLE_GROUPS_MOCK_ENABLED, subscribeReusableGroupsMock };
@@ -145,4 +146,34 @@ export const fetchOnboardingTrips = async (groupId) => {
     (t) => t.participationStatus === "not_joined" || t.participationStatus === "invited"
   );
   return { success: true, data: trips };
+};
+
+/** Best-effort last chat message for Group Chat preview. Soft-fails on errors. */
+export const fetchGroupChatPreview = async (groupId) => {
+  if (!groupId) return { success: true, data: null };
+  try {
+    const res = await getGroupMessages(
+      groupId,
+      { page: 1, limit: 1 },
+      { skipErrorToast: true }
+    );
+    const list = res?.data || [];
+    const latest = Array.isArray(list) && list.length ? list[0] : null;
+    if (!latest) return { success: true, data: null };
+    const senderName = latest.senderId?.name || "Someone";
+    const text =
+      latest.message ||
+      (latest.messageType === "activity" ? latest.activityName : "") ||
+      (latest.mediaUrl ? "Sent an attachment" : "");
+    return {
+      success: true,
+      data: {
+        preview: text ? `${senderName}: ${text}` : null,
+        senderName,
+        message: text,
+      },
+    };
+  } catch (_error) {
+    return { success: true, data: null };
+  }
 };
