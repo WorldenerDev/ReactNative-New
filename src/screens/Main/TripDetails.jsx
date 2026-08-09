@@ -1,14 +1,12 @@
 import { checkoutTrip, getTripBuddies } from "@api/services/mainServices";
 import {
   fetchTripDetailsWithMock,
-  isReusableGroupsMockEnabled,
   optInToTrip,
   optOutOfTrip,
 } from "@api/services/crewGroupsService";
 import TopTab from "@components/TopTab";
 import TripCompareTab from "./tripDetails/TripCompareTab";
 import TripWishlistTab from "./tripDetails/TripWishlistTab";
-import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
@@ -32,10 +30,10 @@ import {
   toSelectedTripOption,
 } from "@utils/tripHelpers";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
-  FlatList,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -292,8 +290,54 @@ const TripDetails = ({ navigation, route }) => {
     return new Date(a) - new Date(b);
   });
 
-  const renderItineraryContent = () => (
-    <View style={styles.activitiesContainer}>
+  const activeDetailTab = showCrewTabs ? detailTab : "Itinerary";
+
+  const renderDateGroup = (date, dateIndex) => {
+    const activitiesForDate = groupedActivities[date] || [];
+    return (
+      <View style={styles.dateGroup} key={`date-${dateIndex}-${date}`}>
+        <Text style={styles.dateHeader}>{formatGroupDate(date)}</Text>
+        {activitiesForDate.map((activity, index) => (
+          <TouchableOpacity
+            key={`activity-${dateIndex}-${index}-${activity.product_id || activity.id || activity._id || index}`}
+            style={styles.activityCard}
+            onPress={handleActivityPress}
+          >
+            <OptimizedImage
+              source={{
+                uri:
+                  activity.image ||
+                  activity.product_image ||
+                  activity.thumbnail ||
+                  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
+              }}
+              style={styles.activityImage}
+              resizeMode="cover"
+            />
+            <View style={styles.activityInfo}>
+              <Text style={styles.activityTitle}>
+                {activity.title ||
+                  activity.name ||
+                  activity.product_name ||
+                  "Activity"}
+              </Text>
+              <Text style={styles.activityDetails}>
+                {formatActivityDate(activity.date || activity.time || "TBD")} •
+                Qty: {activity.quantity || 1} • $
+                {activity.total_price ||
+                  activity.price ||
+                  activity.retail_price ||
+                  0}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const renderItineraryBody = () => (
+    <View style={styles.tabBody}>
       <View style={styles.activitiesHeader}>
         <Text style={styles.activitiesTitle}>Activities</Text>
         <View style={styles.activitiesHeaderIcons}>
@@ -301,10 +345,7 @@ const TripDetails = ({ navigation, route }) => {
             style={styles.calendarButton}
             onPress={handleCheckout}
           >
-            <Image
-              source={imagePath.CART_ICON}
-              style={styles.calendarIcon1}
-            />
+            <Image source={imagePath.CART_ICON} style={styles.calendarIcon1} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.calendarButton}
@@ -319,70 +360,258 @@ const TripDetails = ({ navigation, route }) => {
       </View>
 
       {activityDates.length > 0 ? (
-        <FlatList
-          data={activityDates}
-          keyExtractor={(item, index) => `date-${index}-${item}`}
-          showsVerticalScrollIndicator={false}
-          style={styles.activitiesList}
-          contentContainerStyle={[
-            styles.activitiesListContent,
-            { paddingBottom: scrollContentBottomPadding },
-          ]}
-          renderItem={({ item: date, index: dateIndex }) => {
-            const activitiesForDate = groupedActivities[date] || [];
-
-            return (
-              <View style={styles.dateGroup} key={`date-${dateIndex}-${date}`}>
-                <Text style={styles.dateHeader}>
-                  {formatGroupDate(date)}
-                </Text>
-                {activitiesForDate.map((activity, index) => (
-                  <TouchableOpacity
-                    key={`activity-${dateIndex}-${index}-${activity.product_id || activity.id || activity._id || index}`}
-                    style={styles.activityCard}
-                    onPress={handleActivityPress}
-                  >
-                    <OptimizedImage
-                      source={{
-                        uri:
-                          activity.image ||
-                          activity.product_image ||
-                          activity.thumbnail ||
-                          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
-                      }}
-                      style={styles.activityImage}
-                      resizeMode="cover"
-                    />
-                    <View style={styles.activityInfo}>
-                      <Text style={styles.activityTitle}>
-                        {activity.title ||
-                          activity.name ||
-                          activity.product_name ||
-                          "Activity"}
-                      </Text>
-                      <Text style={styles.activityDetails}>
-                        {formatActivityDate(
-                          activity.date || activity.time || "TBD"
-                        )}{" "}
-                        • Qty: {activity.quantity || 1} • $
-                        {activity.total_price ||
-                          activity.price ||
-                          activity.retail_price ||
-                          0}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            );
-          }}
-        />
+        activityDates.map((date, dateIndex) => renderDateGroup(date, dateIndex))
       ) : (
         <View style={styles.noActivitiesContainer}>
           <Text style={styles.noActivitiesText}>No activities found</Text>
         </View>
       )}
     </View>
+  );
+
+  const renderTabBody = () => {
+    if (activeDetailTab === "Compare") {
+      return (
+        <View style={styles.tabBody}>
+          <TripCompareTab
+            groupId={tripData?.groupId}
+            tripId={tripData?.canonicalTripId || tripData?._id}
+          />
+        </View>
+      );
+    }
+    if (activeDetailTab === "Wishlist") {
+      return (
+        <View style={styles.tabBody}>
+          <TripWishlistTab
+            canonicalTripId={tripData?.canonicalTripId || tripData?._id}
+            groupId={tripData?.groupId}
+            cityId={tripData?.city_id || tripData?.city?.city_id}
+          />
+        </View>
+      );
+    }
+    return renderItineraryBody();
+  };
+
+  const renderTripCard = () => {
+    if (!tripData) return null;
+    return (
+      <View style={styles.tripCard}>
+        <View style={styles.imageContainer}>
+          <OptimizedImage
+            source={{
+              uri:
+                tripData?.image ||
+                tripData?.city?.image ||
+                "https://images.unsplash.com/photo-1513639766991-4c7b0b0b0b0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+            }}
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
+        </View>
+
+        <View style={styles.cardContent}>
+          <View style={styles.destinationRow}>
+            <View style={styles.destinationInfo}>
+              <Image source={imagePath.LOCATION_PIN} style={styles.pinIcon} />
+              <Text style={styles.destinationText}>
+                {tripData?.destination ||
+                  tripData?.name ||
+                  tripData?.city?.name ||
+                  tripData?.city_id?.name ||
+                  "Unknown Destination"}
+              </Text>
+            </View>
+            <View style={styles.statusContainer}>
+              <Image
+                source={imagePath.CHECK_ICON}
+                style={styles.statusIndicator}
+              />
+              <Text style={styles.statusText}>{tripData?.tripStatus || ""}</Text>
+            </View>
+          </View>
+
+          <View style={styles.datesContainer}>
+            <Image
+              source={imagePath.CALENDER_ICON}
+              style={styles.calendarIcon}
+            />
+            <Text style={styles.datesText}>
+              {tripData?.startDate || tripData?.start_at?.slice(0, 10) || "TBD"}{" "}
+              - {tripData?.endDate || tripData?.end_at?.slice(0, 10) || "TBD"}
+            </Text>
+          </View>
+
+          <View style={styles.participantsSection}>
+            {tripData?.groupId ? (
+              <View style={styles.participantsBlock}>
+                <View style={styles.participantsInfo}>
+                  <Text style={styles.participantsCount}>
+                    {tripData?.groupName ? `${tripData.groupName} · ` : ""}
+                    {tripData?.participants || 0} joined
+                  </Text>
+                </View>
+                <View style={styles.buttonsContainer}>
+                  <TouchableOpacity
+                    style={styles.viewGroupButton}
+                    onPress={handleViewGroup}
+                  >
+                    <Text style={styles.viewGroupText}>View Group</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.exploreMoreButton}
+                    onPress={handleExploreMore}
+                  >
+                    <Text style={styles.exploreMoreButtonText}>
+                      Explore More
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (tripData?.participants ||
+                tripData?.participantsList?.length ||
+                0) > 0 ? (
+              <View style={styles.participantsBlock}>
+                <View style={styles.participantsInfo}>
+                  <View style={styles.avatarContainer}>
+                    {(tripData?.participantsList || []).map(
+                      (participant, index) => (
+                        <View
+                          key={`participant-${index}-${participant.id || participant._id || index}`}
+                          style={[
+                            styles.avatar,
+                            {
+                              zIndex:
+                                (tripData?.participantsList || []).length -
+                                index,
+                            },
+                          ]}
+                        >
+                          <OptimizedImage
+                            source={{
+                              uri:
+                                participant.avatar ||
+                                participant.profileImage,
+                            }}
+                            style={styles.avatarImage}
+                            resizeMode="cover"
+                          />
+                        </View>
+                      )
+                    )}
+                    {(tripData?.participants ||
+                      tripData?.participantsList?.length ||
+                      0) > 3 && (
+                      <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>
+                          +
+                          {(tripData?.participants ||
+                            tripData?.participantsList?.length ||
+                            0) - 3}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.participantsCount}>
+                    {tripData?.participants ||
+                      tripData?.participantsList?.length ||
+                      0}{" "}
+                    people
+                  </Text>
+                </View>
+                <View style={styles.buttonsContainer}>
+                  <TouchableOpacity
+                    style={styles.viewGroupButton}
+                    onPress={handleViewGroup}
+                  >
+                    <Text style={styles.viewGroupText}>View Group</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.exploreMoreButton}
+                    onPress={handleExploreMore}
+                  >
+                    <Text style={styles.exploreMoreButtonText}>
+                      Explore More
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.buttonsContainer}>
+                <TouchableOpacity
+                  style={styles.inviteButton}
+                  onPress={handleInviteParticipants}
+                >
+                  <Text style={styles.inviteButtonText}>
+                    Invite Participants
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.exploreMoreButton}
+                  onPress={handleExploreMore}
+                >
+                  <Text style={styles.exploreMoreButtonText}>Explore More</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.actionsRow}>
+            <View style={styles.actionButton}>
+              <Text style={styles.actionButtonText}>
+                {(() => {
+                  const count =
+                    tripData?.activities?.length ||
+                    tripData?.totalActivities ||
+                    0;
+                  return count === 1 ? "1 Activity" : `${count} Activities`;
+                })()}
+              </Text>
+            </View>
+            <View style={styles.actionButton}>
+              <Text style={styles.actionButtonText}>
+                $
+                {(
+                  tripData?.totalBudget ||
+                  tripData?.budget ||
+                  0
+                ).toLocaleString()}{" "}
+                Budget
+              </Text>
+            </View>
+          </View>
+
+          {showCrewTabs && tripData?.participationStatus === "joined" ? (
+            <TouchableOpacity
+              style={styles.optOutLink}
+              onPress={handleOptOut}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.optOutLinkText}>
+                Not this time — opt out of this trip
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {showCrewTabs && tripData?.participationStatus === "opted_out" ? (
+            <TouchableOpacity
+              style={styles.rejoinLink}
+              onPress={handleRejoinTrip}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.rejoinLinkText}>Rejoin this trip</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    );
+  };
+
+  // ScrollView stickyHeaderIndices: child 0 = trip card, child 1 = tabs (sticks after card scrolls away)
+  const scrollStickyIndices = useMemo(
+    () => (showCrewTabs ? [1] : undefined),
+    [showCrewTabs]
   );
 
   return (
@@ -394,279 +623,30 @@ const TripDetails = ({ navigation, route }) => {
         showBack={true}
       />
       <View style={styles.contentContainer}>
-        {tripData && (
-          <>
-            <View style={styles.tripCard}>
-              {/* Hero Image */}
-              <View style={styles.imageContainer}>
-                <OptimizedImage
-                  source={{
-                    uri:
-                      tripData?.image ||
-                      tripData?.city?.image ||
-                      "https://images.unsplash.com/photo-1513639766991-4c7b0b0b0b0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-                  }}
-                  style={styles.cardImage}
-                  resizeMode="cover"
-                />
-              </View>
-
-              {/* Card Content */}
-              <View style={styles.cardContent}>
-                {/* Destination and Status Row */}
-                <View style={styles.destinationRow}>
-                  <View style={styles.destinationInfo}>
-                    <Image
-                      source={imagePath.LOCATION_PIN}
-                      style={styles.pinIcon}
-                    />
-                    <Text style={styles.destinationText}>
-                      {tripData?.destination ||
-                        tripData?.name ||
-                        tripData?.city?.name ||
-                        tripData?.city_id?.name ||
-                        "Unknown Destination"}
-                    </Text>
-                  </View>
-                  <View style={styles.statusContainer}>
-                    <Image
-                      source={imagePath.CHECK_ICON}
-                      style={styles.statusIndicator}
-                    />
-                    <Text style={styles.statusText}>
-                      {tripData?.tripStatus || ""}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Dates */}
-                <View style={styles.datesContainer}>
-                  <Image
-                    source={imagePath.CALENDER_ICON}
-                    style={styles.calendarIcon}
-                  />
-                  <Text style={styles.datesText}>
-                    {tripData?.startDate ||
-                      tripData?.start_at?.slice(0, 10) ||
-                      "TBD"}{" "}
-                    -{" "}
-                    {tripData?.endDate ||
-                      tripData?.end_at?.slice(0, 10) ||
-                      "TBD"}
-                  </Text>
-                </View>
-
-                {/* Participants Section */}
-                <View style={styles.participantsSection}>
-                  {tripData?.groupId ? (
-                    <View style={styles.participantsBlock}>
-                      <View style={styles.participantsInfo}>
-                        <Text style={styles.participantsCount}>
-                          {tripData?.groupName
-                            ? `${tripData.groupName} · `
-                            : ""}
-                          {tripData?.participants || 0} joined
-                        </Text>
-                      </View>
-                      <View style={styles.buttonsContainer}>
-                        <TouchableOpacity
-                          style={styles.viewGroupButton}
-                          onPress={handleViewGroup}
-                        >
-                          <Text style={styles.viewGroupText}>View Group</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.exploreMoreButton}
-                          onPress={handleExploreMore}
-                        >
-                          <Text style={styles.exploreMoreButtonText}>
-                            Explore More
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ) : (tripData?.participants ||
-                    tripData?.participantsList?.length ||
-                    0) > 0 ? (
-                    // Show participants info, View Group, and Explore More
-                    <View style={styles.participantsBlock}>
-                      <View style={styles.participantsInfo}>
-                        <View style={styles.avatarContainer}>
-                          {(tripData?.participantsList || []).map(
-                            (participant, index) => (
-                              <View
-                                key={`participant-${index}-${participant.id || participant._id || index
-                                  }`}
-                                style={[
-                                  styles.avatar,
-                                  {
-                                    zIndex:
-                                      (tripData?.participantsList || [])
-                                        .length - index,
-                                  },
-                                ]}
-                              >
-                                <OptimizedImage
-                                  source={{
-                                    uri:
-                                      participant.avatar ||
-                                      participant.profileImage,
-                                  }}
-                                  style={styles.avatarImage}
-                                  resizeMode="cover"
-                                />
-                              </View>
-                            )
-                          )}
-                          {(tripData?.participants ||
-                            tripData?.participantsList?.length ||
-                            0) > 3 && (
-                              <View style={styles.avatar}>
-                                <Text style={styles.avatarText}>
-                                  +
-                                  {(tripData?.participants ||
-                                    tripData?.participantsList?.length ||
-                                    0) - 3}
-                                </Text>
-                              </View>
-                            )}
-                        </View>
-                        <Text style={styles.participantsCount}>
-                          {tripData?.participants ||
-                            tripData?.participantsList?.length ||
-                            0}{" "}
-                          people
-                        </Text>
-                      </View>
-                      <View style={styles.buttonsContainer}>
-                        <TouchableOpacity
-                          style={styles.viewGroupButton}
-                          onPress={handleViewGroup}
-                        >
-                          <Text style={styles.viewGroupText}>View Group</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.exploreMoreButton}
-                          onPress={handleExploreMore}
-                        >
-                          <Text style={styles.exploreMoreButtonText}>
-                            Explore More
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ) : (
-                    // Show Invite Participants and Explore More buttons when no participants
-                    <View style={styles.buttonsContainer}>
-                      <TouchableOpacity
-                        style={styles.inviteButton}
-                        onPress={handleInviteParticipants}
-                      >
-                        <Text style={styles.inviteButtonText}>
-                          Invite Participants
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.exploreMoreButton}
-                        onPress={handleExploreMore}
-                      >
-                        <Text style={styles.exploreMoreButtonText}>
-                          Explore More
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-
-                {/* Activities and Budget Buttons */}
-                <View style={styles.actionsRow}>
-                  <View style={styles.actionButton}>
-                    <Text style={styles.actionButtonText}>
-                      {(() => {
-                        const count =
-                          tripData?.activities?.length ||
-                          tripData?.totalActivities ||
-                          0;
-                        return count === 1
-                          ? "1 Activity"
-                          : `${count} Activities`;
-                      })()}
-                    </Text>
-                  </View>
-                  <View style={styles.actionButton}>
-                    <Text style={styles.actionButtonText}>
-                      $
-                      {(
-                        tripData?.totalBudget ||
-                        tripData?.budget ||
-                        0
-                      ).toLocaleString()}{" "}
-                      Budget
-                    </Text>
-                  </View>
-                </View>
-
-                {showCrewTabs && tripData?.participationStatus === "joined" ? (
-                  <TouchableOpacity
-                    style={styles.optOutLink}
-                    onPress={handleOptOut}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.optOutLinkText}>
-                      Not this time — opt out of this trip
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
-
-                {showCrewTabs &&
-                tripData?.participationStatus === "opted_out" ? (
-                  <TouchableOpacity
-                    style={styles.rejoinLink}
-                    onPress={handleRejoinTrip}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.rejoinLinkText}>Rejoin this trip</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-            </View>
+        {tripData ? (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            stickyHeaderIndices={scrollStickyIndices}
+            contentContainerStyle={{
+              paddingBottom: scrollContentBottomPadding,
+            }}
+          >
+            {renderTripCard()}
 
             {showCrewTabs ? (
-              <TopTab
-                tabs={["Itinerary", "Compare", "Wishlist"]}
-                activeTab={detailTab}
-                onTabChange={setDetailTab}
-                containerStyle={styles.detailTabs}
-              />
+              <View style={styles.stickyTabsWrap}>
+                <TopTab
+                  tabs={["Itinerary", "Compare", "Wishlist"]}
+                  activeTab={detailTab}
+                  onTabChange={setDetailTab}
+                  containerStyle={styles.detailTabs}
+                />
+              </View>
             ) : null}
 
-            {(!showCrewTabs || detailTab === "Itinerary") && renderItineraryContent()}
-            {showCrewTabs && detailTab === "Compare" ? (
-              <TripCompareTab
-                groupId={tripData?.groupId}
-                tripId={tripData?.canonicalTripId || tripData?._id}
-              />
-            ) : null}
-            {showCrewTabs && detailTab === "Wishlist" ? (
-              <TripWishlistTab
-                canonicalTripId={
-                  tripData?.canonicalTripId || tripData?._id
-                }
-                groupId={tripData?.groupId}
-                cityId={tripData?.city_id || tripData?.city?.city_id}
-              />
-            ) : null}
-
-            {/* Floating Checkout Button */}
-            {/* <View style={styles.floatingButtonContainer}>
-              <ButtonComp
-                disabled={loading}
-                title="Checkout"
-                onPress={handleCheckout}
-              />
-            </View> */}
-          </>
-        )}
+            {renderTabBody()}
+          </ScrollView>
+        ) : null}
       </View>
     </MainContainer>
   );
@@ -679,7 +659,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: getRadius(12),
     width: "100%",
-    maxWidth: getWidth(350),
     shadowColor: colors.black,
     shadowOffset: {
       width: 0,
@@ -690,7 +669,9 @@ const styles = StyleSheet.create({
     elevation: 6,
     overflow: "hidden",
     marginTop: getVertiPadding(15),
+    marginBottom: getHeight(4),
     borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   imageContainer: {
     height: getHeight(120),
@@ -887,7 +868,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginTop: getHeight(8),
     marginBottom: getHeight(16),
+    backgroundColor: colors.white,
   },
   activitiesHeaderIcons: {
     flexDirection: "row",
@@ -957,7 +940,6 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   noActivitiesContainer: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: getHeight(40),
@@ -968,10 +950,26 @@ const styles = StyleSheet.create({
     color: colors.lightText,
     textAlign: "center",
   },
+  stickyTabsWrap: {
+    backgroundColor: colors.white,
+    paddingTop: getHeight(4),
+    paddingBottom: getHeight(8),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    zIndex: 20,
+    elevation: 4,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+  },
   detailTabs: {
-    marginHorizontal: getWidth(16),
-    marginTop: getHeight(12),
-    marginBottom: getHeight(8),
+    marginHorizontal: 0,
+    marginTop: getHeight(4),
+    marginBottom: 0,
+  },
+  tabBody: {
+    paddingTop: getHeight(8),
   },
   optOutLink: {
     marginTop: getHeight(14),

@@ -2,10 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   ActivityIndicator,
-  FlatList,
   TouchableOpacity,
 } from "react-native";
 import colors from "@assets/colors";
@@ -48,6 +46,7 @@ const buildOtherMembers = (groupData, currentUserId) => {
   return members;
 };
 
+/** Presentational compare panel — no nested ScrollView/FlatList (parent scrolls). */
 const TripCompareTab = ({ groupId, tripId }) => {
   const user = useSelector((state) => state.auth?.user);
   const currentUserId = normalizeUserId(user?._id || user?.id);
@@ -177,31 +176,25 @@ const TripCompareTab = ({ groupId, tripId }) => {
         <Text style={styles.compareHint}>
           Select a user you want to compare your itinerary with.
         </Text>
-        <FlatList
-          data={otherMembers}
-          keyExtractor={(item) => String(item.id)}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.pickerList}
-          renderItem={({ item }) => (
-            <View style={styles.compareRow}>
-              <View style={styles.compareUserLeft}>
-                <OptimizedImage
-                  source={{ uri: item.avatar || DUMMY_USER_IMAGE }}
-                  style={styles.avatar}
-                  resizeMode="cover"
-                />
-                <Text style={styles.memberName}>{item.name}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.comparePill}
-                activeOpacity={0.8}
-                onPress={() => setCompareUser(item)}
-              >
-                <Text style={styles.comparePillText}>Compare</Text>
-              </TouchableOpacity>
+        {otherMembers.map((item) => (
+          <View style={styles.compareRow} key={String(item.id)}>
+            <View style={styles.compareUserLeft}>
+              <OptimizedImage
+                source={{ uri: item.avatar || DUMMY_USER_IMAGE }}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
+              <Text style={styles.memberName}>{item.name}</Text>
             </View>
-          )}
-        />
+            <TouchableOpacity
+              style={styles.comparePill}
+              activeOpacity={0.8}
+              onPress={() => setCompareUser(item)}
+            >
+              <Text style={styles.comparePillText}>Compare</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
       </View>
     );
   }
@@ -226,28 +219,26 @@ const TripCompareTab = ({ groupId, tripId }) => {
   }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <View style={styles.container}>
-        <TouchableOpacity onPress={handleBackToPicker} style={styles.backLink}>
-          <Text style={styles.backLinkText}>← Compare someone else</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <TouchableOpacity onPress={handleBackToPicker} style={styles.backLink}>
+        <Text style={styles.backLinkText}>← Compare someone else</Text>
+      </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>
-          Common ({data.user1?.name} & {data.user2?.name})
-        </Text>
-        {(data.common_activities || []).map(renderActivity)}
+      <Text style={styles.sectionTitle}>
+        Common ({data.user1?.name} & {data.user2?.name})
+      </Text>
+      {(data.common_activities || []).map(renderActivity)}
 
-        <Text style={[styles.sectionTitle, styles.sectionGap]}>
-          Only {data.user1?.name}
-        </Text>
-        {(data.uncommon_activities?.added_by_user1 || []).map(renderActivity)}
+      <Text style={[styles.sectionTitle, styles.sectionGap]}>
+        Only {data.user1?.name}
+      </Text>
+      {(data.uncommon_activities?.added_by_user1 || []).map(renderActivity)}
 
-        <Text style={[styles.sectionTitle, styles.sectionGap]}>
-          Only {data.user2?.name}
-        </Text>
-        {(data.uncommon_activities?.added_by_user2 || []).map(renderActivity)}
-      </View>
-    </ScrollView>
+      <Text style={[styles.sectionTitle, styles.sectionGap]}>
+        Only {data.user2?.name}
+      </Text>
+      {(data.uncommon_activities?.added_by_user2 || []).map(renderActivity)}
+    </View>
   );
 };
 
@@ -258,15 +249,15 @@ const styles = StyleSheet.create({
     padding: getWidth(16),
   },
   pickerContainer: {
-    flex: 1,
     paddingHorizontal: getWidth(16),
     paddingTop: getHeight(8),
+    paddingBottom: getHeight(24),
   },
   center: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: getWidth(24),
+    minHeight: getHeight(160),
   },
   empty: {
     fontFamily: fonts.RobotoRegular,
@@ -292,9 +283,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoRegular,
     color: colors.lightText,
     marginBottom: getHeight(16),
-  },
-  pickerList: {
-    paddingBottom: getHeight(40),
   },
   compareRow: {
     flexDirection: "row",
