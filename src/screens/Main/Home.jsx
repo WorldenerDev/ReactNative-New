@@ -2,11 +2,13 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
   FlatList,
   Image,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import MainContainer from "@components/container/MainContainer";
 import {
@@ -14,193 +16,221 @@ import {
   getWidth,
   getFontSize,
   getVertiPadding,
+  getRadius,
 } from "@utils/responsive";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import useAuth from "@hooks/useAuth";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchCategoriesTree } from "@redux/slices/authSlice";
 import imagePath from "@assets/icons";
-import { fetchAllCity, fetchEventForYou } from "@redux/slices/cityTripSlice";
-import ForYouCard from "@components/appComponent/ForYouCard";
-import CityCard from "@components/appComponent/CityCard";
-import CategoryCard from "@components/appComponent/CategoryCard";
-
-const getTimeOfDayGreeting = (name) => {
-  const hour = new Date().getHours();
-  let greeting = "Good evening";
-
-  if (hour < 12) {
-    greeting = "Good morning";
-  } else if (hour < 17) {
-    greeting = "Good afternoon";
-  }
-
-  const displayName = name?.trim() || "there";
-  return `${greeting}, ${displayName}!`;
-};
+import { getHomeFeed } from "@api/services/mainServices";
+import FeaturedTripCard from "@components/home/FeaturedTripCard";
+import HomeCrewCard from "@components/home/HomeCrewCard";
+import InspirationCard from "@components/home/InspirationCard";
+import {
+  getFirstName,
+  getTimeOfDayGreeting,
+  openInspirationTarget,
+} from "@utils/homeHelpers";
 
 const Home = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
-  const { user, isGuest } = useAuth();
-  const { categories } = useSelector((state) => state.auth);
-  const { city, eventForYou, eventForYouPreferencesKey } = useSelector(
-    (state) => state.cityTrip
-  );
-  const dispatch = useDispatch();
-  const preferencesKey = isGuest
-    ? "__guest__"
-    : JSON.stringify(user?.preferences ?? []);
+  const { user, isGuest, requireAuth } = useAuth();
+  const [feed, setFeed] = useState({
+    featuredTrip: null,
+    crews: [],
+    inspiration: [],
+    unreadCount: 0,
+  });
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const getCity = useCallback(async () => {
+  const loadFeed = useCallback(async () => {
     try {
-      await dispatch(fetchAllCity());
+      const response = await getHomeFeed();
+      const data = response?.data || {};
+      setFeed({
+        featuredTrip: data.featuredTrip || null,
+        crews: Array.isArray(data.crews) ? data.crews : [],
+        inspiration: Array.isArray(data.inspiration) ? data.inspiration : [],
+        unreadCount: data.unreadCount || 0,
+      });
     } catch (error) {
-      console.error("Failed to fetch City on home Screen ", error);
+      console.error("Failed to fetch Home feed", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, [dispatch]);
-
-  const getCategory = useCallback(async () => {
-    try {
-      await dispatch(fetchCategoriesTree({ level: 1 }));
-    } catch (err) {
-      console.error("Failed to fetch category on home Screen ", err);
-    }
-  }, [dispatch]);
-
-  const hasPreferences = !isGuest && (user?.preferences?.length ?? 0) > 0;
-
-  const getForYou = useCallback(async () => {
-    if (
-      eventForYou.length > 0 &&
-      eventForYouPreferencesKey === preferencesKey
-    ) {
-      return;
-    }
-
-    try {
-      await dispatch(
-        fetchEventForYou({
-          preferencesKey,
-          // Guests and users without interests get top-rated activities from Musement
-          ...(hasPreferences
-            ? {}
-            : { limit: 10, guestFallback: true }),
-        })
-      );
-    } catch (error) {
-      console.error("Failed to fetch Event For You on home Screen ", error);
-    }
-  }, [
-    dispatch,
-    eventForYou.length,
-    eventForYouPreferencesKey,
-    preferencesKey,
-    hasPreferences,
-  ]);
-
-  useEffect(() => {
-    getCity();
-    getCategory();
-  }, [getCity, getCategory]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      getForYou();
-    }, [getForYou])
+      loadFeed();
+    }, [loadFeed])
   );
 
-  const ListHeader = () => (
-    <View>
-      {/* Header */}
+  const openSearch = (openFilters = false) => {
+    navigation.navigate(navigationStrings.SEARCH_CITY, {
+      fromScreen: "Home",
+      openFilters,
+    });
+  };
 
-      {/* Where to next */}
-      <Text style={styles.sectionTitle}>Where to next?</Text>
-      <FlatList
-        data={city.slice(0, 10)}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <CityCard
-            item={item}
-            onPress={() =>
-              navigation.navigate(navigationStrings.CITY_DETAIL, {
-                cityData: item,
-              })
-            }
-          />
-        )}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      />
+  const handleFeaturedPress = () => {
+    const trip = feed.featuredTrip;
+    if (!trip || !requireAuth("Sign in to open this trip")) return;
+    navigation.navigate(navigationStrings.TRIP_DETAILS, {
+      tripId: trip.tripId || trip.memberTripId || trip._id,
+      trip,
+    });
+  };
 
-      {/* Browse by Category */}
-      <Text style={styles.sectionTitle}>Browse by Category</Text>
-      <FlatList
-        data={categories}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <CategoryCard
-            item={item}
-            onPress={() =>
-              navigation.navigate(navigationStrings.BROUSE_BY_CATEGORY, {
-                name: item?.name,
-                categoryIn: item?.code,
-              })
-            }
-          />
-        )}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      />
+  const handleCrewPress = (crew) => {
+    if (!requireAuth("Sign in to open this crew")) return;
+    navigation.navigate(navigationStrings.GROUP_DETAILS, {
+      groupId: crew._id,
+    });
+  };
 
-      {/* For You Title */}
-      <Text style={styles.sectionTitle}>For You</Text>
-    </View>
-  );
+  const handleCrewChat = (crew) => {
+    if (!requireAuth("Sign in to chat with your crew")) return;
+    navigation.navigate(navigationStrings.CHAT, { groupId: crew._id });
+  };
+
+  const firstName = getFirstName(isGuest ? "Guest" : user?.name);
 
   return (
-    <MainContainer>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
-          {getTimeOfDayGreeting(isGuest ? "Guest" : user?.name)}
-        </Text>
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate(navigationStrings.SEARCH_CITY, {
-              mode: undefined, // Search both cities and events
-              fromScreen: "Home",
-            })
-          }
-        >
-          <Image style={styles.search} source={imagePath.SEARCH_ICON} />
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={eventForYou}
-        renderItem={({ item }) => (
-          <ForYouCard
-            item={item}
-            onPress={() =>
-              navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
-                eventData: item,
-              })
-            }
-          />
-        )}
-        keyExtractor={(item, index) =>
-          String(item?.id || item?.activity_id || index)
-        }
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+    <MainContainer loader={loading && !refreshing}>
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={ListHeader}
         contentContainerStyle={[
-          styles.listContainer,
+          styles.scroll,
           { paddingBottom: scrollPadding },
         ]}
-      />
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              loadFeed();
+            }}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text style={styles.greetingLine}>
+              <Text style={styles.greeting}>{getTimeOfDayGreeting()}, </Text>
+              <Text style={styles.firstName}>{firstName}</Text>
+            </Text>
+            <Text style={styles.subtitle}>Where are we going next?</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.bellWrap}
+            onPress={() => {
+              if (!requireAuth("Sign in to view notifications")) return;
+              navigation.navigate(navigationStrings.NOTIFICATION_SCREEN);
+            }}
+          >
+            <Image
+              source={imagePath.NOTIFICATION_ICON}
+              style={styles.bell}
+              resizeMode="contain"
+            />
+            {feed.unreadCount > 0 ? <View style={styles.unreadDot} /> : null}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchBar}>
+          <TouchableOpacity
+            style={styles.searchMain}
+            onPress={() => openSearch(false)}
+            activeOpacity={0.85}
+          >
+            <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
+            <Text style={styles.searchPlaceholder}>
+              Search cities, trips or experiences...
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.filterBtn}
+            onPress={() => openSearch(true)}
+          >
+            <View style={styles.filterGlyph}>
+              <View style={[styles.filterLine, styles.filterLineWide]} />
+              <View style={[styles.filterLine, styles.filterLineMid]} />
+              <View style={[styles.filterLine, styles.filterLineShort]} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {feed.featuredTrip ? (
+          <View style={styles.section}>
+            <FeaturedTripCard
+              trip={feed.featuredTrip}
+              onPress={handleFeaturedPress}
+            />
+          </View>
+        ) : null}
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My crews</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate(navigationStrings.GROUP)}
+            >
+              <Text style={styles.seeAll}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {feed.crews.length ? (
+            <FlatList
+              data={feed.crews}
+              keyExtractor={(item) => String(item._id)}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <HomeCrewCard
+                  crew={item}
+                  onPress={() => handleCrewPress(item)}
+                  onActionPress={() => handleCrewChat(item)}
+                />
+              )}
+            />
+          ) : (
+            <Text style={styles.emptyCopy}>
+              {isGuest
+                ? "Sign in to see crews you travel with."
+                : "Create a crew to plan trips with friends."}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Get inspired</Text>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate(navigationStrings.INSPIRATION_LIST)
+              }
+            >
+              <Text style={styles.seeAll}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {feed.inspiration[0] ? (
+            <InspirationCard
+              item={feed.inspiration[0]}
+              onPress={() =>
+                openInspirationTarget(navigation, feed.inspiration[0])
+              }
+            />
+          ) : (
+            <Text style={styles.emptyCopy}>Inspiration is on the way.</Text>
+          )}
+        </View>
+      </ScrollView>
     </MainContainer>
   );
 };
@@ -208,34 +238,128 @@ const Home = ({ navigation }) => {
 export default Home;
 
 const styles = StyleSheet.create({
-  listContainer: {
+  scroll: {
     paddingBottom: getVertiPadding(20),
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginVertical: getVertiPadding(10),
+    alignItems: "flex-start",
+    marginTop: getVertiPadding(8),
+    marginBottom: getVertiPadding(16),
+  },
+  headerText: {
+    flex: 1,
+    paddingRight: getWidth(12),
+  },
+  greetingLine: {
+    marginBottom: getHeight(4),
   },
   greeting: {
-    fontSize: getFontSize(18),
+    fontSize: getFontSize(22),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
+  },
+  firstName: {
+    fontSize: getFontSize(22),
     fontFamily: fonts.RobotoMedium,
     color: colors.lightText,
   },
-  search: {
-    resizeMode: "contain",
-    height: getHeight(25),
-    width: getWidth(25),
+  subtitle: {
+    fontSize: getFontSize(14),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+  },
+  bellWrap: {
+    width: getWidth(40),
+    height: getWidth(40),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bell: {
+    width: getWidth(28),
+    height: getHeight(28),
+  },
+  unreadDot: {
+    position: "absolute",
+    top: getHeight(6),
+    right: getWidth(6),
+    width: getWidth(8),
+    height: getWidth(8),
+    borderRadius: getWidth(4),
+    backgroundColor: "#F97316",
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: getRadius(28),
+    paddingHorizontal: getWidth(14),
+    height: getHeight(48),
+    marginBottom: getVertiPadding(18),
+  },
+  searchMain: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    height: "100%",
+  },
+  searchIcon: {
+    width: getWidth(16),
+    height: getHeight(16),
+    tintColor: colors.lightText,
+    marginRight: getWidth(10),
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+  },
+  filterBtn: {
+    width: getWidth(32),
+    height: getWidth(32),
+    borderRadius: getWidth(16),
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterGlyph: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+    height: getHeight(12),
+  },
+  filterLine: {
+    height: 1.5,
+    backgroundColor: colors.black,
+    borderRadius: 1,
+    marginVertical: 1.5,
+  },
+  filterLineWide: { width: getWidth(12) },
+  filterLineMid: { width: getWidth(9) },
+  filterLineShort: { width: getWidth(6) },
+  section: {
+    marginBottom: getVertiPadding(22),
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: getVertiPadding(12),
   },
   sectionTitle: {
-    fontSize: getFontSize(16),
+    fontSize: getFontSize(18),
     fontFamily: fonts.RobotoBold,
-    marginTop: getVertiPadding(10),
-    marginBottom: getVertiPadding(10),
     color: colors.black,
   },
-  row: {
-    justifyContent: "space-between",
-    marginBottom: getVertiPadding(10),
+  seeAll: {
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.lightText,
+  },
+  emptyCopy: {
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
   },
 });

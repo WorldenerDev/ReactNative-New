@@ -30,6 +30,7 @@ const TripCard = ({
   participationStatus,
   dimmed = false,
   showCrewButton = true,
+  secondaryLabel = "Crew",
   onItineraryPress,
   onGroupPress,
   onDeletePress,
@@ -124,18 +125,20 @@ const TripCard = ({
                     activeOpacity={0.85}
                   >
                     <Text style={styles.secondaryBtnText} numberOfLines={1}>
-                      Crew
+                      {secondaryLabel}
                     </Text>
                   </TouchableOpacity>
                 ) : null}
 
-                <TouchableOpacity
-                  style={[styles.btn, styles.deleteBtn]}
-                  onPress={onDeletePress}
-                  activeOpacity={0.85}
-                >
-                  <Image source={imagePath.DELETE_ICON} style={styles.deleteIcon} />
-                </TouchableOpacity>
+                {onDeletePress ? (
+                  <TouchableOpacity
+                    style={[styles.btn, styles.deleteBtn]}
+                    onPress={onDeletePress}
+                    activeOpacity={0.85}
+                  >
+                    <Image source={imagePath.DELETE_ICON} style={styles.deleteIcon} />
+                  </TouchableOpacity>
+                ) : null}
               </>
             )}
           </View>

@@ -26,6 +26,8 @@ export const deleteTrip = (tripId) =>
   apiDelete(`${endpoints?.main?.deleteTrip}/${tripId}`);
 export const activityLikeUnlike = (data) =>
   apiPost(endpoints?.main?.activityLikeUnlike, data);
+export const recordSurpriseSkip = (data) =>
+  apiPost(endpoints?.main?.activitySkip, data);
 export const getEventDetails = (data) =>
   apiPost(endpoints?.main?.getEventDetails, data);
 export const getEventDates = (data) =>
@@ -85,8 +87,10 @@ export const getGroupDetails = (groupId) =>
   apiGet(`${endpoints?.main?.getGroupDetails}/${groupId}`);
 export const sendInvitation = (data) => apiPost(endpoints?.main?.sendInvitation, data);
 export const getInvitations = () => apiGet(endpoints?.main?.getInvitations);
-export const acceptInvite = (data) => apiPost(endpoints?.main?.acceptInvite, data);
-export const rejectInvite = (data) => apiPost(endpoints?.main?.rejectInvite, data);
+export const acceptInvite = (data, config) =>
+  apiPost(endpoints?.main?.acceptInvite, data, config);
+export const rejectInvite = (data, config) =>
+  apiPost(endpoints?.main?.rejectInvite, data, config);
 export const getNotifications = (params) => apiGet(endpoints?.main?.getNotifications, params);
 export const markNotificationRead = (data) => apiPost(endpoints?.main?.markNotificationRead, data);
 export const getNotificationSettings = () =>
@@ -112,6 +116,8 @@ export const getGroupWishlisted = (groupId, cityId, tripId) =>
       ...(tripId ? { tripId } : {}),
     }
   );
+export const getMyWishlisted = (cityId) =>
+  apiGet(`${endpoints?.main?.getMyWishlisted}/${cityId}/my-wishlisted`);
 export const updateProfile = (formData) =>
   apiPost(endpoints?.main?.updateProfile, formData);
 export const addCard = (data) => apiPost(endpoints?.main?.addCard, data);
@@ -128,3 +134,6 @@ export const getChatbotHistory = (conversationId, params) =>
   apiGet(`${endpoints?.main?.chatbotHistory}/${conversationId}`, params);
 export const getTransactions = (params) =>
   apiGet(endpoints?.main?.getTransactions, params);
+export const getHomeFeed = () => apiGet(endpoints?.main?.home);
+export const searchHome = (params) => apiGet(endpoints?.main?.search, params);
+export const getInspiration = () => apiGet(endpoints?.main?.inspiration);

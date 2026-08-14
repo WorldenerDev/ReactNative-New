@@ -8,11 +8,10 @@ import {
   Image,
   StatusBar,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TopTab from "@components/TopTab";
-import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
@@ -28,8 +27,6 @@ import { formatDisplayDate } from "@utils/formatDate";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import {
   getInvitations,
-  acceptInvite,
-  rejectInvite,
   getNotifications,
   markNotificationRead,
 } from "@api/services/mainServices";
@@ -38,8 +35,16 @@ import {
   isReusableGroupsMockEnabled,
 } from "@api/services/crewGroupsService";
 import navigationStrings from "@navigation/navigationStrings";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { showToast } from "@components/AppToast";
+import { getImageUrl } from "@api/apiClient";
+
+const getInviterAvatar = (item) => {
+  const fromProfile = getImageUrl(item?.invitedBy?.image);
+  if (fromProfile) return fromProfile;
+  const name = item?.invitedBy?.name || "User";
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&size=200`;
+};
 
 
 const getInvitationStatus = (item) => {
@@ -51,11 +56,10 @@ const getInvitationStatus = (item) => {
 
 const getNotificationTypeLabel = (item) => {
   const type = item?.notifictaion_type;
-  const title = (item?.title || "").toLowerCase();
 
   switch (type) {
     case "group_invitation":
-      return title.includes("trip") ? "Trip Invite" : "Group Invite";
+      return "Crew Invite";
     case "trip_reminder":
       return "Trip Reminder";
     case "admin_broadcast":
@@ -101,51 +105,62 @@ const NotificationScreen = () => {
     }
   };
 
-  const handleAcceptInvitation = async (item) => {
-    try {
-      setLoading(true);
-      const response = await acceptInvite({
-        groupId: item?.groupId,
-        invitedId: item?._id,
-      });
-      if (response?.success) {
-        showToast("success", "Invitation accepted successfully");
-        await fetchInvitations();
-        const activeTrips = response?.data?.activeTrips || [];
-        const gid = item?.groupId || response?.data?.group?._id;
-        if (gid) {
-          navigation.navigate(navigationStrings.GROUP_TRIPS_ONBOARDING, {
-            groupId: gid,
-            activeTrips,
-          });
+  const openCrewInvite = async (item, invitationId) => {
+    let groupId = item?.groupId || null;
+    let resolvedInvitationId = invitationId || item?.invitationId || null;
+    let groupName = item?.groupName || "";
+    let inviterName = item?.invitedBy?.name || item?.sender?.name || "";
+    let message = item?.message || item?.body || "";
+
+    if (
+      item?.notifictaion_type === "group_invitation" &&
+      (!groupId || !resolvedInvitationId)
+    ) {
+      try {
+        const response = await getInvitations();
+        const match = (response?.data || []).find(
+          (invite) =>
+            getInvitationStatus(invite) === "pending" &&
+            groupId &&
+            String(invite.groupId) === String(groupId)
+        );
+        if (match) {
+          groupId = groupId || match.groupId;
+          resolvedInvitationId = resolvedInvitationId || match._id;
+          groupName = groupName || match.groupName || "";
+          inviterName = inviterName || match.invitedBy?.name || "";
+          message = message || match.message || "";
         }
+      } catch (error) {
+        console.error("Error resolving crew invitation:", error);
       }
-    } catch (error) {
-      console.error("Error accepting invitation:", error);
-      showToast("error", error?.message || "Failed to accept invitation");
-    } finally {
-      setLoading(false);
     }
+
+    if (!groupId || !resolvedInvitationId) {
+      showToast("error", "Invitation not found");
+      return;
+    }
+
+    navigation.navigate(navigationStrings.CREW_INVITE, {
+      groupId,
+      invitationId: resolvedInvitationId,
+      groupName,
+      inviterName,
+      message,
+    });
   };
 
-  const handleRejectInvitation = async (item) => {
-    try {
-      setLoading(true);
-      const response = await rejectInvite({
-        groupId: item?.groupId,
-        invitedId: item?._id,
-      });
-
-      if (response?.success) {
-        showToast("success", "Invitation rejected successfully");
-        await fetchInvitations();
-      }
-    } catch (error) {
-      console.error("Error rejecting invitation:", error);
-      showToast("error", error?.message || "Failed to reject invitation");
-    } finally {
-      setLoading(false);
+  const openTripBrief = (item) => {
+    const canonicalTripId =
+      item?.canonicalTripId || item?.tripId || item?.trip_id || null;
+    if (!canonicalTripId) {
+      showToast("error", "Trip not found");
+      return;
     }
+    navigation.navigate(navigationStrings.TRIP_BRIEF, {
+      canonicalTripId,
+      groupId: item?.groupId || null,
+    });
   };
 
   const handleTabChange = (tab) => {
@@ -161,7 +176,11 @@ const NotificationScreen = () => {
     try {
       setLoading(true);
       const response = await getInvitations();
-      setInvitations(response?.data || []);
+      const pending = (response?.data || []).filter((item) => {
+        const status = getInvitationStatus(item);
+        return status === "pending";
+      });
+      setInvitations(pending);
     } catch (error) {
       console.error("Error fetching invitations:", error);
       showToast("error", error?.message || "Failed to fetch invitations");
@@ -196,13 +215,15 @@ const NotificationScreen = () => {
     }
   };
 
-  useEffect(() => {
-    if (activeTab === "Invitations") {
-      fetchInvitations();
-    } else {
-      fetchNotifications();
-    }
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (activeTab === "Invitations") {
+        fetchInvitations();
+      } else {
+        fetchNotifications();
+      }
+    }, [activeTab])
+  );
 
   const getCurrentData = () => {
     return activeTab === "Notifications" ? notifications : invitations;
@@ -211,16 +232,19 @@ const NotificationScreen = () => {
   const renderInvitationItem = ({ item }) => {
     const status = getInvitationStatus(item);
     const isPending = status === "pending";
-    const groupLabel = item?.groupName ? ` "${item.groupName}"` : " the group";
+    const groupLabel = item?.groupName ? ` "${item.groupName}"` : " the crew";
 
     return (
-      <View style={styles.invitationCard}>
+      <TouchableOpacity
+        style={styles.invitationCard}
+        onPress={() => openCrewInvite(item, item?._id)}
+        activeOpacity={0.8}
+      >
         <View style={styles.invitationContent}>
           <View style={styles.invitationIconContainer}>
             <Image
-              source={imagePath.INVITATION_ICON}
-              style={styles.invitationIcon}
-              resizeMode="contain"
+              source={{ uri: getInviterAvatar(item) }}
+              style={styles.invitationAvatar}
             />
           </View>
           <View style={styles.invitationTextContainer}>
@@ -247,38 +271,20 @@ const NotificationScreen = () => {
             ) : null}
           </View>
         </View>
-        {isPending ? (
-          <View style={styles.buttonContainer}>
-            <ButtonComp
-              title="Accept"
-              onPress={() => handleAcceptInvitation(item)}
-              containerStyle={styles.acceptButton}
-              textStyle={styles.acceptButtonText}
-              disabled={loading}
-            />
-            <ButtonComp
-              title="Reject"
-              onPress={() => handleRejectInvitation(item)}
-              containerStyle={styles.rejectButton}
-              textStyle={styles.rejectButtonText}
-              disabled={loading}
-            />
-          </View>
-        ) : null}
-      </View>
+      </TouchableOpacity>
     );
   };
 
   const handleNotificationPress = async (item) => {
     await markAsRead(item);
 
-    if (
-      item?.notifictaion_type === "trip_created_in_group" &&
-      (item?.tripId || item?.trip_id)
-    ) {
-      navigation.navigate(navigationStrings.TRIP_BRIEF, {
-        canonicalTripId: item.tripId || item.trip_id,
-      });
+    if (item?.notifictaion_type === "group_invitation") {
+      await openCrewInvite(item, item?.invitationId);
+      return;
+    }
+
+    if (item?.notifictaion_type === "trip_created_in_group") {
+      openTripBrief(item);
     }
   };
 
@@ -337,7 +343,7 @@ const NotificationScreen = () => {
       <Text style={styles.emptyMessage}>
         {activeTab === "Notifications"
           ? "You're all caught up! We'll notify you when something new happens."
-          : "No invitations yet. When someone invites you to a group, it will appear here."}
+          : "No invitations yet. When someone invites you to a crew, it will appear here."}
       </Text>
     </View>
   );
@@ -492,19 +498,20 @@ const styles = StyleSheet.create({
   },
   invitationContent: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: getVertiPadding(8),
+    alignItems: "center",
   },
   invitationIconContainer: {
-    width: getWidth(36),
-    height: getHeight(36),
-    marginRight: getHoriPadding(8),
+    width: getWidth(40),
+    height: getHeight(40),
+    marginRight: getHoriPadding(10),
     alignItems: "center",
     justifyContent: "center",
   },
-  invitationIcon: {
-    width: getWidth(36),
-    height: getHeight(36),
+  invitationAvatar: {
+    width: getWidth(40),
+    height: getHeight(40),
+    borderRadius: getRadius(20),
+    backgroundColor: colors.border,
   },
   invitationTextContainer: {
     flex: 1,
@@ -536,55 +543,5 @@ const styles = StyleSheet.create({
   highlightedText: {
     fontFamily: fonts.RobotoMedium,
     color: "#1E3A8A",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    marginTop: getVertiPadding(1),
-  },
-  acceptButton: {
-    flex: 1,
-    backgroundColor: colors.secondary,
-    paddingVertical: getVertiPadding(8),
-    paddingHorizontal: getHoriPadding(14),
-    borderRadius: getRadius(8),
-    marginRight: getHoriPadding(4),
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 1.5,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  acceptButtonText: {
-    fontSize: getFontSize(13.5),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.primary,
-    fontWeight: "normal",
-  },
-  rejectButton: {
-    flex: 1,
-    backgroundColor: colors.white,
-    paddingVertical: getVertiPadding(8),
-    paddingHorizontal: getHoriPadding(14),
-    borderRadius: getRadius(8),
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginLeft: getHoriPadding(4),
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 1.5,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  rejectButtonText: {
-    fontSize: getFontSize(13.5),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.primary,
-    fontWeight: "normal",
   },
 });

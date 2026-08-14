@@ -1,39 +1,79 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { fetchTripWishlist } from "@api/services/crewGroupsService";
+import { getImageUrl } from "@api/apiClient";
+import navigationStrings from "@navigation/navigationStrings";
 
 /** Presentational wishlist grid — no nested FlatList (parent scrolls). */
-const TripWishlistTab = ({ canonicalTripId, groupId, cityId }) => {
+const TripWishlistTab = ({
+  canonicalTripId,
+  groupId,
+  cityId,
+  selectedTrip,
+  personal = false,
+}) => {
+  const navigation = useNavigation();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      if (!canonicalTripId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const res = await fetchTripWishlist(canonicalTripId, groupId, cityId);
-        if (res?.success) {
-          setItems(res.data?.wishlisted_items || []);
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      const load = async () => {
+        if (!canonicalTripId && !cityId) {
+          setLoading(false);
+          return;
         }
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [canonicalTripId, groupId, cityId]);
+        try {
+          setLoading(true);
+          const res = await fetchTripWishlist(canonicalTripId, groupId, cityId);
+          if (!cancelled && res?.success) {
+            setItems(res.data?.wishlisted_items || []);
+          }
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      };
+      load();
+      return () => {
+        cancelled = true;
+      };
+    }, [canonicalTripId, groupId, cityId])
+  );
+
+  const openActivity = (item) => {
+    const activityId = item?.activity_id || item?.id;
+    if (!activityId) return;
+
+    const image = item?.image;
+    const processedImage =
+      image && String(image).startsWith("/")
+        ? getImageUrl(image)
+        : image || undefined;
+
+    navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+      eventData: {
+        ...item,
+        id: activityId,
+        activity_id: activityId,
+        name: item?.name || "Activity",
+        image: processedImage,
+        isLiked: item?.is_liked_by_current_user || false,
+      },
+      selectedTrip: selectedTrip || null,
+    });
+  };
 
   if (loading) {
     return (
@@ -60,24 +100,41 @@ const TripWishlistTab = ({ canonicalTripId, groupId, cityId }) => {
     <View style={styles.list}>
       {rows.map((pair, rowIndex) => (
         <View style={styles.row} key={`wishlist-row-${rowIndex}`}>
-          {pair.map((item) => (
-            <View style={styles.card} key={String(item.activity_id)}>
-              <OptimizedImage
-                source={{ uri: item.image }}
-                style={styles.image}
-                resizeMode="cover"
-              />
-              <Text style={styles.name} numberOfLines={2}>
-                {item.name}
-              </Text>
-              <Text style={styles.likes}>
-                {item.like_count} liked
-                {item.liked_by_members?.length
-                  ? ` · ${item.liked_by_members.map((m) => m.name).join(", ")}`
-                  : ""}
-              </Text>
-            </View>
-          ))}
+          {pair.map((item) => {
+            const image = item?.image;
+            const processedImage =
+              image && String(image).startsWith("/")
+                ? getImageUrl(image)
+                : image || undefined;
+
+            return (
+              <TouchableOpacity
+                style={styles.card}
+                key={String(item.activity_id || item.id)}
+                activeOpacity={0.8}
+                onPress={() => openActivity(item)}
+                accessibilityRole="button"
+                accessibilityLabel={item?.name || "Open activity"}
+              >
+                <OptimizedImage
+                  source={{ uri: processedImage }}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+                <Text style={styles.name} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                {!personal ? (
+                  <Text style={styles.likes}>
+                    {item.like_count} liked
+                    {item.liked_by_members?.length
+                      ? ` · ${item.liked_by_members.map((m) => m.name).join(", ")}`
+                      : ""}
+                  </Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
           {pair.length === 1 ? <View style={styles.cardSpacer} /> : null}
         </View>
       ))}

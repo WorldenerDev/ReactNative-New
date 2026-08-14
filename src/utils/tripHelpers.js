@@ -126,3 +126,28 @@ export const toSelectedTripOption = (trip) => {
     end_at: trip?.end_at || trip?.endDate || null,
   };
 };
+
+const toComparableId = (value) => {
+  if (value == null || value === "") return "";
+  if (typeof value === "object") {
+    return String(value._id ?? value.id ?? "");
+  }
+  return String(value);
+};
+
+export const canDeleteTrip = (trip, currentUserId) => {
+  const uid = toComparableId(currentUserId);
+  if (!uid || !trip) return false;
+
+  const groupAdminId = toComparableId(trip.groupCreatedBy);
+  if (groupAdminId && groupAdminId === uid) return true;
+
+  const tripCreatorId = toComparableId(trip.tripCreatorId);
+  if (tripCreatorId && tripCreatorId === uid) return true;
+
+  const isCrewTrip = Boolean(trip.groupId || trip.group_id);
+  if (isCrewTrip) return false;
+
+  const ownerId = toComparableId(trip.user_id);
+  return Boolean(ownerId && ownerId === uid);
+};

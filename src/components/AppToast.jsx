@@ -88,8 +88,15 @@ const toastConfig = {
   ),
 };
 
+const isAxiosTimeoutMessage = (message) =>
+  /timeout of \d+ms exceeded/i.test(String(message || ""));
+
 // Function to show toast anywhere
 export const showToast = (type = "info", message = "") => {
+  if (isAxiosTimeoutMessage(message)) {
+    return;
+  }
+
   Toast.show({
     type,
     text1: message,

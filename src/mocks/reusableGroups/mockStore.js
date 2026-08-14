@@ -192,6 +192,7 @@ export const mockGetTripBrief = async (canonicalTripId) => {
     data: {
       ...canonical,
       groupName: group?.groupName,
+      groupImage: group?.groupImage || null,
       participationStatus: p?.status || "not_joined",
       invitedCount: (group?.addedUsers?.length || 0) + 1,
       creatorName: canonical.createdBy?.name || "Someone",

@@ -22,6 +22,7 @@ import { useDispatch } from "react-redux";
 import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import GuestPrompt from "@components/GuestPrompt";
 import useAuth from "@hooks/useAuth";
+import { canDeleteTrip } from "@utils/tripHelpers";
 import {
   fetchMyTripsWithMock,
   isReusableGroupsMockEnabled,
@@ -32,7 +33,7 @@ import { showToast } from "@components/AppToast";
 
 const Trips = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
-  const { isGuest } = useAuth();
+  const { isGuest, user } = useAuth();
   const dispatch = useDispatch();
   const [tripList, setTripList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -184,7 +185,8 @@ const Trips = ({ navigation }) => {
               groupName={item?.groupName}
               participationStatus={item?.participationStatus}
               dimmed={isOptedOut}
-              showCrewButton={!!item?.groupId}
+              showCrewButton
+              secondaryLabel={item?.groupId ? "Crew" : "My Wishlist"}
               onItineraryPress={() =>
                 navigation.navigate(navigationStrings.TRIP_DETAILS, {
                   tripId: item?._id,
@@ -192,19 +194,29 @@ const Trips = ({ navigation }) => {
                 })
               }
               onGroupPress={() => {
-                item?.groupId
-                  ? navigation.navigate(navigationStrings.GROUP_DETAILS, {
-                      groupId: item?.groupId,
-                      tripId: item?._id,
-                    })
-                  : Alert.alert("Crew not available");
+                if (item?.groupId) {
+                  navigation.navigate(navigationStrings.GROUP_DETAILS, {
+                    groupId: item?.groupId,
+                    tripId: item?._id,
+                  });
+                  return;
+                }
+                navigation.navigate(navigationStrings.TRIP_DETAILS, {
+                  tripId: item?._id,
+                  trip: item,
+                  initialTab: "My Wishlist",
+                });
               }}
               onRejoinPress={
                 isOptedOut
                   ? () => handleRejoin(item)
                   : undefined
               }
-              onDeletePress={() => handleDelete(item._id)}
+              onDeletePress={
+                canDeleteTrip(item, user?._id || user?.id)
+                  ? () => handleDelete(item._id)
+                  : undefined
+              }
               onPressCard={() => {
                 if (isOptedOut) return;
                 navigation.navigate(navigationStrings.TRIP_DETAILS, {

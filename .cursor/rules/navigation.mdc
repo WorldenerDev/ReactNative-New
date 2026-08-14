@@ -29,9 +29,21 @@ Prefer helpers in `src/navigation/helpers/nestedTabNavigation.js`:
 ```js
 navigateToTripDetails(navigation, params);
 resetToTripDetails(navigation, params);
+navigateToGroupDetails(navigation, params);
+resetToGroupDetails(navigation, params);
 ```
 
-Keeps TripDetails inside the Trips tab so the custom tab bar stays visible.
+Keeps TripDetails / GroupDetails inside their tabs so the custom tab bar stays visible. After Create Crew (root stack), use `resetToGroupDetails`.
+
+## Crew vs trip entry
+
+| From | Open |
+|------|------|
+| Invitations tab or `group_invitation` | `CREW_INVITE` (join the crew) |
+| After Join Crew, existing trips | `GROUP_TRIPS_ONBOARDING` |
+| `trip_created_in_group` | `TRIP_BRIEF` (join / opt-out of that trip) |
+
+Do **not** send crew invitations to `TRIP_BRIEF`. Invitations are crew membership, not trip membership.
 
 ## Guest screens
 
@@ -40,4 +52,5 @@ If guests must not open the route, add it to `GUEST_RESTRICTED_SCREENS` in `util
 ## Do not
 
 - Add React Navigation linking config unless product asks for deep links (none today)
-- Navigate to TripDetails on the root stack when the tab bar should remain visible
+- Navigate to TripDetails or GroupDetails on the root stack when the tab bar should remain visible
+- `replace(GROUP_DETAILS)` from Create Crew — that screen is not on the root stack

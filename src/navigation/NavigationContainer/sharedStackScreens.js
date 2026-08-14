@@ -12,6 +12,7 @@ import {
   EditTrip,
   GroupDetails,
   GroupTripsOnboarding,
+  InspirationList,
   MemberProfile,
   NotificationScreen,
   NotificationSettings,
@@ -25,6 +26,7 @@ import {
   TransactionHistory,
   TripDetails,
   TripBrief,
+  CrewInvite,
   UpdateInterests,
   ViewAiChat,
 } from "@screens/index";
@@ -47,6 +49,7 @@ export const sharedStackScreens = [
     component: CalendarViewTripDetail,
   },
   { name: navigationStrings.GROUP_DETAILS, component: GroupDetails },
+  { name: navigationStrings.CREW_INVITE, component: CrewInvite },
   { name: navigationStrings.TRIP_BRIEF, component: TripBrief },
   {
     name: navigationStrings.GROUP_TRIPS_ONBOARDING,
@@ -68,6 +71,7 @@ export const sharedStackScreens = [
   { name: navigationStrings.SAVE_CARD, component: SaveCard },
   { name: navigationStrings.PRIVACYTERMS, component: PrivacyTerms },
   { name: navigationStrings.UPDATE_INTERESTS, component: UpdateInterests },
+  { name: navigationStrings.INSPIRATION_LIST, component: InspirationList },
   { name: navigationStrings.AI_CHAT, component: AiChat },
   { name: navigationStrings.VIEW_AI_CHAT, component: ViewAiChat },
 ];

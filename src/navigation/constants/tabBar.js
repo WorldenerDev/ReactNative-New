@@ -1,4 +1,4 @@
-export const TAB_BAR_HEIGHT = 70;
+export const TAB_BAR_HEIGHT = 78;
 
 /** Small gap above the tab bar for sticky footers */
 export const STICKY_FOOTER_OFFSET = 8;

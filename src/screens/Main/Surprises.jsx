@@ -26,6 +26,7 @@ import imagePath from "@assets/icons";
 import {
   getCityActivities,
   activityLikeUnlike,
+  recordSurpriseSkip,
 } from "@api/services/mainServices";
 import { showToast } from "@components/AppToast";
 import Loader from "@components/Loader";
@@ -60,7 +61,6 @@ const Surprises = ({ navigation, route }) => {
   const [surprises, setSurprises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const position = useRef(new Animated.ValueXY()).current;
   const isAnimating = useRef(false);
@@ -70,6 +70,9 @@ const Surprises = ({ navigation, route }) => {
   const currentIndexRef = useRef(0);
   const pendingAdvance = useRef(false);
   const isPanning = useRef(false);
+  const hasMoreRef = useRef(true);
+  const pageRef = useRef(1);
+  const loadingMoreRef = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -87,10 +90,25 @@ const Surprises = ({ navigation, route }) => {
     "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800";
   const limit = 10;
 
+  const recordCardDecision = (activityId, liked) => {
+    if (!activityId) return;
+    const payload = {
+      activity_id: activityId,
+      city_id: String(cityId),
+    };
+    if (liked) {
+      activityLikeUnlike({ ...payload, is_liked: true }).catch(() => {});
+    } else {
+      recordSurpriseSkip(payload).catch(() => {});
+    }
+  };
+
   // Fetch city activities from API
   const fetchCityActivities = async (pageNum = 1, append = false) => {
+    let chaining = false;
     try {
       if (append) {
+        loadingMoreRef.current = true;
         setLoadingMore(true);
       } else {
         setLoading(true);
@@ -100,12 +118,14 @@ const Surprises = ({ navigation, route }) => {
         cityId: cityId,
         limit: limit,
         page: pageNum,
+        excludeSeen: true,
       });
 
       if (response?.success && response?.data) {
-        const activities = Array.isArray(response.data)
-          ? response.data
-          : response.data?.activities || response.data?.data || [];
+        const payload = response.data;
+        const activities = Array.isArray(payload)
+          ? payload
+          : payload?.activities || payload?.data || [];
 
         const transformedActivities = activities.map((activity, index) => ({
           id:
@@ -133,22 +153,55 @@ const Surprises = ({ navigation, route }) => {
             "Lorem Ipsum is simply dummy",
         }));
 
+        const existingIds = new Set(
+          (append ? surprisesRef.current : []).map((item) => String(item.id))
+        );
+        const uniqueActivities = transformedActivities.filter((item) => {
+          const id = String(item.id);
+          if (existingIds.has(id)) return false;
+          existingIds.add(id);
+          return true;
+        });
+
         if (append) {
-          setSurprises((prev) => [...prev, ...transformedActivities]);
+          setSurprises((prev) => [...prev, ...uniqueActivities]);
         } else {
-          setSurprises(transformedActivities);
+          setSurprises(uniqueActivities);
         }
 
-        const hasMoreItems = transformedActivities.length === limit;
+        const hasMoreItems =
+          typeof payload?.hasMore === "boolean"
+            ? payload.hasMore
+            : uniqueActivities.length === limit;
+        const nextPage = Number(payload?.nextPage) || pageNum + 1;
+        hasMoreRef.current = hasMoreItems;
+        pageRef.current = nextPage;
         setHasMore(hasMoreItems);
+
+        if (uniqueActivities.length === 0 && hasMoreItems) {
+          chaining = true;
+          fetchCityActivities(nextPage, append);
+          return;
+        }
       } else {
         showToast("error", response?.message || "Failed to fetch activities");
+        if (!append) {
+          hasMoreRef.current = false;
+          setHasMore(false);
+        }
       }
     } catch (error) {
       showToast("error", error?.message || "Something went wrong");
+      if (!append) {
+        hasMoreRef.current = false;
+        setHasMore(false);
+      }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (!chaining) {
+        loadingMoreRef.current = false;
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   };
 
@@ -171,10 +224,9 @@ const Surprises = ({ navigation, route }) => {
 
   // Load more when we reach the end of the current list
   const loadMoreIfNeeded = () => {
-    if (hasMore && !loadingMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchCityActivities(nextPage, true);
+    if (hasMoreRef.current && !loadingMoreRef.current) {
+      loadingMoreRef.current = true;
+      fetchCityActivities(pageRef.current, true);
     }
   };
 
@@ -312,15 +364,7 @@ const Surprises = ({ navigation, route }) => {
     const safeIdx = Math.min(currentIdx, currentSurprises.length - 1);
     const currentCardData = currentSurprises[safeIdx];
 
-    if (currentCardData?.id) {
-      activityLikeUnlike({
-        activity_id: currentCardData.id,
-        is_liked: direction === "right",
-        city_id: cityData?.city_id,
-      }).catch(() => {
-        // Error handling is done in API interceptor
-      });
-    }
+    recordCardDecision(currentCardData?.id, direction === "right");
 
     Animated.timing(position, {
       toValue: { x: exitX, y: 0 },
@@ -338,7 +382,7 @@ const Surprises = ({ navigation, route }) => {
       const total = surprisesRef.current.length;
 
       // Preload more items when approaching the end (2 cards before the end)
-      if (nextIndex >= total - 2 && hasMore && !loadingMore) {
+      if (nextIndex >= total - 2 && hasMoreRef.current && !loadingMoreRef.current) {
         loadMoreIfNeeded();
       }
 
@@ -350,15 +394,15 @@ const Surprises = ({ navigation, route }) => {
 
       // We are at the end of the current list
       // Try to load more (if available) and keep showing the last card
-      if (total > 0 && hasMore && !loadingMore) {
+      if (total > 0 && hasMoreRef.current) {
         pendingAdvance.current = true;
         loadMoreIfNeeded();
         return prevIndex;
       }
 
-      // No more data
+      // City is exhausted — advance past the last card so empty state can show
       pendingAdvance.current = false;
-      return prevIndex;
+      return nextIndex;
     });
   };
 
@@ -372,15 +416,7 @@ const Surprises = ({ navigation, route }) => {
     position.setOffset({ x: 0, y: 0 });
     currentPosition.current = { x: 0, y: 0 };
 
-    if (currentCard?.id) {
-      activityLikeUnlike({
-        activity_id: currentCard.id,
-        is_liked: true,
-        city_id: cityData?.city_id,
-      }).catch(() => {
-        // Error handling is done in API interceptor
-      });
-    }
+    recordCardDecision(currentCard?.id, true);
 
     Animated.timing(position, {
       toValue: { x: SCREEN_WIDTH * 1.5, y: 0 },
@@ -401,15 +437,7 @@ const Surprises = ({ navigation, route }) => {
     position.setOffset({ x: 0, y: 0 });
     currentPosition.current = { x: 0, y: 0 };
 
-    if (currentCard?.id) {
-      activityLikeUnlike({
-        activity_id: currentCard.id,
-        is_liked: false,
-        city_id: cityData?.city_id,
-      }).catch(() => {
-        // Error handling is done in API interceptor
-      });
-    }
+    recordCardDecision(currentCard?.id, false);
 
     Animated.timing(position, {
       toValue: { x: -SCREEN_WIDTH * 1.5, y: 0 },
@@ -433,8 +461,23 @@ const Surprises = ({ navigation, route }) => {
   });
 
   // Ensure currentIndex is always valid
-  const safeCurrentIndex = Math.min(currentIndex, surprises.length - 1);
-  const currentCard = surprises[safeCurrentIndex];
+  const currentCard = surprises[currentIndex];
+  const cityExhausted =
+    !loading && !loadingMore && !hasMore && !currentCard;
+
+  const renderEmptyState = (message) => (
+    <ScreenWapper>
+      <View style={styles.container}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.emptyBackBtn}
+        >
+          <Image source={imagePath.BACK_ICON} style={styles.iconStyle} />
+        </TouchableOpacity>
+        <Text style={styles.emptyText}>{message}</Text>
+      </View>
+    </ScreenWapper>
+  );
 
   if (loading && surprises.length === 0) {
     return (
@@ -446,27 +489,16 @@ const Surprises = ({ navigation, route }) => {
     );
   }
 
-  if (!currentCard && surprises.length === 0) {
-    return (
-      <ScreenWapper>
-        <View style={styles.container}>
-          <Text style={styles.emptyText}>No activities available!</Text>
-        </View>
-      </ScreenWapper>
+  if (cityExhausted && surprises.length === 0) {
+    return renderEmptyState(
+      "You're all caught up. No more surprises in this city."
     );
   }
 
-  if (!currentCard && !loadingMore) {
-    return (
-      <ScreenWapper>
-        <View style={styles.container}>
-          <Text style={styles.emptyText}>No more surprises!</Text>
-        </View>
-      </ScreenWapper>
-    );
+  if (cityExhausted) {
+    return renderEmptyState("No more surprises in this city!");
   }
 
-  // If we're loading more but don't have a current card, show loader
   if (!currentCard && loadingMore) {
     return (
       <ScreenWapper>
@@ -475,6 +507,10 @@ const Surprises = ({ navigation, route }) => {
         </View>
       </ScreenWapper>
     );
+  }
+
+  if (!currentCard) {
+    return renderEmptyState("No more surprises in this city!");
   }
 
   return (
@@ -755,6 +791,19 @@ const styles = StyleSheet.create({
     color: colors.lightText,
     textAlign: "center",
     marginTop: getVertiPadding(100),
+    paddingHorizontal: getHoriPadding(24),
+  },
+  emptyBackBtn: {
+    width: getWidth(32),
+    height: getHeight(32),
+    borderRadius: getRadius(16),
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.border,
+    marginTop: getVertiPadding(45),
+    marginLeft: getHoriPadding(16),
+    paddingVertical: getVertiPadding(6),
+    paddingHorizontal: getHoriPadding(10),
   },
   loadingMoreContainer: {
     alignItems: "center",

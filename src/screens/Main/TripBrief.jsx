@@ -13,11 +13,15 @@ import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import { formatCompactDateRange } from "@utils/formatDate";
 import navigationStrings from "@navigation/navigationStrings";
 import { showToast } from "@components/AppToast";
+import { getImageUrl } from "@api/apiClient";
 import {
   fetchTripBrief,
   optInToTrip,
   optOutOfTrip,
 } from "@api/services/crewGroupsService";
+
+const CREW_FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop";
 
 const TripBrief = ({ navigation, route }) => {
   useGuestScreenGuard();
@@ -84,6 +88,8 @@ const TripBrief = ({ navigation, route }) => {
   const dateLabel = brief
     ? formatCompactDateRange(brief.start_at, brief.end_at)
     : "";
+  const crewImage =
+    getImageUrl(brief?.groupImage) || brief?.groupImage || CREW_FALLBACK_IMAGE;
 
   return (
     <MainContainer loader={loading || actionLoading}>
@@ -91,7 +97,7 @@ const TripBrief = ({ navigation, route }) => {
       {brief ? (
         <View style={styles.container}>
           <OptimizedImage
-            source={{ uri: brief.image }}
+            source={{ uri: crewImage }}
             style={styles.hero}
             resizeMode="cover"
           />

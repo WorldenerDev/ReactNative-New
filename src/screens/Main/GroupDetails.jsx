@@ -1067,7 +1067,6 @@ const GroupDetails = () => {
           onPress={handleCreateCrewTrip}
           activeOpacity={0.85}
         >
-          <Image source={icons.PLUS_ICON_BORDER} style={styles.createTripIcon} />
           <Text style={styles.createTripText}>Create Trip</Text>
         </TouchableOpacity>
       </View>

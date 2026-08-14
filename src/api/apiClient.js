@@ -95,7 +95,11 @@ apiClient.interceptors.response.use(
       throw responseData || { message: "Session expired" };
     }
 
-    if (!error?.config?.skipErrorToast) {
+    const isTimeout =
+      error?.code === "ECONNABORTED" ||
+      /timeout of \d+ms exceeded/i.test(error?.message || "");
+
+    if (!error?.config?.skipErrorToast && !isTimeout) {
       showToast("error", responseData?.message || error.message);
     }
     throw responseData || { message: "Network error" };

@@ -26,6 +26,7 @@ export const endpoints = {
     deleteTrip: "/deleteTrip",
     getTripDetails: "/getTripDetails",
     activityLikeUnlike: "/activity-like-unlike",
+    activitySkip: "/activity-skip",
     getEventDetails: "/get-event-Details", // Using same endpoint as checkPickupPoints
     getEventDates: "/get-event-dates",
     getEventDatesDetails: "/get-event-dates-details",
@@ -78,10 +79,14 @@ export const endpoints = {
     getStripeCardList: "/get-stripe-card-list",
     updateProfile: "/updateProfile",
     getGroupWishlisted: "/group",
+    getMyWishlisted: "/city",
     chatbot: "/chatbot",
     chatbotHistoryList: "/chatbot/history-list",
     chatbotHistory: "/chatbot/history",
     getTransactions: "/getTransactions",
+    home: "/home",
+    search: "/search",
+    inspiration: "/inspiration",
   },
 
 };

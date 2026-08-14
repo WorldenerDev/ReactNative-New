@@ -219,7 +219,7 @@ const Booking = ({ navigation, route }) => {
   if (isGuest) {
     return (
       <MainContainer>
-        <Header showBack={false} title="My Booking" />
+        <Header showBack={false} title="My Bookings" />
         <GuestPrompt
           title="Sign in to view bookings"
           subtitle="Create an account to book activities and manage your upcoming trips."
@@ -231,7 +231,7 @@ const Booking = ({ navigation, route }) => {
   if (loading) {
     return (
       <MainContainer>
-        <Header showBack={false} title="My Booking" />
+        <Header showBack={false} title="My Bookings" />
         <Loader />
       </MainContainer>
     );
@@ -239,7 +239,7 @@ const Booking = ({ navigation, route }) => {
 
   return (
     <MainContainer>
-      <Header showBack={false} title="My Booking" />
+      <Header showBack={false} title="My Bookings" />
       <TopTab activeTab={activeTab} onTabChange={setActiveTab} />
       <FlatList
         data={currentTrips}

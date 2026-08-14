@@ -25,6 +25,7 @@ export default {
   CREATE_TRIP: "CreateTrip",
   CREATE_GROUP: "CreateGroup",
   TRIP_BRIEF: "TripBrief",
+  CREW_INVITE: "CrewInvite",
   GROUP_TRIPS_ONBOARDING: "GroupTripsOnboarding",
   ADD_TO_TRIP: "AddToTrip",
   TRIP_DETAILS: "TripDetails",
@@ -50,4 +51,5 @@ export default {
   UPDATE_INTERESTS: "UpdateInterests",
   TRANSACTION_HISTORY: "TransactionHistory",
   TRANSACTION_DETAIL: "TransactionDetail",
+  INSPIRATION_LIST: "InspirationList",
 };

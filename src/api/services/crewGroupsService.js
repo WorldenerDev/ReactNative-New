@@ -29,6 +29,7 @@ import {
   optOutOfTripApi,
   getNotifications,
   getGroupWishlisted,
+  getMyWishlisted,
   compareUsersInGroup,
   getTrip,
   getGroupMessages,
@@ -130,8 +131,9 @@ export const fetchCrewTripNotifications = async () => {
 
 export const fetchTripWishlist = async (canonicalTripId, groupId, cityId) => {
   if (REUSABLE_GROUPS_MOCK_ENABLED) return mockGetWishlist(canonicalTripId);
-  if (!groupId) return { success: true, data: { wishlisted_items: [] } };
-  return getGroupWishlisted(groupId, cityId, canonicalTripId);
+  if (groupId) return getGroupWishlisted(groupId, cityId, canonicalTripId);
+  if (cityId) return getMyWishlisted(cityId);
+  return { success: true, data: { wishlisted_items: [] } };
 };
 
 export const fetchTripCompare = async ({ groupId, tripId, userId1, userId2 }) => {

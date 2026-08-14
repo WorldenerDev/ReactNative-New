@@ -14,9 +14,9 @@ import ButtonComp from "@components/ButtonComp";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getWidth } from "@utils/responsive";
-import navigationStrings from "@navigation/navigationStrings";
 import { showToast } from "@components/AppToast";
 import { createCrew } from "@api/services/crewGroupsService";
+import { resetToGroupDetails } from "@navigation/helpers/nestedTabNavigation";
 
 const CreateGroup = ({ navigation }) => {
   useGuestScreenGuard();
@@ -33,11 +33,13 @@ const CreateGroup = ({ navigation }) => {
     try {
       setLoading(true);
       const response = await createCrew({ groupName: name });
-      if (response?.success && response?.data) {
+      const groupId =
+        response?.data?._id ||
+        response?.data?.id ||
+        response?.data?.group?._id;
+      if (response?.success && groupId) {
         showToast("success", "Crew created!");
-        navigation.replace(navigationStrings.GROUP_DETAILS, {
-          groupId: response.data._id,
-        });
+        resetToGroupDetails(navigation, { groupId });
       } else {
         showToast("error", response?.message || "Failed to create crew");
       }

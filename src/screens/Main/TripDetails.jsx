@@ -2,7 +2,6 @@ import { checkoutTrip, getTripBuddies } from "@api/services/mainServices";
 import {
   fetchTripDetailsWithMock,
   optInToTrip,
-  optOutOfTrip,
 } from "@api/services/crewGroupsService";
 import TopTab from "@components/TopTab";
 import TripCompareTab from "./tripDetails/TripCompareTab";
@@ -30,7 +29,7 @@ import {
   toSelectedTripOption,
 } from "@utils/tripHelpers";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -47,13 +46,16 @@ const BOTTOM_MARGIN = 20;
 const EXTRA_SCROLL_PADDING = 10;
 
 const TripDetails = ({ navigation, route }) => {
-  const { trip, tripId } = route?.params || {};
+  const { trip, tripId, initialTab } = route?.params || {};
   const [tripData, setTripData] = useState(() =>
     trip ? normalizeTripDetails(trip) : null
   );
   const [loading, setLoading] = useState(true);
-  const [detailTab, setDetailTab] = useState("Itinerary");
-  const showCrewTabs = Boolean(tripData?.groupId);
+  const [detailTab, setDetailTab] = useState(initialTab || "Itinerary");
+  const isCrewTrip = Boolean(tripData?.groupId);
+  const detailTabs = isCrewTrip
+    ? ["Itinerary", "Compare", "Wishlist"]
+    : ["Itinerary", "My Wishlist"];
   const { requestContactsPermission } = usePermissions();
   const insets = useSafeAreaInsets();
   const scrollContentBottomPadding =
@@ -88,6 +90,12 @@ const TripDetails = ({ navigation, route }) => {
     }
   }, [currentTripId]);
 
+  useEffect(() => {
+    if (initialTab) {
+      setDetailTab(initialTab);
+    }
+  }, [initialTab]);
+
   useFocusEffect(
     useCallback(() => {
       fetchTripDetails();
@@ -106,21 +114,6 @@ const TripDetails = ({ navigation, route }) => {
     navigation.navigate(navigationStrings.GROUP_DETAILS, {
       groupId: tripData.groupId,
     });
-  };
-
-  const handleOptOut = async () => {
-    const canonicalId = tripData?.canonicalTripId || tripData?._id;
-    if (!canonicalId) return;
-    try {
-      setLoading(true);
-      await optOutOfTrip(canonicalId);
-      showToast("success", "You opted out of this trip");
-      navigation.goBack();
-    } catch (error) {
-      showToast("error", error?.message || "Failed to opt out");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleRejoinTrip = async () => {
@@ -290,7 +283,9 @@ const TripDetails = ({ navigation, route }) => {
     return new Date(a) - new Date(b);
   });
 
-  const activeDetailTab = showCrewTabs ? detailTab : "Itinerary";
+  const activeDetailTab = detailTabs.includes(detailTab)
+    ? detailTab
+    : "Itinerary";
 
   const renderDateGroup = (date, dateIndex) => {
     const activitiesForDate = groupedActivities[date] || [];
@@ -380,13 +375,15 @@ const TripDetails = ({ navigation, route }) => {
         </View>
       );
     }
-    if (activeDetailTab === "Wishlist") {
+    if (activeDetailTab === "Wishlist" || activeDetailTab === "My Wishlist") {
       return (
         <View style={styles.tabBody}>
           <TripWishlistTab
             canonicalTripId={tripData?.canonicalTripId || tripData?._id}
             groupId={tripData?.groupId}
             cityId={tripData?.city_id || tripData?.city?.city_id}
+            selectedTrip={toSelectedTripOption(tripData)}
+            personal={!isCrewTrip}
           />
         </View>
       );
@@ -582,19 +579,7 @@ const TripDetails = ({ navigation, route }) => {
             </View>
           </View>
 
-          {showCrewTabs && tripData?.participationStatus === "joined" ? (
-            <TouchableOpacity
-              style={styles.optOutLink}
-              onPress={handleOptOut}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.optOutLinkText}>
-                Not this time — opt out of this trip
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-
-          {showCrewTabs && tripData?.participationStatus === "opted_out" ? (
+          {isCrewTrip && tripData?.participationStatus === "opted_out" ? (
             <TouchableOpacity
               style={styles.rejoinLink}
               onPress={handleRejoinTrip}
@@ -609,10 +594,7 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   // ScrollView stickyHeaderIndices: child 0 = trip card, child 1 = tabs (sticks after card scrolls away)
-  const scrollStickyIndices = useMemo(
-    () => (showCrewTabs ? [1] : undefined),
-    [showCrewTabs]
-  );
+  const scrollStickyIndices = useMemo(() => [1], []);
 
   return (
     <MainContainer loader={loading}>
@@ -633,16 +615,14 @@ const TripDetails = ({ navigation, route }) => {
           >
             {renderTripCard()}
 
-            {showCrewTabs ? (
-              <View style={styles.stickyTabsWrap}>
-                <TopTab
-                  tabs={["Itinerary", "Compare", "Wishlist"]}
-                  activeTab={detailTab}
-                  onTabChange={setDetailTab}
-                  containerStyle={styles.detailTabs}
-                />
-              </View>
-            ) : null}
+            <View style={styles.stickyTabsWrap}>
+              <TopTab
+                tabs={detailTabs}
+                activeTab={activeDetailTab}
+                onTabChange={setDetailTab}
+                containerStyle={styles.detailTabs}
+              />
+            </View>
 
             {renderTabBody()}
           </ScrollView>
@@ -970,17 +950,6 @@ const styles = StyleSheet.create({
   },
   tabBody: {
     paddingTop: getHeight(8),
-  },
-  optOutLink: {
-    marginTop: getHeight(14),
-    alignItems: "center",
-    paddingVertical: getHeight(6),
-  },
-  optOutLinkText: {
-    fontSize: getHeight(13),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.lightText,
-    textDecorationLine: "underline",
   },
   rejoinLink: {
     marginTop: getHeight(14),

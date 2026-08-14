@@ -81,6 +81,13 @@ const Account = ({ navigation }) => {
     });
   };
 
+  const handleAllBookings = () => {
+    navigation.navigate(navigationStrings.BOOKING, {
+      screen: navigationStrings.BOOKING,
+      params: { initialTab: "All" },
+    });
+  };
+
   const handleTransactionHistory = () => {
     navigation.navigate(navigationStrings.TRANSACTION_HISTORY);
   };
@@ -245,6 +252,7 @@ const Account = ({ navigation }) => {
       {/* My Bookings Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>My Bookings</Text>
+        <ProfileButton title="All Bookings" onPress={handleAllBookings} />
         <ProfileButton
           title="My Upcoming Bookings"
           onPress={handleMyUpcomingBookings}

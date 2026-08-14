@@ -26,15 +26,18 @@ import fonts from "@assets/fonts";
 import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
 import { updateTrip } from "@api/services/mainServices";
-import { getTripCityId } from "@utils/tripHelpers";
+import { optOutOfTrip } from "@api/services/crewGroupsService";
+import { getTripCityId, canDeleteTrip } from "@utils/tripHelpers";
 import { useDispatch } from "react-redux";
 import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import navigationStrings from "@navigation/navigationStrings";
 import useStickyBottomInset from "@hooks/useStickyBottomInset";
+import useAuth from "@hooks/useAuth";
 
 const EditTrip = ({ navigation, route }) => {
   const { trip } = route?.params || {};
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const bottomInset = useStickyBottomInset();
   // Form state
   const [tripName, setTripName] = useState(
@@ -47,6 +50,11 @@ const EditTrip = ({ navigation, route }) => {
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const canOptOut =
+    Boolean(trip?.groupId || trip?.group_id) &&
+    trip?.participationStatus === "joined";
+  const canDelete = canDeleteTrip(trip, user?._id || user?.id);
 
   const handleSave = async () => {
     try {
@@ -110,6 +118,50 @@ const EditTrip = ({ navigation, route }) => {
               showToast("error", error?.message || "Failed to delete trip");
             } finally {
               setDeleteLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleOptOut = () => {
+    Alert.alert(
+      "Opt out of this trip",
+      "You will leave this crew trip. You can rejoin later from Trip Details.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Opt out",
+          style: "destructive",
+          onPress: async () => {
+            const canonicalId = trip?.canonicalTripId || trip?._id || trip?.id;
+            if (!canonicalId) {
+              showToast("error", "Trip ID not found");
+              return;
+            }
+            try {
+              setIsLoading(true);
+              await optOutOfTrip(canonicalId);
+              showToast("success", "You opted out of this trip");
+              const groupId = trip?.groupId || trip?.group_id;
+              if (groupId) {
+                navigation.navigate(navigationStrings.GROUP_DETAILS, {
+                  groupId,
+                });
+              } else {
+                navigation.navigate(navigationStrings.BOTTOM_TAB, {
+                  screen: navigationStrings.TRIPS,
+                  params: { screen: navigationStrings.TRIPS },
+                });
+              }
+            } catch (error) {
+              showToast("error", error?.message || "Failed to opt out");
+            } finally {
+              setIsLoading(false);
             }
           },
         },
@@ -222,13 +274,25 @@ const EditTrip = ({ navigation, route }) => {
 
         {/* Action Buttons */}
         <View style={styles.buttonsContainer}>
-          <ButtonComp
-            title="Delete Trip"
-            onPress={handleDelete}
-            disabled={isLoading || deleteLoading}
-            containerStyle={styles.deleteButton}
-            textStyle={styles.deleteButtonText}
-          />
+          {canOptOut ? (
+            <ButtonComp
+              title="Opt out of this trip"
+              onPress={handleOptOut}
+              disabled={isLoading || deleteLoading}
+              containerStyle={styles.deleteButton}
+              textStyle={styles.deleteButtonText}
+            />
+          ) : null}
+
+          {canDelete ? (
+            <ButtonComp
+              title="Delete Trip"
+              onPress={handleDelete}
+              disabled={isLoading || deleteLoading}
+              containerStyle={styles.deleteButton}
+              textStyle={styles.deleteButtonText}
+            />
+          ) : null}
 
           <ButtonComp
             disabled={deleteLoading}
