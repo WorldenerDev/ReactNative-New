@@ -58,7 +58,9 @@ export const buildUpdateProfileFormData = ({
   const formData = new FormData();
 
   formData.append("name", name);
-  formData.append("phone_number", phone_number);
+  if (phone_number) {
+    formData.append("phone_number", phone_number);
+  }
 
   if (email) {
     formData.append("email", email);

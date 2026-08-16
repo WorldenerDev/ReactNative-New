@@ -25,6 +25,7 @@ import { useDispatch } from "react-redux";
 import { signupUser, guestLoginUser } from "@redux/slices/authSlice";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 import SocialNamePromptModal from "@components/SocialNamePromptModal";
+import SocialPhonePromptModal from "@components/SocialPhonePromptModal";
 import {
   validateForm,
   validateLetter,
@@ -50,7 +51,12 @@ const SignUp = ({ navigation }) => {
     namePromptLoading,
     handleNameSubmit,
     handleNameCancel,
-  } = useSocialLogin({ logContext: "SignUp" });
+    phonePromptVisible,
+    phonePromptLoading,
+    handleSendLinkPhoneOtp,
+    handleVerifyLinkPhone,
+    handleSkipPhone,
+  } = useSocialLogin({ logContext: "SignUp", navigation });
 
   const handlePhoneNumberChange = (text) => {
     setData((prev) => ({ ...prev, phoneNumber: text }));
@@ -195,6 +201,15 @@ const SignUp = ({ navigation }) => {
         loading={namePromptLoading}
         onSubmit={handleNameSubmit}
         onCancel={handleNameCancel}
+      />
+      <SocialPhonePromptModal
+        visible={phonePromptVisible}
+        loading={phonePromptLoading}
+        allowSkip
+        onSendOtp={handleSendLinkPhoneOtp}
+        onVerifyOtp={handleVerifyLinkPhone}
+        onResendOtp={handleSendLinkPhoneOtp}
+        onSkip={handleSkipPhone}
       />
     </ResponsiveContainer>
   );

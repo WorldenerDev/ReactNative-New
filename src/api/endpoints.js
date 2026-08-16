@@ -5,6 +5,8 @@ export const endpoints = {
     signup: "/signup",
     otp: "/verifyOtp",
     socialLogin: "/socialLoginAndSignUp",
+    sendLinkPhoneOtp: "/sendLinkPhoneOtp",
+    verifyLinkPhone: "/verifyLinkPhone",
     getCategory: "/getCategories",
     getProfile: "/getProfile",
     selectCategory: "/selectCategory",

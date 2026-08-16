@@ -27,8 +27,13 @@ import {
 } from "@utils/responsive";
 import useImagePicker from "@hooks/useImagePicker";
 import { updateProfile } from "@api/services/mainServices";
+import {
+  sendLinkPhoneOtp,
+  verifyLinkPhone,
+} from "@api/services/authService";
 import { setUser } from "@redux/slices/authSlice";
 import { showToast } from "@components/AppToast";
+import SocialPhonePromptModal from "@components/SocialPhonePromptModal";
 import useStickyBottomInset, {
   useStickyScrollPadding,
 } from "@hooks/useStickyBottomInset";
@@ -40,6 +45,7 @@ import {
 } from "@utils/formDataHelper";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
+import { hasUsablePhone } from "@utils/socialLoginPayload";
 
 const PencilIcon = () => (
   <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
@@ -71,6 +77,9 @@ const EditProfile = ({ navigation }) => {
 
   const [name, setName] = useState(user?.name || "");
   const [profileImage, setProfileImage] = useState(null);
+  const [phonePromptVisible, setPhonePromptVisible] = useState(false);
+  const [phonePromptLoading, setPhonePromptLoading] = useState(false);
+  const hasPhone = hasUsablePhone(user?.phone_number);
   const mobileNumber = user?.phone_number || "";
 
   // Construct image URI: if user has image, use URL + image path, otherwise null
@@ -79,9 +88,14 @@ const EditProfile = ({ navigation }) => {
   const [imageUri, setImageUri] = useState(getUserImageUri());
   const [loading, setLoading] = useState(false);
 
+  const persistUser = async (updatedUser) => {
+    dispatch(setUser(updatedUser));
+    await setItem(STORAGE_KEYS.USER_DATA, updatedUser);
+  };
+
   const handleSaveChanges = async () => {
-    if (!name || !mobileNumber) {
-      showToast("error", "Please fill in all required fields");
+    if (!name) {
+      showToast("error", "Please enter your name");
       return;
     }
 
@@ -90,8 +104,7 @@ const EditProfile = ({ navigation }) => {
 
       const formData = buildUpdateProfileFormData({
         name,
-        phone_number: mobileNumber,
-        // email: user?.email,
+        phone_number: hasPhone ? mobileNumber : undefined,
         gender: user?.gender,
         dob: user?.dob,
         nationality: user?.nationality,
@@ -109,13 +122,12 @@ const EditProfile = ({ navigation }) => {
         const updatedUser = {
           ...user,
           name,
-          phone_number: mobileNumber,
+          phone_number: hasPhone ? mobileNumber : user?.phone_number || "",
           image: responseImage || user?.image,
           profileImage: responseImage || user?.profileImage,
         };
 
-        dispatch(setUser(updatedUser));
-        await setItem(STORAGE_KEYS.USER_DATA, updatedUser);
+        await persistUser(updatedUser);
         setImageUri(finalImageUri);
         setProfileImage(null);
         showToast(
@@ -131,6 +143,43 @@ const EditProfile = ({ navigation }) => {
       showToast("error", error?.message || "Something went wrong");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendLinkPhoneOtp = async (phoneNumber) => {
+    setPhonePromptLoading(true);
+    try {
+      await sendLinkPhoneOtp({ phone_number: phoneNumber });
+      showToast("success", "OTP sent to your mobile number");
+      return true;
+    } catch (error) {
+      return false;
+    } finally {
+      setPhonePromptLoading(false);
+    }
+  };
+
+  const handleVerifyLinkPhone = async (phoneNumber, otp) => {
+    setPhonePromptLoading(true);
+    try {
+      const res = await verifyLinkPhone({
+        phone_number: phoneNumber,
+        otp,
+      });
+      const updated = res?.data || {};
+      await persistUser({
+        ...user,
+        ...updated,
+        phone_number: updated.phone_number || phoneNumber,
+        accessToken: user?.accessToken,
+        token: user?.token || user?.accessToken,
+      });
+      setPhonePromptVisible(false);
+      showToast("success", "Mobile number added");
+    } catch (error) {
+      // apiClient already toasts
+    } finally {
+      setPhonePromptLoading(false);
     }
   };
 
@@ -154,6 +203,7 @@ const EditProfile = ({ navigation }) => {
   };
 
   return (
+    <>
     <ResponsiveContainer>
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
       <View style={[styles.container, { paddingBottom: scrollPadding }]}>
@@ -243,11 +293,23 @@ const EditProfile = ({ navigation }) => {
 
           <CustomInput
             label="Mobile Number"
-            placeholder="Enter mobile number"
-            value={mobileNumber}
+            placeholder={hasPhone ? "Enter mobile number" : "Not added yet"}
+            value={hasPhone ? mobileNumber : ""}
             keyboardType="phone-pad"
             editable={false}
           />
+          {!hasPhone ? (
+            <TouchableOpacity
+              style={styles.addPhoneButton}
+              onPress={() => setPhonePromptVisible(true)}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.addPhoneText}>
+                Add a number so friends can find you
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Save Changes Button */}
@@ -260,6 +322,16 @@ const EditProfile = ({ navigation }) => {
         </View>
       </View>
     </ResponsiveContainer>
+      <SocialPhonePromptModal
+        visible={phonePromptVisible}
+        loading={phonePromptLoading}
+        allowSkip={false}
+        onSendOtp={handleSendLinkPhoneOtp}
+        onVerifyOtp={handleVerifyLinkPhone}
+        onResendOtp={handleSendLinkPhoneOtp}
+        onClose={() => setPhonePromptVisible(false)}
+      />
+    </>
   );
 };
 
@@ -360,6 +432,16 @@ const styles = StyleSheet.create({
   },
   inputsContainer: {
     marginBottom: getVertiPadding(40),
+  },
+  addPhoneButton: {
+    marginTop: getVertiPadding(8),
+    alignSelf: "flex-start",
+  },
+  addPhoneText: {
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.black,
+    textDecorationLine: "underline",
   },
   buttonContainer: {
     position: "absolute",

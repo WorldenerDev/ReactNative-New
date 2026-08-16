@@ -152,11 +152,13 @@ const styles = StyleSheet.create({
     borderRadius: getRadius(12),
     backgroundColor: colors.white,
     paddingHorizontal: getHoriPadding(14),
+    overflow: "hidden",
   },
   countryCodeButton: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: getVertiPadding(8),
+    flexShrink: 0,
   },
   flagText: {
     fontSize: getFontSize(20),
@@ -180,6 +182,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontFamily: fonts.RobotoRegular,
     height: getHeight(52),
+    letterSpacing: 0,
   },
   modalOverlay: {
     flex: 1,

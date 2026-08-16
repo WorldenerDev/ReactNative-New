@@ -102,26 +102,21 @@ const OtpScreen = ({ navigation, route }) => {
       };
       const result = await dispatch(onOtp(sendData));
       console.log("signup Otp Verify result ", result);
-      logAuthToken("OTP verifyOtp", result?.payload?.data ?? result?.payload);
-      if (result?.payload?.success && fromScreen === "signin") {
-        if (result?.payload?.data?.isPreference) {
-          await setItem(STORAGE_KEYS?.USER_DATA, result?.payload?.data);
-          dispatch(setUser(result?.payload?.data));
-        } else if (result?.payload?.success) {
-          await setItem(
-            STORAGE_KEYS?.TOKEN,
-            result?.payload?.data?.accessToken
-          );
-          navigation.navigate(navigationStrings.INTERESTS, {
-            userData: result?.payload?.data,
-          });
-        }
-      } else if (result?.payload?.success) {
-        await setItem(STORAGE_KEYS?.TOKEN, result?.payload?.data?.accessToken);
-        navigation.navigate(navigationStrings.INTERESTS, {
-          userData: result?.payload?.data,
-        });
+      if (onOtp.rejected.match(result) || !result?.payload?.success) {
+        return;
       }
+
+      const userData = result?.payload?.data;
+      logAuthToken("OTP verifyOtp", userData ?? result?.payload);
+
+      if (userData?.isPreference) {
+        await setItem(STORAGE_KEYS?.USER_DATA, userData);
+        dispatch(setUser(userData));
+        return;
+      }
+
+      await setItem(STORAGE_KEYS?.TOKEN, userData?.accessToken);
+      navigation.navigate(navigationStrings.INTERESTS, { userData });
     } catch (error) {
       console.log("Error verifying code:", error);
     }

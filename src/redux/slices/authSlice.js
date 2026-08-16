@@ -83,7 +83,6 @@ export const googleAppleSignIn = createAsyncThunk(
         token: res?.data?.accessToken || res?.accessToken,
         isGuest: false,
       };
-      await setItem(STORAGE_KEYS?.USER_DATA, result);
       return result;
     } catch (err) {
       return rejectWithValue(err.message || "Google Sign-In failed");
@@ -234,14 +233,8 @@ const authSlice = createSlice({
         state.token = action.payload.token;
       },
     });
-    handleAsyncCases(builder, onOtp, {
-      onFulfilled: (state, action) => {
-        const user = action.payload?.data || action.payload?.user || action.payload;
-        state.user = { ...user, isGuest: false };
-        state.token = user?.accessToken || action.payload?.token || null;
-        state.pendingAuthRedirect = false;
-      },
-    });
+    // Do not set user here — OtpScreen sends new users to Interests first.
+    handleAsyncCases(builder, onOtp);
     handleAsyncCases(builder, requestOtp, {
       onFulfilled: (state, action) => {
         state.user = action.payload.user;

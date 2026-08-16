@@ -6,26 +6,35 @@ import {
   googleAppleSignIn,
   setUser,
 } from "@redux/slices/authSlice";
+import {
+  sendLinkPhoneOtp,
+  verifyLinkPhone,
+} from "@api/services/authService";
 import { getDeviceId } from "@utils/uiUtils";
 import { getFCMToken } from "@utils/fcmToken";
 import { logAuthToken } from "@utils/devAuthTokenLog";
-import { removeItem } from "@utils/storage";
+import { removeItem, setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
+import navigationStrings from "@navigation/navigationStrings";
 import {
   buildSocialLoginPayload,
   hasUsableName,
+  hasUsablePhone,
   isSocialLoginPayloadValid,
 } from "@utils/socialLoginPayload";
 
 /**
  * Shared Google/Apple login flow. If the backend user has no name after social
- * auth, prompts for one and re-submits via the existing socialLogin endpoint.
+ * auth, prompts for one. If they have no phone, optionally offer to link one.
  */
-const useSocialLogin = ({ logContext = "Social" } = {}) => {
+const useSocialLogin = ({ logContext = "Social", navigation } = {}) => {
   const dispatch = useDispatch();
   const [namePromptVisible, setNamePromptVisible] = useState(false);
   const [namePromptLoading, setNamePromptLoading] = useState(false);
   const [pendingSocial, setPendingSocial] = useState(null);
+  const [phonePromptVisible, setPhonePromptVisible] = useState(false);
+  const [phonePromptLoading, setPhonePromptLoading] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null);
 
   const finalizeSession = useCallback(
     (loginPayload) => {
@@ -39,12 +48,54 @@ const useSocialLogin = ({ logContext = "Social" } = {}) => {
     [dispatch]
   );
 
+  const completeAuth = useCallback(
+    async (user) => {
+      const userInfo = {
+        ...user,
+        token: user?.accessToken,
+      };
+
+      if (user?.isPreference) {
+        await setItem(STORAGE_KEYS.USER_DATA, userInfo);
+        finalizeSession(userInfo);
+        return;
+      }
+
+      await setItem(STORAGE_KEYS.TOKEN, user?.accessToken);
+      if (navigation?.navigate) {
+        navigation.navigate(navigationStrings.INTERESTS, { userData: userInfo });
+        return;
+      }
+      await setItem(STORAGE_KEYS.USER_DATA, userInfo);
+      finalizeSession(userInfo);
+    },
+    [finalizeSession, navigation]
+  );
+
   const clearPendingSession = useCallback(async () => {
     setNamePromptVisible(false);
     setPendingSocial(null);
+    setPhonePromptVisible(false);
+    setPendingUser(null);
     await removeItem(STORAGE_KEYS.USER_DATA);
     await removeItem(STORAGE_KEYS.TOKEN);
   }, []);
+
+  const continueAfterProfile = useCallback(
+    async (user) => {
+      if (!hasUsablePhone(user?.phone_number)) {
+        const token = user?.accessToken || user?.token;
+        if (token) {
+          await setItem(STORAGE_KEYS.TOKEN, token);
+        }
+        setPendingUser(user);
+        setPhonePromptVisible(true);
+        return;
+      }
+      await completeAuth(user);
+    },
+    [completeAuth]
+  );
 
   const runSocialLogin = useCallback(
     async ({ result, provider, nameOverride, deviceId, fcmToken }) => {
@@ -92,13 +143,13 @@ const useSocialLogin = ({ logContext = "Social" } = {}) => {
           return;
         }
 
-        finalizeSession(user);
+        await continueAfterProfile(user);
       } catch (error) {
         console.error("Social login error:", error);
         showToast("error", error?.message || "Login failed");
       }
     },
-    [finalizeSession, runSocialLogin]
+    [continueAfterProfile, runSocialLogin]
   );
 
   const handleNameSubmit = useCallback(
@@ -120,7 +171,7 @@ const useSocialLogin = ({ logContext = "Social" } = {}) => {
 
         setNamePromptVisible(false);
         setPendingSocial(null);
-        finalizeSession(user);
+        await continueAfterProfile(user);
       } catch (error) {
         console.error("Social name submit error:", error);
         showToast("error", error?.message || "Failed to save name");
@@ -128,7 +179,7 @@ const useSocialLogin = ({ logContext = "Social" } = {}) => {
         setNamePromptLoading(false);
       }
     },
-    [finalizeSession, pendingSocial, runSocialLogin]
+    [continueAfterProfile, pendingSocial, runSocialLogin]
   );
 
   const handleNameCancel = useCallback(async () => {
@@ -136,6 +187,58 @@ const useSocialLogin = ({ logContext = "Social" } = {}) => {
     await clearPendingSession();
     showToast("info", "Sign-in cancelled. Please enter your name to continue.");
   }, [clearPendingSession, namePromptLoading]);
+
+  const handleSendLinkPhoneOtp = useCallback(async (phoneNumber) => {
+    setPhonePromptLoading(true);
+    try {
+      await sendLinkPhoneOtp({ phone_number: phoneNumber });
+      showToast("success", "OTP sent to your mobile number");
+      return true;
+    } catch (error) {
+      return false;
+    } finally {
+      setPhonePromptLoading(false);
+    }
+  }, []);
+
+  const handleVerifyLinkPhone = useCallback(
+    async (phoneNumber, otp) => {
+      if (!pendingUser) return;
+      setPhonePromptLoading(true);
+      try {
+        const res = await verifyLinkPhone({
+          phone_number: phoneNumber,
+          otp,
+        });
+        const updated = res?.data || {};
+        const nextUser = {
+          ...pendingUser,
+          ...updated,
+          phone_number: updated.phone_number || phoneNumber,
+          accessToken: pendingUser.accessToken || updated.accessToken,
+          token: pendingUser.token || pendingUser.accessToken,
+        };
+        setPhonePromptVisible(false);
+        setPendingUser(null);
+        await completeAuth(nextUser);
+      } catch (error) {
+        // apiClient already toasts
+      } finally {
+        setPhonePromptLoading(false);
+      }
+    },
+    [completeAuth, pendingUser]
+  );
+
+  const handleSkipPhone = useCallback(() => {
+    if (phonePromptLoading) return;
+    const user = pendingUser;
+    setPhonePromptVisible(false);
+    setPendingUser(null);
+    if (user) {
+      completeAuth(user);
+    }
+  }, [completeAuth, pendingUser, phonePromptLoading]);
 
   const handleSocialLoginError = useCallback((error) => {
     showToast("error", error?.error || "Social login failed");
@@ -148,6 +251,11 @@ const useSocialLogin = ({ logContext = "Social" } = {}) => {
     namePromptLoading,
     handleNameSubmit,
     handleNameCancel,
+    phonePromptVisible,
+    phonePromptLoading,
+    handleSendLinkPhoneOtp,
+    handleVerifyLinkPhone,
+    handleSkipPhone,
   };
 };
 

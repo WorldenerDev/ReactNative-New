@@ -20,6 +20,7 @@ import { guestLoginUser, loginUser } from "@redux/slices/authSlice";
 import PhoneInput from "@components/PhoneInput";
 import SocialLoginButtons from "@components/SocialLoginButtons";
 import SocialNamePromptModal from "@components/SocialNamePromptModal";
+import SocialPhonePromptModal from "@components/SocialPhonePromptModal";
 import { getDeviceId } from "@utils/uiUtils";
 import { logAuthToken } from "@utils/devAuthTokenLog";
 import { getFCMToken } from "@utils/fcmToken";
@@ -38,7 +39,12 @@ const SignInScreen = ({ navigation }) => {
     namePromptLoading,
     handleNameSubmit,
     handleNameCancel,
-  } = useSocialLogin({ logContext: "SignIn" });
+    phonePromptVisible,
+    phonePromptLoading,
+    handleSendLinkPhoneOtp,
+    handleVerifyLinkPhone,
+    handleSkipPhone,
+  } = useSocialLogin({ logContext: "SignIn", navigation });
 
   const handlePhoneNumberChange = (text) => {
     setData((prev) => ({ ...prev, phoneNumber: text }));
@@ -198,6 +204,15 @@ const SignInScreen = ({ navigation }) => {
         loading={namePromptLoading}
         onSubmit={handleNameSubmit}
         onCancel={handleNameCancel}
+      />
+      <SocialPhonePromptModal
+        visible={phonePromptVisible}
+        loading={phonePromptLoading}
+        allowSkip
+        onSendOtp={handleSendLinkPhoneOtp}
+        onVerifyOtp={handleVerifyLinkPhone}
+        onResendOtp={handleSendLinkPhoneOtp}
+        onSkip={handleSkipPhone}
       />
     </ResponsiveContainer>
   );

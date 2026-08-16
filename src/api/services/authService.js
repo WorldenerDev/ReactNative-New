@@ -12,6 +12,10 @@ export const guestLogin = (data) => apiPost(endpoints?.auth?.guestLogin, data);
 export const logout = () => apiDelete(endpoints?.auth?.logout);
 export const SocialLogin = (data) =>
   apiPost(endpoints?.auth?.socialLogin, data);
+export const sendLinkPhoneOtp = (data) =>
+  apiPost(endpoints?.auth?.sendLinkPhoneOtp, data);
+export const verifyLinkPhone = (data) =>
+  apiPost(endpoints?.auth?.verifyLinkPhone, data);
 export const getCategory = (data) => apiGet(endpoints?.auth?.getCategory);
 export const getProfile = () => apiGet(endpoints?.auth?.getProfile);
 export const SelectCategory = (data) =>

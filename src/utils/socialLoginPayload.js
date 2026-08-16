@@ -22,6 +22,9 @@ export const extractSocialDisplayName = (userData = {}) => {
 export const hasUsableName = (name) =>
   typeof name === "string" && name.trim().length > 0;
 
+export const hasUsablePhone = (phone) =>
+  typeof phone === "string" && phone.trim().length > 0;
+
 export const buildSocialLoginPayload = ({
   provider,
   result,
