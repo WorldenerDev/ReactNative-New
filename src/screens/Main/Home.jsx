@@ -317,6 +317,7 @@ const styles = StyleSheet.create({
     color: colors.lightText,
   },
   filterBtn: {
+    display: "none",
     width: getWidth(32),
     height: getWidth(32),
     borderRadius: getWidth(16),

@@ -80,6 +80,33 @@ export const buildUpdateProfileFormData = ({
   return formData;
 };
 
+export const buildCreateGroupFormData = ({
+  groupName,
+  groupImage,
+  phoneNumbers,
+  message,
+}) => {
+  const formData = new FormData();
+  formData.append("groupName", groupName);
+  if (phoneNumbers?.length) {
+    phoneNumbers.forEach((phone) => formData.append("phoneNumbers[]", phone));
+  }
+  if (message) {
+    formData.append("message", message);
+  }
+  appendFileToFormData(formData, "groupImage", groupImage);
+  return formData;
+};
+
+export const buildUpdateGroupFormData = ({ groupName, groupImage }) => {
+  const formData = new FormData();
+  if (groupName?.trim()) {
+    formData.append("groupName", groupName.trim());
+  }
+  appendFileToFormData(formData, "groupImage", groupImage);
+  return formData;
+};
+
 export const extractProfileImagePath = (response) =>
   response?.data?.image ||
   response?.data?.user?.image ||

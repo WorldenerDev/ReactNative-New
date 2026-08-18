@@ -52,6 +52,7 @@ export const endpoints = {
     getTripBycity: "/getTripBycity",
     getGroups: "/getGroups",
     createGroup: "/createGroup",
+    updateGroup: "/updateGroup",
     getGroupTrips: "/groups",
     tripBrief: "/trips",
     tripOptIn: "/trips",

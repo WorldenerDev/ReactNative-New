@@ -50,13 +50,13 @@ const styles = StyleSheet.create({
     width: getWidth(150),
     marginRight: getWidth(12),
     borderRadius: getRadius(16),
-    overflow: "hidden",
     backgroundColor: colors.white,
   },
   image: {
     width: "100%",
     height: getHeight(110),
     borderRadius: getRadius(16),
+    overflow: "hidden",
   },
   action: {
     position: "absolute",
@@ -77,6 +77,8 @@ const styles = StyleSheet.create({
   },
   body: {
     paddingTop: getHeight(8),
+    paddingHorizontal: getWidth(4),
+    paddingBottom: getHeight(4),
   },
   title: {
     fontSize: getFontSize(14),
@@ -88,5 +90,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoRegular,
     color: colors.lightText,
     marginTop: getHeight(2),
+    flexShrink: 1,
   },
 });

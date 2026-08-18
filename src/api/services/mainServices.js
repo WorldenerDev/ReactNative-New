@@ -72,6 +72,8 @@ export const getTripBycity = (cityId) =>
   apiGet(`${endpoints?.main?.getTripBycity}/${cityId}`);
 export const getGroups = () => apiGet(endpoints?.main?.getGroups);
 export const createGroup = (data) => apiPost(endpoints?.main?.createGroup, data);
+export const updateGroup = (groupId, data) =>
+  apiPost(`${endpoints?.main?.updateGroup}/${groupId}`, data);
 export const getGroupTrips = (groupId, params) =>
   apiGet(`${endpoints?.main?.getGroupTrips}/${groupId}/trips`, params);
 export const getTripBrief = (tripId) =>

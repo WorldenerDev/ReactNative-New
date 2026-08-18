@@ -50,10 +50,11 @@ import CrewTripCard from "@components/crew/CrewTripCard";
 import {
   fetchCrewDetails,
   fetchCrewTrips,
-  fetchGroupChatPreview,
   isReusableGroupsMockEnabled,
   subscribeReusableGroupsMock,
+  updateCrewPhoto,
 } from "@api/services/crewGroupsService";
+import CrewPhotoPicker from "@components/crew/CrewPhotoPicker";
 
 // Dummy image URL for users without images
 const DUMMY_USER_IMAGE =
@@ -95,10 +96,21 @@ const GroupDetails = () => {
   );
   const [crewTrips, setCrewTrips] = useState([]);
   const [tripSegment, setTripSegment] = useState("active");
-  const [chatPreview, setChatPreview] = useState(null);
   const [compareUser, setCompareUser] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [photoUpdating, setPhotoUpdating] = useState(false);
+  const [pendingAvatarUri, setPendingAvatarUri] = useState(null);
+
+  const currentUserId = useMemo(
+    () => normalizeUserId(user?._id || user?.id),
+    [user?._id, user?.id]
+  );
+
+  const isGroupCreator = useMemo(() => {
+    if (!groupData) return false;
+    return normalizeUserId(groupData.createdBy?._id || groupData.createdBy) === currentUserId;
+  }, [groupData, currentUserId]);
 
   const memberCount = useMemo(() => {
     if (!groupData) return 0;
@@ -113,12 +125,44 @@ const GroupDetails = () => {
   }, [groupData]);
 
   const crewAvatarUri = useMemo(() => {
+    if (pendingAvatarUri) return pendingAvatarUri;
     const fallback =
       "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop";
     if (!groupData) return fallback;
     const fromGroup = getImageUrl(groupData.groupImage);
     return fromGroup || groupData.groupImage || fallback;
-  }, [groupData]);
+  }, [groupData, pendingAvatarUri]);
+
+  const handleCrewPhotoChange = async (image) => {
+    if (!groupId || !image?.uri) {
+      return;
+    }
+
+    setPendingAvatarUri(image.uri);
+
+    try {
+      setPhotoUpdating(true);
+      const response = await updateCrewPhoto(groupId, { groupImage: image });
+      if (response?.success) {
+        const updatedImage =
+          response?.data?.groupImage || response?.data?.data?.groupImage;
+        setGroupData((prev) =>
+          prev ? { ...prev, groupImage: updatedImage || prev.groupImage } : prev
+        );
+        setPendingAvatarUri(null);
+        showToast("success", "Crew photo updated");
+      } else {
+        setPendingAvatarUri(null);
+        showToast("error", response?.message || "Failed to update crew photo");
+      }
+    } catch (error) {
+      console.error("Error updating crew photo:", error);
+      setPendingAvatarUri(null);
+      showToast("error", error?.message || "Failed to update crew photo");
+    } finally {
+      setPhotoUpdating(false);
+    }
+  };
 
   // Always show selection list when switching to Compare tab
   useEffect(() => {
@@ -261,15 +305,6 @@ const GroupDetails = () => {
     };
 
     fetchGroupDetails();
-  }, [groupId]);
-
-  useEffect(() => {
-    const loadChatPreview = async () => {
-      if (!groupId) return;
-      const res = await fetchGroupChatPreview(groupId);
-      setChatPreview(res?.data?.preview || null);
-    };
-    loadChatPreview();
   }, [groupId]);
 
   useEffect(() => {
@@ -1036,7 +1071,7 @@ const GroupDetails = () => {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[
         styles.tripsContainer,
-        { paddingBottom: scrollPadding + getHeight(100) },
+        { paddingBottom: scrollPadding + getHeight(72) },
       ]}
     >
       <View style={styles.tripsToolbar}>
@@ -1090,7 +1125,7 @@ const GroupDetails = () => {
   );
 
   return (
-    <MainContainer>
+    <MainContainer loader={photoUpdating}>
       <View style={styles.crewHeader}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -1103,10 +1138,13 @@ const GroupDetails = () => {
             style={styles.crewHeaderBackIcon}
           />
         </TouchableOpacity>
-        <OptimizedImage
-          source={{ uri: crewAvatarUri }}
-          style={styles.crewHeaderAvatar}
-          resizeMode="cover"
+        <CrewPhotoPicker
+          variant="avatar"
+          imageUri={crewAvatarUri}
+          onImageSelected={handleCrewPhotoChange}
+          disabled={!isGroupCreator || photoUpdating || loading}
+          showCameraBadge={isGroupCreator}
+          imageStyle={styles.crewHeaderAvatar}
         />
         <View style={styles.crewHeaderText}>
           <Text style={styles.crewHeaderName} numberOfLines={1}>
@@ -1142,32 +1180,15 @@ const GroupDetails = () => {
           activeTab === "Trips" ||
           (!mockEnabled &&
             (activeTab === "Compare" || activeTab === "Wishlisted"))) && (
-          <View style={[styles.fixedChatContainer, { bottom: bottomInset }]}>
-            <TouchableOpacity
-              style={styles.chatBar}
-              onPress={handleChat}
-              activeOpacity={0.85}
-            >
-              <View style={styles.chatBarIconWrap}>
-                <Image source={icons.CHAT_ICON} style={styles.chatBarIcon} />
-              </View>
-              <View style={styles.chatBarText}>
-                <Text style={styles.chatBarTitle}>Group Chat</Text>
-                {chatPreview ? (
-                  <Text style={styles.chatBarPreview} numberOfLines={1}>
-                    {chatPreview}
-                  </Text>
-                ) : null}
-              </View>
-              <View style={styles.chatBarChevronWrap}>
-                <Image
-                  source={icons.RIGHT_ICON}
-                  style={styles.chatBarChevron}
-                  resizeMode="contain"
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.chatFab, { bottom: bottomInset }]}
+            onPress={handleChat}
+            activeOpacity={0.85}
+            accessibilityLabel="Group Chat"
+            accessibilityRole="button"
+          >
+            <Image source={icons.CHAT_ICON} style={styles.chatFabIcon} />
+          </TouchableOpacity>
         )}
 
       {/* Liked By Modal */}
@@ -1413,11 +1434,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
   },
-  fixedChatContainer: {
+  chatFab: {
     position: "absolute",
-    left: getHoriPadding(16),
     right: getHoriPadding(16),
     zIndex: 10,
+    width: getWidth(52),
+    height: getWidth(52),
+    borderRadius: getWidth(26),
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatFabIcon: {
+    width: getWidth(16),
+    height: getWidth(16),
+    resizeMode: "contain",
+    tintColor: colors.black,
   },
   wishContainer: {
     flex: 1,
@@ -1809,55 +1841,5 @@ const styles = StyleSheet.create({
     fontSize: getFontSize(13),
     fontFamily: fonts.RobotoRegular,
     color: colors.lightText,
-  },
-  chatBar: {
-    backgroundColor: colors.secondary,
-    borderRadius: getRadius(16),
-    paddingVertical: getVertiPadding(14),
-    paddingHorizontal: getHoriPadding(16),
-    flexDirection: "row",
-    alignItems: "center",
-    gap: getWidth(12),
-    overflow: "visible",
-  },
-  chatBarIconWrap: {
-    width: getWidth(40),
-    height: getWidth(40),
-    borderRadius: getRadius(12),
-    backgroundColor: "rgba(255,255,255,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  chatBarIcon: {
-    width: getWidth(22),
-    height: getWidth(22),
-  },
-  chatBarText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  chatBarTitle: {
-    fontSize: getFontSize(15),
-    fontFamily: fonts.RobotoBold,
-    color: colors.black,
-  },
-  chatBarPreview: {
-    marginTop: getHeight(2),
-    fontSize: getFontSize(12),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
-  },
-  chatBarChevronWrap: {
-    width: getWidth(32),
-    height: getHeight(32),
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  chatBarChevron: {
-    width: getWidth(20),
-    height: getHeight(20),
-    resizeMode: "contain",
   },
 });

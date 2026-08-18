@@ -75,15 +75,6 @@ const AiChat = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasBotResponse, setHasBotResponse] = useState(false);
   const [tripTitle, setTripTitle] = useState("Trip");
-  const [activeConversationId, setActiveConversationId] = useState(
-    conversation_id || null
-  );
-
-  useEffect(() => {
-    if (conversation_id) {
-      setActiveConversationId(conversation_id);
-    }
-  }, [conversation_id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -134,9 +125,14 @@ const AiChat = ({ navigation }) => {
         historyItems.forEach((item, index) => {
           const isUserRole = item?.role === "user";
           const baseUser = isUserRole ? currentUser : BOT_USER;
+          const payloadReply =
+            typeof item?.payload?.reply === "string" ? item.payload.reply : "";
           const messageText = isUserRole
             ? item?.message
-            : item?.message || "Recommendations generated";
+            : payloadReply ||
+              (item?.message && item.message !== "Recommendations generated"
+                ? item.message
+                : "");
 
           if (messageText) {
             mappedMessages.push(
@@ -206,7 +202,7 @@ const AiChat = ({ navigation }) => {
 
   const onSend = useCallback(async () => {
     const prompt = text.trim();
-    if (!prompt || isLoading) return;
+    if (!prompt || isLoading || hasBotResponse) return;
 
     if (!tripId) {
       showToast(
@@ -230,29 +226,36 @@ const AiChat = ({ navigation }) => {
       const response = await chatbot({
         prompt,
         trip_id: tripId,
-        ...(activeConversationId && { conversation_id: activeConversationId }),
       });
-
-      if (response?.conversation_id) {
-        setActiveConversationId(response.conversation_id);
-      }
 
       const activities =
         response?.activities?.data || response?.data?.activities?.data || [];
+      const replyText =
+        typeof response?.reply === "string" ? response.reply.trim() : "";
       const firstBatch = activities.slice(0, 5);
       const activityMessages = firstBatch.map((item, index) =>
         createActivityMessage(item, index + 1)
       );
+      const replyMessages = replyText
+        ? [
+            createTextMessage({
+              id: `ai-reply-${Date.now()}`,
+              text: replyText,
+              user: BOT_USER,
+            }),
+          ]
+        : [];
       const nextMessages =
         activityMessages.length > 0
-          ? activityMessages
+          ? [...activityMessages, ...replyMessages]
           : [
               {
                 _id: `ai-empty-${Date.now()}`,
-                text: "No activities found for your query.",
+                text: "No activities found for your query. Start a new chat to search again.",
                 createdAt: new Date(),
                 user: BOT_USER,
               },
+              ...replyMessages,
             ];
       setMessages((prev) => GiftedChat.append(prev, nextMessages));
       setAllActivities(activities);
@@ -272,7 +275,7 @@ const AiChat = ({ navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [text, tripId, isLoading, currentUser, activeConversationId]);
+  }, [text, tripId, isLoading, hasBotResponse, currentUser]);
 
   const handleLoadMore = useCallback(() => {
     if (visibleActivities >= allActivities.length) return;
@@ -287,8 +290,10 @@ const AiChat = ({ navigation }) => {
     setVisibleActivities((prev) => prev + nextSlice.length);
   }, [allActivities, visibleActivities]);
 
+  const composerLocked = hasBotResponse || Boolean(fromHistoryList);
+
   const renderSend = () => {
-    const hasText = text.trim().length > 0 && !isLoading;
+    const hasText = text.trim().length > 0 && !isLoading && !composerLocked;
     return (
       <TouchableOpacity
         style={[styles.sendButton, !hasText && styles.sendButtonDisabled]}
@@ -308,15 +313,19 @@ const AiChat = ({ navigation }) => {
     <View style={styles.inputToolbar}>
       <View style={styles.inputContainer}>
         <TextInput
-          style={styles.input}
-          placeholder="Type you message"
+          style={[styles.input, composerLocked && styles.inputLocked]}
+          placeholder={
+            composerLocked
+              ? "Start a new chat for a new search"
+              : "Type your message"
+          }
           placeholderTextColor="#999"
-          value={text}
+          value={composerLocked ? "" : text}
           onChangeText={setText}
           multiline
-          editable={!isLoading}
+          editable={!isLoading && !composerLocked}
         />
-        {renderSend()}
+        {composerLocked ? null : renderSend()}
       </View>
     </View>
   );
@@ -546,6 +555,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#000",
     borderWidth: 0,
+  },
+  inputLocked: {
+    opacity: 0.7,
   },
   sendButton: {
     width: 40,

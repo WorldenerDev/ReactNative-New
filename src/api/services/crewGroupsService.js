@@ -1,5 +1,9 @@
 import { REUSABLE_GROUPS_MOCK_ENABLED } from "@config/reusableGroupsMock";
 import {
+  buildCreateGroupFormData,
+  buildUpdateGroupFormData,
+} from "@utils/formDataHelper";
+import {
   mockGetCrews,
   mockGetCrewDetails,
   mockGetCrewTrips,
@@ -9,6 +13,7 @@ import {
   mockOptIn,
   mockOptOut,
   mockCreateGroup,
+  mockUpdateGroupPhoto,
   mockCreateTripInGroup,
   mockCreateSoloTrip,
   mockGetNotifications,
@@ -23,6 +28,7 @@ import {
   getTripDetails,
   createTrip,
   createGroup,
+  updateGroup,
   getGroupTrips,
   getTripBrief,
   optInToTripApi,
@@ -88,12 +94,52 @@ export const optOutOfTrip = async (canonicalTripId) => {
 
 export const createCrew = async (payload) => {
   if (REUSABLE_GROUPS_MOCK_ENABLED) return mockCreateGroup(payload);
+
+  const hasImageFile =
+    payload?.groupImage &&
+    typeof payload.groupImage === "object" &&
+    payload.groupImage.uri;
+
+  if (hasImageFile) {
+    return createGroup(
+      buildCreateGroupFormData({
+        groupName: payload.groupName || payload.name,
+        groupImage: payload.groupImage,
+        phoneNumbers: payload.phoneNumbers || [],
+        message: payload.message,
+      })
+    );
+  }
+
   return createGroup({
     groupName: payload.groupName || payload.name,
     groupImage: payload.groupImage || "",
     phoneNumbers: payload.phoneNumbers || [],
     message: payload.message,
   });
+};
+
+export const updateCrewPhoto = async (groupId, payload) => {
+  if (REUSABLE_GROUPS_MOCK_ENABLED) {
+    return mockUpdateGroupPhoto(groupId, payload);
+  }
+
+  const hasImageFile =
+    payload?.groupImage &&
+    typeof payload.groupImage === "object" &&
+    payload.groupImage.uri;
+
+  if (!hasImageFile) {
+    throw new Error("Please select a photo to upload");
+  }
+
+  return updateGroup(
+    groupId,
+    buildUpdateGroupFormData({
+      groupName: payload.groupName,
+      groupImage: payload.groupImage,
+    })
+  );
 };
 
 export const createTripForCrew = async (payload) => {

@@ -11,6 +11,7 @@ import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
 import ButtonComp from "@components/ButtonComp";
+import CrewPhotoPicker from "@components/crew/CrewPhotoPicker";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
 import { getHeight, getWidth } from "@utils/responsive";
@@ -21,6 +22,7 @@ import { resetToGroupDetails } from "@navigation/helpers/nestedTabNavigation";
 const CreateGroup = ({ navigation }) => {
   useGuestScreenGuard();
   const [groupName, setGroupName] = useState("");
+  const [groupImage, setGroupImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
@@ -32,7 +34,10 @@ const CreateGroup = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const response = await createCrew({ groupName: name });
+      const response = await createCrew({
+        groupName: name,
+        ...(groupImage ? { groupImage } : {}),
+      });
       const groupId =
         response?.data?._id ||
         response?.data?.id ||
@@ -70,9 +75,11 @@ const CreateGroup = ({ navigation }) => {
         />
       </View>
 
-      <View style={styles.photoPlaceholder}>
-        <Text style={styles.photoText}>Add photo (optional)</Text>
-      </View>
+      <CrewPhotoPicker
+        imageUri={groupImage?.uri}
+        onImageSelected={setGroupImage}
+        containerStyle={styles.photoPicker}
+      />
 
       <TouchableOpacity style={styles.inviteHint} activeOpacity={0.7}>
         <Text style={styles.inviteText}>Invite members after creating →</Text>
@@ -109,20 +116,8 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontFamily: fonts.RobotoRegular,
   },
-  photoPlaceholder: {
-    height: getHeight(120),
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
+  photoPicker: {
     marginBottom: getHeight(24),
-  },
-  photoText: {
-    fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
-    fontSize: getHeight(14),
   },
   inviteHint: {
     marginBottom: getHeight(32),

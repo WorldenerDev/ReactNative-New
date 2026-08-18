@@ -238,13 +238,13 @@ export const mockOptOut = async (canonicalTripId) => {
   return { success: true };
 };
 
-export const mockCreateGroup = async ({ groupName }) => {
+export const mockCreateGroup = async ({ groupName, groupImage }) => {
   await delay();
   const id = `crew-${Date.now()}`;
   const group = {
     _id: id,
     groupName: groupName || "New Crew",
-    groupImage: null,
+    groupImage: groupImage?.uri || groupImage || null,
     createdBy: { _id: MOCK_CURRENT_USER_ID, name: "You", image: "" },
     addedUsers: [],
     activeTripCount: 0,
@@ -253,6 +253,27 @@ export const mockCreateGroup = async ({ groupName }) => {
   state.groups.unshift(group);
   notify();
   return { success: true, data: group };
+};
+
+export const mockUpdateGroupPhoto = async (groupId, { groupImage }) => {
+  await delay();
+  const group = state.groups.find((g) => g._id === groupId);
+  if (!group) {
+    return { success: false, message: "Group not found" };
+  }
+
+  group.groupImage = groupImage?.uri || groupImage || group.groupImage;
+  notify();
+  return {
+    success: true,
+    data: {
+      _id: group._id,
+      groupName: group.groupName,
+      groupImage: group.groupImage,
+      createdBy: group.createdBy,
+      addedUsers: group.addedUsers,
+    },
+  };
 };
 
 export const mockCreateTripInGroup = async ({

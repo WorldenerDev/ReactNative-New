@@ -618,7 +618,7 @@ const Chat = ({ navigation, route }) => {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Type you message"
+          placeholder="Type your message"
           placeholderTextColor="#999"
           value={text}
           onChangeText={handleTextChange}
@@ -865,8 +865,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     // paddingHorizontal: 10,
     paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopWidth: 0,
     borderBottomWidth: 0,
   },
   inputContainer: { flexDirection: "row", alignItems: "center", gap: 8 },
