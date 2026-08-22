@@ -23,8 +23,71 @@ import useStickyBottomInset, {
 } from "@hooks/useStickyBottomInset";
 import Contacts from "react-native-contacts";
 import { sendInvitation } from "@api/services/mainServices";
+import { fetchCrewDetails } from "@api/services/crewGroupsService";
 import { showToast } from "@components/AppToast";
 
+const normalizePhone = (phone) => {
+  if (!phone) return "";
+  let normalized = String(phone).replace(/\D/g, "");
+  if (normalized.length > 10 && normalized.startsWith("1")) {
+    normalized = normalized.substring(1);
+  }
+  return normalized;
+};
+
+const extractPhone = (buddy) => {
+  if (typeof buddy === "string") return buddy;
+  return (
+    buddy?.phone_number ||
+    buddy?.phone ||
+    buddy?.phoneNumber ||
+    buddy?.mobile ||
+    buddy?.contact ||
+    ""
+  );
+};
+
+const extractUserId = (user) => {
+  if (!user || typeof user === "string") return user ? String(user) : "";
+  const id = user._id || user.id;
+  return id ? String(id) : "";
+};
+
+const phoneVariants = (phone) => {
+  const normalized = normalizePhone(phone);
+  if (!normalized) return [];
+  const variants = [normalized];
+  if (normalized.length === 10) variants.push(`1${normalized}`);
+  if (normalized.length === 11 && normalized.startsWith("1")) {
+    variants.push(normalized.substring(1));
+  }
+  return variants;
+};
+
+const buildMemberLookup = (group) => {
+  const ids = new Set();
+  const phones = new Set();
+  const members = [group?.createdBy, ...(group?.addedUsers || [])].filter(
+    Boolean
+  );
+  members.forEach((member) => {
+    const id = extractUserId(member);
+    if (id) ids.add(id);
+    phoneVariants(extractPhone(member)).forEach((value) => phones.add(value));
+  });
+  return { ids, phones };
+};
+
+const isAlreadyJoined = (buddyOrPhone, memberLookup) => {
+  if (!memberLookup) return false;
+  const id = extractUserId(
+    typeof buddyOrPhone === "object" && buddyOrPhone ? buddyOrPhone : null
+  );
+  if (id && memberLookup.ids.has(id)) return true;
+  return phoneVariants(extractPhone(buddyOrPhone)).some((value) =>
+    memberLookup.phones.has(value)
+  );
+};
 
 const AddToTrip = ({ navigation, route }) => {
   useGuestScreenGuard();
@@ -42,24 +105,23 @@ const AddToTrip = ({ navigation, route }) => {
   // Initialize data from API response
   useEffect(() => {
     const initializeData = async () => {
+      let memberLookup = { ids: new Set(), phones: new Set() };
+      if (groupId) {
+        try {
+          const crewRes = await fetchCrewDetails(groupId);
+          if (crewRes?.success && crewRes?.data) {
+            memberLookup = buildMemberLookup(crewRes.data);
+          }
+        } catch (crewError) {
+          console.error("Error fetching crew members:", crewError);
+        }
+      }
+
       try {
         // Step 1: Get all device contacts to create a phone number -> name mapping
         // This allows us to display contact names instead of just phone numbers
         const contacts = await Contacts.getAll();
         const phoneToNameMap = {};
-
-        // Helper function to normalize phone numbers for matching
-        const normalizePhone = (phone) => {
-          if (!phone) return "";
-          // Remove all non-digit characters except keep digits only
-          let normalized = phone.replace(/\D/g, "");
-          // Remove leading country codes for better matching (US: 1, others vary)
-          // Keep last 10 digits for US numbers, or full number if less than 10 digits
-          if (normalized.length > 10 && normalized.startsWith("1")) {
-            normalized = normalized.substring(1); // Remove US country code
-          }
-          return normalized;
-        };
 
         // Build phone-to-name mapping from device contacts
         contacts.forEach((contact) => {
@@ -91,13 +153,6 @@ const AddToTrip = ({ navigation, route }) => {
 
         // Step 2: Process API response data
         // The API returns phone numbers, we match them with device contacts to get names
-        // Helper function to extract phone number from buddy object
-        const extractPhone = (buddy) => {
-          if (typeof buddy === "string") return buddy;
-          return buddy?.phone_number || buddy?.phone || buddy?.phoneNumber || buddy?.mobile || buddy?.contact || "";
-        };
-
-        // Process yourBuddies - filter out nulls and invalid entries
         const yourBuddies = (apiResponse?.yourBuddies || [])
           .filter((buddy) => buddy !== null && buddy !== undefined)
           .map((buddy, index) => {
@@ -121,6 +176,7 @@ const AddToTrip = ({ navigation, route }) => {
               name: name,
               phone: phone,
               isAdded: false,
+              isJoined: isAlreadyJoined(buddy, memberLookup),
               type: "buddy",
             };
           })
@@ -140,6 +196,7 @@ const AddToTrip = ({ navigation, route }) => {
               name: name,
               phone: phone,
               isInvited: false,
+              isJoined: isAlreadyJoined(phone, memberLookup),
               type: "contact",
             };
           });
@@ -147,12 +204,6 @@ const AddToTrip = ({ navigation, route }) => {
         setAllData([...yourBuddies, ...fromYourContacts]);
       } catch (error) {
         console.error("Error initializing data:", error);
-        // Fallback: use API data directly without contact names
-        const extractPhone = (buddy) => {
-          if (typeof buddy === "string") return buddy;
-          return buddy?.phone_number || buddy?.phone || buddy?.phoneNumber || buddy?.mobile || buddy?.contact || "";
-        };
-
         const yourBuddies = (apiResponse?.yourBuddies || [])
           .filter((buddy) => buddy !== null && buddy !== undefined)
           .map((buddy, index) => {
@@ -162,6 +213,7 @@ const AddToTrip = ({ navigation, route }) => {
               name: buddy?.name || buddy?.userName || buddy?.username || phone || "Unknown",
               phone: phone,
               isAdded: false,
+              isJoined: isAlreadyJoined(buddy, memberLookup),
               type: "buddy",
             };
           })
@@ -174,6 +226,7 @@ const AddToTrip = ({ navigation, route }) => {
             name: phone,
             phone: phone,
             isInvited: false,
+            isJoined: isAlreadyJoined(phone, memberLookup),
             type: "contact",
           }));
 
@@ -182,7 +235,7 @@ const AddToTrip = ({ navigation, route }) => {
     };
 
     initializeData();
-  }, [apiResponse]);
+  }, [apiResponse, groupId]);
 
   // Filter data based on search query
   const filteredData = useMemo(() => {
@@ -200,7 +253,7 @@ const AddToTrip = ({ navigation, route }) => {
 
   const handleToggleItem = (id) => {
     const item = allData.find((i) => i.id === id);
-    if (!item) return;
+    if (!item || item.isJoined) return;
 
     // For buddies, just toggle the state
     if (item.type === "buddy") {
@@ -227,10 +280,10 @@ const AddToTrip = ({ navigation, route }) => {
 
   // Get selected buddies and invited contacts
   const selectedBuddies = allData.filter(
-    (item) => item.type === "buddy" && item.isAdded
+    (item) => item.type === "buddy" && item.isAdded && !item.isJoined
   );
   const invitedContacts = allData.filter(
-    (item) => item.type === "contact" && item.isInvited
+    (item) => item.type === "contact" && item.isInvited && !item.isJoined
   );
 
   const hasSelections = selectedBuddies.length > 0 || invitedContacts.length > 0;
@@ -266,7 +319,7 @@ const AddToTrip = ({ navigation, route }) => {
           name: name,
           phoneNumbers: allSelectedPhones,
           groupId: groupId,
-          message: "Hello",
+          message: "",
         });
 
         if (response?.success || response?.data) {
@@ -336,9 +389,16 @@ const AddToTrip = ({ navigation, route }) => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleToggleItem(item.id)}
-            disabled={isSendingInvitations}
+            disabled={isSendingInvitations || item.isJoined}
           >
-            {item.type === "buddy" ? (
+            {item.isJoined ? (
+              <View style={styles.statusContainer}>
+                <View style={styles.checkIcon}>
+                  <Text style={styles.checkMark}>✓</Text>
+                </View>
+                <Text style={styles.statusText}>Joined</Text>
+              </View>
+            ) : item.type === "buddy" ? (
               item.isAdded ? (
                 <View style={styles.statusContainer}>
                   <View style={styles.checkIcon}>

@@ -1,4 +1,4 @@
-import { checkoutTrip, getTripBuddies } from "@api/services/mainServices";
+import { checkoutTrip } from "@api/services/mainServices";
 import {
   fetchTripDetailsWithMock,
   optInToTrip,
@@ -13,7 +13,6 @@ import { showToast } from "@components/AppToast";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import OptimizedImage from "@components/OptimizedImage";
-import usePermissions from "@hooks/usePermissions";
 import navigationStrings from "@navigation/navigationStrings";
 import {
   getHeight,
@@ -38,7 +37,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Contacts from "react-native-contacts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const CHECKOUT_BUTTON_HEIGHT = 16;
@@ -56,7 +54,6 @@ const TripDetails = ({ navigation, route }) => {
   const detailTabs = isCrewTrip
     ? ["Itinerary", "Compare", "Wishlist"]
     : ["Itinerary", "My Wishlist"];
-  const { requestContactsPermission } = usePermissions();
   const insets = useSafeAreaInsets();
   const scrollContentBottomPadding =
     insets.bottom + getHeight(BOTTOM_MARGIN) + CHECKOUT_BUTTON_HEIGHT + getHeight(EXTRA_SCROLL_PADDING);
@@ -155,55 +152,6 @@ const TripDetails = ({ navigation, route }) => {
       });
     } else {
       showToast("error", "City information not available");
-    }
-  };
-
-  const handleInviteParticipants = async () => {
-    if (!tripData?.groupId) {
-      showToast("error", "Group ID not found");
-      return;
-    }
-
-    try {
-      const permissionGranted = await requestContactsPermission();
-      if (permissionGranted) {
-        // Fetch contacts after permission is granted
-        try {
-          const contacts = await Contacts.getAll();
-          const phoneNumbers = contacts
-            .flatMap((contact) => contact.phoneNumbers || [])
-            .map((phone) => phone.number)
-            .filter((phone) => phone && phone.trim() !== "") // Filter out empty phone numbers
-            .map((phone) => phone.replace(/[()\s-]/g, "")); // Remove parentheses, spaces, and dashes (preserves + sign)
-
-          if (phoneNumbers.length > 0) {
-            try {
-              setLoading(true);
-              const response = await getTripBuddies({
-                contacts: phoneNumbers,
-              });
-              const cityName = tripData?.city?.name || tripData?.destination || "Trip";
-              navigation.navigate(navigationStrings.ADD_TO_TRIP, {
-                name: cityName,
-                groupId: tripData.groupId,
-                selectedBuddyPhones: response?.data,
-              });
-            } catch (apiError) {
-              console.error("Error calling getTripBuddies:", apiError);
-              showToast("error", apiError?.message || "Failed to fetch trip buddies");
-            } finally {
-              setLoading(false);
-            }
-          }
-        } catch (contactsError) {
-          console.error("Error fetching contacts:", contactsError);
-        }
-      } else {
-        showToast("error", "Contacts permission is required to add participants");
-      }
-    } catch (error) {
-      console.error("Error requesting contacts permission:", error);
-      showToast("error", "Failed to request contacts permission");
     }
   };
 
@@ -537,14 +485,6 @@ const TripDetails = ({ navigation, route }) => {
             ) : (
               <View style={styles.buttonsContainer}>
                 <TouchableOpacity
-                  style={styles.inviteButton}
-                  onPress={handleInviteParticipants}
-                >
-                  <Text style={styles.inviteButtonText}>
-                    Invite Participants
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
                   style={styles.exploreMoreButton}
                   onPress={handleExploreMore}
                 >
@@ -789,19 +729,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: getWidth(8),
     width: "100%",
-  },
-  inviteButton: {
-    flex: 1,
-    backgroundColor: colors.secondary,
-    paddingHorizontal: getWidth(16),
-    paddingVertical: getHeight(10),
-    borderRadius: getRadius(6),
-    alignItems: "center",
-  },
-  inviteButtonText: {
-    fontSize: getHeight(12),
-    fontFamily: fonts.RobotoMedium,
-    color: colors.black,
   },
   exploreMoreButton: {
     flex: 1,
