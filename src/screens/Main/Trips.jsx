@@ -2,16 +2,16 @@ import {
   StyleSheet,
   Text,
   View,
-  FlatList,
+  SectionList,
   Alert,
   RefreshControl,
 } from "react-native";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TripCard from "@components/TripCard";
-import { getHeight, getWidth } from "@utils/responsive";
+import { getFontSize, getHeight, getWidth } from "@utils/responsive";
 import { typography } from "@utils/theme";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
@@ -22,7 +22,7 @@ import { useDispatch } from "react-redux";
 import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import GuestPrompt from "@components/GuestPrompt";
 import useAuth from "@hooks/useAuth";
-import { canDeleteTrip } from "@utils/tripHelpers";
+import { canDeleteTrip, isTripPast, getTripImage } from "@utils/tripHelpers";
 import {
   fetchMyTripsWithMock,
   isReusableGroupsMockEnabled,
@@ -30,6 +30,7 @@ import {
   subscribeReusableGroupsMock,
 } from "@api/services/crewGroupsService";
 import { showToast } from "@components/AppToast";
+import { getImageUrl } from "@api/apiClient";
 
 const Trips = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
@@ -145,7 +146,76 @@ const Trips = ({ navigation }) => {
     return { members, activities };
   };
 
-  const displayTrips = tripList;
+  const tripSections = useMemo(() => {
+    const upcoming = [];
+    const past = [];
+    for (const trip of tripList) {
+      if (isTripPast(trip)) past.push(trip);
+      else upcoming.push(trip);
+    }
+    const sections = [];
+    if (upcoming.length) sections.push({ title: "Upcoming", data: upcoming });
+    if (past.length) sections.push({ title: "Past", data: past });
+    return sections;
+  }, [tripList]);
+
+  const renderTrip = ({ item }) => {
+    const { members, activities } = getTripMeta(item);
+    const isOptedOut = item?.participationStatus === "opted_out";
+    const past = isTripPast(item);
+
+    return (
+      <TripCard
+        image={getImageUrl(getTripImage(item)) || getTripImage(item)}
+        city={item?.name || item?.city?.name}
+        startDate={item?.start_at}
+        endDate={item?.end_at}
+        memberCount={members}
+        activityCount={activities}
+        groupName={item?.groupName}
+        participationStatus={item?.participationStatus}
+        dimmed={isOptedOut}
+        isPast={past}
+        showCrewButton
+        secondaryLabel={item?.groupId ? "Crew" : "My Wishlist"}
+        onItineraryPress={() =>
+          navigation.navigate(navigationStrings.TRIP_DETAILS, {
+            tripId: item?._id,
+            trip: item,
+          })
+        }
+        onGroupPress={() => {
+          if (item?.groupId) {
+            navigation.navigate(navigationStrings.GROUP_DETAILS, {
+              groupId: item?.groupId,
+              tripId: item?._id,
+            });
+            return;
+          }
+          navigation.navigate(navigationStrings.TRIP_DETAILS, {
+            tripId: item?._id,
+            trip: item,
+            initialTab: "My Wishlist",
+          });
+        }}
+        onRejoinPress={
+          isOptedOut ? () => handleRejoin(item) : undefined
+        }
+        onDeletePress={
+          canDeleteTrip(item, user?._id || user?.id)
+            ? () => handleDelete(item._id)
+            : undefined
+        }
+        onPressCard={() => {
+          if (isOptedOut) return;
+          navigation.navigate(navigationStrings.TRIP_DETAILS, {
+            tripId: item?._id,
+            trip: item,
+          });
+        }}
+      />
+    );
+  };
 
   if (isGuest) {
     return (
@@ -168,71 +238,19 @@ const Trips = ({ navigation }) => {
         onRightIconPress={handleAddTrip}
       />
 
-      <FlatList
-        data={displayTrips}
-        renderItem={({ item }) => {
-          const { members, activities } = getTripMeta(item);
-          const isOptedOut = item?.participationStatus === "opted_out";
-
-          return (
-            <TripCard
-              image={item?.city?.image}
-              city={item?.name || item?.city?.name}
-              startDate={item?.start_at}
-              endDate={item?.end_at}
-              memberCount={members}
-              activityCount={activities}
-              groupName={item?.groupName}
-              participationStatus={item?.participationStatus}
-              dimmed={isOptedOut}
-              showCrewButton
-              secondaryLabel={item?.groupId ? "Crew" : "My Wishlist"}
-              onItineraryPress={() =>
-                navigation.navigate(navigationStrings.TRIP_DETAILS, {
-                  tripId: item?._id,
-                  trip: item,
-                })
-              }
-              onGroupPress={() => {
-                if (item?.groupId) {
-                  navigation.navigate(navigationStrings.GROUP_DETAILS, {
-                    groupId: item?.groupId,
-                    tripId: item?._id,
-                  });
-                  return;
-                }
-                navigation.navigate(navigationStrings.TRIP_DETAILS, {
-                  tripId: item?._id,
-                  trip: item,
-                  initialTab: "My Wishlist",
-                });
-              }}
-              onRejoinPress={
-                isOptedOut
-                  ? () => handleRejoin(item)
-                  : undefined
-              }
-              onDeletePress={
-                canDeleteTrip(item, user?._id || user?.id)
-                  ? () => handleDelete(item._id)
-                  : undefined
-              }
-              onPressCard={() => {
-                if (isOptedOut) return;
-                navigation.navigate(navigationStrings.TRIP_DETAILS, {
-                  tripId: item?._id,
-                  trip: item,
-                });
-              }}
-            />
-          );
-        }}
+      <SectionList
+        sections={tripSections}
+        renderItem={renderTrip}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.sectionTitle}>{title}</Text>
+        )}
         keyExtractor={(item) => item?._id.toString()}
         contentContainerStyle={[
           styles.flatListContent,
           { paddingBottom: scrollPadding },
         ]}
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -262,6 +280,13 @@ const styles = StyleSheet.create({
   flatListContent: {
     paddingTop: getHeight(4),
     paddingBottom: getHeight(16),
+  },
+  sectionTitle: {
+    fontSize: getFontSize(16),
+    fontFamily: fonts.RobotoBold,
+    color: colors.black,
+    marginTop: getHeight(8),
+    marginBottom: getHeight(10),
   },
   emptyContainer: {
     flex: 1,

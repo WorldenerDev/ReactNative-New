@@ -35,8 +35,9 @@ export const getTripName = (trip) =>
 
 export const getTripImage = (trip) =>
   trip?.image ||
-  trip?.city?.image ||
+  (typeof trip?.city === "object" ? trip?.city?.image : null) ||
   trip?.city_id?.image ||
+  trip?.cityImage ||
   null;
 
 const normalizeActivities = (trip, raw) => {
@@ -133,6 +134,13 @@ const toComparableId = (value) => {
     return String(value._id ?? value.id ?? "");
   }
   return String(value);
+};
+
+export const isTripPast = (trip) => {
+  const endValue = trip?.end_at || trip?.endDate;
+  if (!endValue) return false;
+  const end = new Date(endValue);
+  return !Number.isNaN(end.getTime()) && end < new Date();
 };
 
 export const canDeleteTrip = (trip, currentUserId) => {

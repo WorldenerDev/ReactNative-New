@@ -96,11 +96,11 @@ const AddToTrip = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [allData, setAllData] = useState([]);
   const [isSendingInvitations, setIsSendingInvitations] = useState(false); // Track loading state for Done button
+  const [crewName, setCrewName] = useState(route?.params?.groupName || "");
 
-  // Get API response data, groupId, and name from route params
+  // Get API response data and groupId from route params
   const apiResponse = route?.params?.selectedBuddyPhones || {};
   const groupId = route?.params?.groupId;
-  const tripName = route?.params?.name; // Name passed from TripDetails (city name)
 
   // Initialize data from API response
   useEffect(() => {
@@ -111,6 +111,9 @@ const AddToTrip = ({ navigation, route }) => {
           const crewRes = await fetchCrewDetails(groupId);
           if (crewRes?.success && crewRes?.data) {
             memberLookup = buildMemberLookup(crewRes.data);
+            if (crewRes.data.groupName) {
+              setCrewName(crewRes.data.groupName);
+            }
           }
         } catch (crewError) {
           console.error("Error fetching crew members:", crewError);
@@ -311,15 +314,10 @@ const AddToTrip = ({ navigation, route }) => {
       try {
         setIsSendingInvitations(true);
 
-        // Use name passed from TripDetails (city name), or fallback to first selected item name, or default
-        const name = tripName || selectedBuddies[0]?.name || invitedContacts[0]?.name || "User";
-
-        // Call sendInvitation API with batch phone numbers
         const response = await sendInvitation({
-          name: name,
+          groupName: crewName || undefined,
           phoneNumbers: allSelectedPhones,
           groupId: groupId,
-          message: "",
         });
 
         if (response?.success || response?.data) {

@@ -14,6 +14,8 @@ import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import MainContainer from "@components/container/MainContainer";
+import OptimizedImage from "@components/OptimizedImage";
+import { getImageUrl } from "@api/apiClient";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
 import navigationStrings from "@navigation/navigationStrings";
 import { getGroups } from "@api/services/mainServices";
@@ -43,9 +45,7 @@ const Group = ({ navigation }) => {
         people: `${peopleCount} ${peopleCount === 1 ? "member" : "members"}`,
         activeTripCount: group.activeTripCount || 0,
         cityChips: group.cityChips || [],
-        image:
-          group.groupImage ||
-          "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop",
+        image: getImageUrl(group.groupImage) || group.groupImage || null,
       };
     });
 
@@ -108,7 +108,19 @@ const Group = ({ navigation }) => {
         onPress={() => handleCardPress(item)}
         activeOpacity={0.8}
       >
-        <Image source={{ uri: item.image }} style={styles.tripImage} />
+        {item.image ? (
+          <OptimizedImage
+            source={{ uri: item.image }}
+            style={styles.tripImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Image
+            source={imagePath.DUMMY_ICON}
+            style={styles.tripImage}
+            resizeMode="cover"
+          />
+        )}
         <View style={styles.tripDetails}>
           <Text style={styles.tripTitle}>{item.title}</Text>
           <Text style={styles.peopleText}>{item.people}</Text>
@@ -151,7 +163,19 @@ const Group = ({ navigation }) => {
         onPress={() => handleCardPress(item)}
         activeOpacity={0.8}
       >
-        <Image source={{ uri: item.image }} style={styles.tripImage} />
+        {item.image ? (
+          <OptimizedImage
+            source={{ uri: item.image }}
+            style={styles.tripImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <Image
+            source={imagePath.DUMMY_ICON}
+            style={styles.tripImage}
+            resizeMode="cover"
+          />
+        )}
         <View style={styles.tripDetails}>
           <Text style={styles.tripTitle}>{item.title}</Text>
           <View style={styles.locationRow}>

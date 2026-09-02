@@ -27,7 +27,10 @@ import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
 import { updateTrip } from "@api/services/mainServices";
 import { optOutOfTrip } from "@api/services/crewGroupsService";
-import { getTripCityId, canDeleteTrip } from "@utils/tripHelpers";
+import { getTripCityId, getTripImage, canDeleteTrip } from "@utils/tripHelpers";
+import { appendFileToFormData } from "@utils/formDataHelper";
+import { getImageUrl } from "@api/apiClient";
+import useImagePicker from "@hooks/useImagePicker";
 import { useDispatch } from "react-redux";
 import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import navigationStrings from "@navigation/navigationStrings";
@@ -39,13 +42,19 @@ const EditTrip = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const { user } = useAuth();
   const bottomInset = useStickyBottomInset();
+  const { pickImage } = useImagePicker();
   // Form state
   const [tripName, setTripName] = useState(
     trip?.name || trip?.city?.name || trip?.destination || "Trip"
   );
   const [fromDate, setFromDate] = useState(trip?.start_at?.slice(0, 10) || "");
   const [toDate, setToDate] = useState(trip?.end_at?.slice(0, 10) || "");
-  const [coverPhoto, setCoverPhoto] = useState(trip?.city?.image || "");
+  const existingCover = getTripImage(trip);
+  const [coverPhotoUri, setCoverPhotoUri] = useState(
+    getImageUrl(existingCover) || existingCover || ""
+  );
+  const [coverPhotoFile, setCoverPhotoFile] = useState(null);
+  const [coverFailed, setCoverFailed] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,6 +83,7 @@ const EditTrip = ({ navigation, route }) => {
       formData.append("city_id", String(getTripCityId(trip) || ""));
       formData.append("start_at", fromDate);
       formData.append("end_at", toDate);
+      appendFileToFormData(formData, "image", coverPhotoFile);
 
       // Call the API
       await updateTrip(tripId, formData);
@@ -169,9 +179,17 @@ const EditTrip = ({ navigation, route }) => {
     );
   };
 
-  const handleCoverPhotoPress = () => {
-    // Cover photo is read-only from route params
-    showToast("info", "Cover photo cannot be changed in edit mode");
+  const handleCoverPhotoPress = async () => {
+    try {
+      const result = await pickImage();
+      if (!result?.uri) return;
+      setCoverPhotoFile(result);
+      setCoverPhotoUri(result.uri);
+      setCoverFailed(false);
+    } catch (error) {
+      console.error("Error picking cover photo:", error);
+      showToast("error", error?.message || "Failed to pick image");
+    }
   };
 
   const openCalendar = (field) => {
@@ -253,22 +271,44 @@ const EditTrip = ({ navigation, route }) => {
           <TouchableOpacity
             style={styles.coverPhotoContainer}
             onPress={handleCoverPhotoPress}
+            activeOpacity={0.85}
           >
-            {coverPhoto ? (
-              <OptimizedImage
-                source={{ uri: coverPhoto }}
+            {coverPhotoUri && !coverFailed ? (
+              coverPhotoUri.startsWith("file://") ||
+              coverPhotoUri.startsWith("content://") ? (
+                <Image
+                  source={{ uri: coverPhotoUri }}
+                  style={styles.coverPhoto}
+                  resizeMode="cover"
+                  onError={() => setCoverFailed(true)}
+                />
+              ) : (
+                <OptimizedImage
+                  source={{ uri: coverPhotoUri }}
+                  style={styles.coverPhoto}
+                  resizeMode="cover"
+                  onError={() => setCoverFailed(true)}
+                />
+              )
+            ) : (
+              <Image
+                source={imagePath.DUMMY_ICON}
                 style={styles.coverPhoto}
                 resizeMode="cover"
               />
-            ) : (
-              <View style={styles.coverPhotoPlaceholder}>
-                <Image
-                  source={imagePath.CAMERA_ICON}
-                  style={styles.cameraIcon}
-                />
-                <Text style={styles.placeholderText}>Add Cover Photo</Text>
-              </View>
             )}
+            <View style={styles.coverPhotoOverlay} pointerEvents="none">
+              <Image
+                source={imagePath.CAMERA_ICON}
+                style={styles.coverCameraIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.coverPhotoHint}>
+                {coverPhotoUri && !coverFailed
+                  ? "Change cover photo"
+                  : "Add cover photo"}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -379,22 +419,22 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  coverPhotoPlaceholder: {
-    flex: 1,
-    justifyContent: "center",
+  coverPhotoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.28)",
     alignItems: "center",
-    backgroundColor: colors.input,
+    justifyContent: "center",
   },
-  cameraIcon: {
-    width: getWidth(40),
-    height: getHeight(40),
-    tintColor: colors.lightText,
-    marginBottom: getHeight(8),
+  coverCameraIcon: {
+    width: getWidth(28),
+    height: getHeight(28),
+    tintColor: colors.white,
+    marginBottom: getHeight(6),
   },
-  placeholderText: {
-    fontSize: getHeight(14),
-    fontFamily: fonts.RobotoRegular,
-    color: colors.lightText,
+  coverPhotoHint: {
+    fontSize: getHeight(13),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.white,
   },
   buttonsContainer: {
     marginTop: getHeight(32),

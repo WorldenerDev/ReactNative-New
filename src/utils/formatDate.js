@@ -71,3 +71,35 @@ export const formatCompactDateRange = (startDate, endDate) => {
 
   return `${startPart.day} ${startPart.month} ${startPart.year} – ${endPart.day} ${endPart.month} ${endPart.year}`;
 };
+
+/**
+ * Activity listing date/time. Uses the calendar day from the ISO prefix so
+ * UTC midnight does not shift the date, and only shows a clock time when one
+ * is actually stored.
+ * Format: "Mar 11" or "Mar 11 · 2:30 PM"
+ */
+export const formatActivityDateTime = (value) => {
+  if (!value) return "";
+  const raw = String(value);
+  const ymd = toYmd(value);
+  if (!ymd) return raw;
+
+  const [year, month, day] = ymd.split("-").map(Number);
+  const dateLabel = new Date(year, month - 1, day).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
+  const timeMatch = raw.match(/T(\d{2}):(\d{2})/);
+  if (!timeMatch) return dateLabel;
+
+  const hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  if (!hours && !minutes) return dateLabel;
+
+  const timeLabel = new Date(2000, 0, 1, hours, minutes).toLocaleTimeString(
+    "en-US",
+    { hour: "numeric", minute: "2-digit" }
+  );
+  return `${dateLabel} · ${timeLabel}`;
+};

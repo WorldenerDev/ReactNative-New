@@ -24,9 +24,11 @@ import {
   getActivityDateKey,
   getTripCityId,
   getTripId,
+  getTripImage,
   normalizeTripDetails,
   toSelectedTripOption,
 } from "@utils/tripHelpers";
+import { getImageUrl } from "@api/apiClient";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -319,6 +321,8 @@ const TripDetails = ({ navigation, route }) => {
           <TripCompareTab
             groupId={tripData?.groupId}
             tripId={tripData?.canonicalTripId || tripData?._id}
+            selectedTrip={toSelectedTripOption(tripData)}
+            cityId={getTripCityId(tripData)}
           />
         </View>
       );
@@ -341,16 +345,13 @@ const TripDetails = ({ navigation, route }) => {
 
   const renderTripCard = () => {
     if (!tripData) return null;
+    const coverUri =
+      getImageUrl(getTripImage(tripData)) || getTripImage(tripData);
     return (
       <View style={styles.tripCard}>
         <View style={styles.imageContainer}>
           <OptimizedImage
-            source={{
-              uri:
-                tripData?.image ||
-                tripData?.city?.image ||
-                "https://images.unsplash.com/photo-1513639766991-4c7b0b0b0b0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-            }}
+            source={coverUri ? { uri: coverUri } : imagePath.DUMMY_ICON}
             style={styles.cardImage}
             resizeMode="cover"
           />

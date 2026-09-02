@@ -16,6 +16,9 @@ import {
 } from "@api/services/crewGroupsService";
 import { getImageUrl } from "@api/apiClient";
 import { useSelector } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
+import navigationStrings from "@navigation/navigationStrings";
+import { formatActivityDateTime } from "@utils/formatDate";
 
 const DUMMY_USER_IMAGE =
   "https://ui-avatars.com/api/?name=User&background=random&size=200";
@@ -47,7 +50,8 @@ const buildOtherMembers = (groupData, currentUserId) => {
 };
 
 /** Presentational compare panel — no nested ScrollView/FlatList (parent scrolls). */
-const TripCompareTab = ({ groupId, tripId }) => {
+const TripCompareTab = ({ groupId, tripId, selectedTrip, cityId }) => {
+  const navigation = useNavigation();
   const user = useSelector((state) => state.auth?.user);
   const currentUserId = normalizeUserId(user?._id || user?.id);
 
@@ -135,20 +139,61 @@ const TripCompareTab = ({ groupId, tripId }) => {
     setData(null);
   }, []);
 
-  const renderActivity = (item, index) => (
-    <View
-      style={styles.activityRow}
-      key={item._id || item.id || `activity-${index}`}
-    >
-      <OptimizedImage source={{ uri: item.image }} style={styles.thumb} />
-      <View style={styles.activityInfo}>
-        <Text style={styles.activityName}>{item.name}</Text>
-        <Text style={styles.activityMeta}>
-          {item.date} · ${item.price}
-        </Text>
-      </View>
-    </View>
+  const openActivity = useCallback(
+    (item) => {
+      const activityId = item?.event_id || item?.activity_id || item?.id;
+      if (!activityId) return;
+
+      const image = item?.image;
+      const processedImage =
+        image && String(image).startsWith("/")
+          ? getImageUrl(image)
+          : image || undefined;
+
+      navigation.navigate(navigationStrings.ACTIVITY_DETAILS, {
+        eventData: {
+          ...item,
+          id: activityId,
+          activity_id: activityId,
+          name: item?.name || item?.product_name || "Activity",
+          image: processedImage,
+          city_id: item?.city_id || cityId,
+        },
+        selectedTrip: selectedTrip || null,
+      });
+    },
+    [navigation, selectedTrip, cityId]
   );
+
+  const renderActivity = (item, index) => {
+    const when = formatActivityDateTime(item.date || item.start_date || item.time);
+    const price = item.total_price ?? item.retail_price ?? item.price;
+    const metaParts = [
+      when,
+      price != null && price !== "" ? `$${price}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    return (
+      <TouchableOpacity
+        style={styles.activityRow}
+        key={item.event_id || item._id || item.id || `activity-${index}`}
+        activeOpacity={0.8}
+        onPress={() => openActivity(item)}
+      >
+        <OptimizedImage source={{ uri: item.image }} style={styles.thumb} />
+        <View style={styles.activityInfo}>
+          <Text style={styles.activityName}>
+            {item.name || item.product_name || "Activity"}
+          </Text>
+          {!!metaParts && (
+            <Text style={styles.activityMeta}>{metaParts}</Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (membersLoading) {
     return (

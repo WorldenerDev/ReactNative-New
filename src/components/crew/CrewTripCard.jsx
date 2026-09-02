@@ -18,6 +18,7 @@ import { formatCompactDateRange } from "@utils/formatDate";
 import imagePath from "@assets/icons";
 import OptimizedImage from "@components/OptimizedImage";
 import { getImageUrl } from "@api/apiClient";
+import { getTripImage } from "@utils/tripHelpers";
 
 const DUMMY_USER_IMAGE =
   "https://ui-avatars.com/api/?name=User&background=random&size=200";
@@ -52,6 +53,10 @@ const CrewTripCard = ({ trip, onPress }) => {
     memberCount > members.length ? memberCount - members.length : 0;
   const savedCount = trip.savedCount || 0;
   const activityCount = trip.activityCount || 0;
+  const coverRaw = getTripImage(trip);
+  const coverUri = getImageUrl(coverRaw) || coverRaw || null;
+  const cityName =
+    typeof trip.city === "string" ? trip.city : trip.city?.name || "";
 
   return (
     <TouchableOpacity
@@ -59,15 +64,23 @@ const CrewTripCard = ({ trip, onPress }) => {
       onPress={() => onPress?.(trip)}
       activeOpacity={0.85}
     >
-      <OptimizedImage
-        source={{ uri: trip.image }}
-        style={styles.image}
-        resizeMode="cover"
-      />
+      {coverUri ? (
+        <OptimizedImage
+          source={{ uri: coverUri }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      ) : (
+        <Image
+          source={imagePath.DUMMY_ICON}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      )}
       <View style={styles.content}>
         <View style={styles.titleRow}>
           <Text style={styles.city} numberOfLines={1}>
-            {trip.city}
+            {cityName}
           </Text>
           <View
             style={[

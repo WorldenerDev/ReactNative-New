@@ -76,6 +76,7 @@ const SearchCity = ({ navigation, route }) => {
   const [tripStatus, setTripStatus] = useState("");
   const mode = route?.params?.mode;
   const fromScreen = route?.params?.fromScreen;
+  const cityId = route?.params?.cityId;
   const unifiedMode = !mode;
 
   useEffect(() => {
@@ -129,7 +130,10 @@ const SearchCity = ({ navigation, route }) => {
           setTripsData([]);
           setCrewsData([]);
         } else if (mode === "eventOnly") {
-          const eventsRes = await getEventForYou({ search: searchText });
+          const eventsRes = await getEventForYou({
+            search: searchText,
+            ...(cityId ? { city: cityId } : {}),
+          });
           const nextEvents = eventsRes?.data || eventsRes || [];
           setCitiesData([]);
           setEventsData(Array.isArray(nextEvents) ? nextEvents : []);
@@ -161,7 +165,7 @@ const SearchCity = ({ navigation, route }) => {
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [query, mode, selectedTypes, tripStatus]);
+  }, [query, mode, cityId, selectedTypes, tripStatus]);
 
   const toggleType = (id) => {
     if (id === "all") {

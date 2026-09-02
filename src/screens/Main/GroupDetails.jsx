@@ -491,6 +491,7 @@ const GroupDetails = () => {
               });
               navigation.navigate(navigationStrings.ADD_TO_TRIP, {
                 groupId: groupId,
+                groupName: groupData?.groupName,
                 selectedBuddyPhones: response?.data,
               });
             } catch (apiError) {

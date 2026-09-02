@@ -36,6 +36,7 @@ const TripCard = ({
   onDeletePress,
   onRejoinPress,
   onPressCard,
+  isPast = false,
 }) => {
   const dateLabel = formatCompactDateRange(startDate, endDate);
   const metaParts = [];
@@ -68,14 +69,26 @@ const TripCard = ({
         disabled={isOptedOut && !onRejoinPress}
       >
         <View style={styles.hero}>
-          <OptimizedImage
-            source={{ uri: image }}
-            style={[styles.heroImage, isOptedOut && styles.dimmedImage]}
-            resizeMode="cover"
-          />
+          {image ? (
+            <OptimizedImage
+              source={{ uri: image }}
+              style={[styles.heroImage, isOptedOut && styles.dimmedImage]}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image
+              source={imagePath.DUMMY_ICON}
+              style={[styles.heroImage, isOptedOut && styles.dimmedImage]}
+              resizeMode="cover"
+            />
+          )}
           {isOptedOut ? (
             <View style={styles.optedOutBadge}>
               <Text style={styles.optedOutText}>Opted out</Text>
+            </View>
+          ) : isPast ? (
+            <View style={styles.pastBadge}>
+              <Text style={styles.pastBadgeText}>Past</Text>
             </View>
           ) : null}
         </View>
@@ -209,6 +222,20 @@ const styles = StyleSheet.create({
     borderRadius: getRadius(6),
   },
   optedOutText: {
+    color: colors.white,
+    fontSize: getHeight(10),
+    fontFamily: fonts.RobotoMedium,
+  },
+  pastBadge: {
+    position: "absolute",
+    top: getHeight(8),
+    right: getWidth(8),
+    backgroundColor: "rgba(17,17,17,0.72)",
+    paddingHorizontal: getWidth(8),
+    paddingVertical: getHeight(4),
+    borderRadius: getRadius(6),
+  },
+  pastBadgeText: {
     color: colors.white,
     fontSize: getHeight(10),
     fontFamily: fonts.RobotoMedium,

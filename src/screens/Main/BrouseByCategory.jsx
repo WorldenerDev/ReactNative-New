@@ -103,6 +103,7 @@ const BrouseByCategory = ({ navigation, route }) => {
           navigation.navigate(navigationStrings.SEARCH_CITY, {
             mode: "eventOnly",
             fromScreen: "BrouseByCategory",
+            cityId,
           })
         }
         activeOpacity={0.9}

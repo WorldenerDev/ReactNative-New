@@ -279,6 +279,7 @@ const CityDetail = ({ route, navigation }) => {
                   navigation.navigate(navigationStrings.SEARCH_CITY, {
                     mode: "eventOnly", // Search only events from CityDetail
                     fromScreen: "CityDetail",
+                    cityId: cityData?.city_id,
                   })
                 }
                 activeOpacity={0.9}
