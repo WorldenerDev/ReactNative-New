@@ -12,6 +12,7 @@ import CustomInput from "./CustomInput";
 const ParticipantAccordion = ({
   participant,
   participantIndex,
+  title,
   participantData,
   participantErrors,
   onParticipantDataChange,
@@ -23,7 +24,7 @@ const ParticipantAccordion = ({
   };
 
   const getParticipantTitle = () => {
-    return participant.product.name;
+    return title || participant.product?.name || "Participant";
   };
 
   const renderParticipantForm = () => {
@@ -32,13 +33,17 @@ const ParticipantAccordion = ({
 
     const participantFields = schema.properties.participants.items.properties;
     const requiredFields = schema.properties.participants.items.required || [];
+    const index =
+      participant.participantIndex != null
+        ? participant.participantIndex
+        : participantIndex;
 
     return (
       <View style={styles.participantForm}>
         {Object.keys(participantFields).map((fieldKey) => {
           const field = participantFields[fieldKey];
           const isRequired = requiredFields.includes(fieldKey);
-          const fieldPath = `${participant.uuid}.${participantIndex}.${fieldKey}`;
+          const fieldPath = `${participant.uuid}.${index}.${fieldKey}`;
 
           return (
             <CustomInput

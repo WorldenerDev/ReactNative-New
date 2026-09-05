@@ -139,7 +139,7 @@ Two groups: `endpoints.auth` and `endpoints.main`. Always add a leading `/` on n
 | Trips | `getTrips`, `createTrip`, `updateTrip`, `deleteTrip`, `getTripDetails`, `getTripBuddies`, `getTripBycity`, `checkout`, `addEventInTrip` |
 | Activities | `activityLikeUnlike`, `getEventDetails`, `getEventDates`, `getEventDatesDetails` |
 | Cart / orders | `getCartList`, `cartCheckout`, `cartSchema`, `getParticipantSchema`, `cartCustomerInfo`, `createOrder`, `createStripePaymentIntent`, `createNoPayment`, `downloadVoucher`, `removeItemFromCart`, `updateParticipants`, `updateCart`, `getOrders`, `getOrderDetails`, `getRefundPolicies`, `cancelOrderItem`, `getTransactions` |
-| Groups | `getGroups`, `getGroupList`, `shareActivityWithGroups`, `getGroupDetails`, `sendInvitation`, `getInvitations`, `acceptInvite`, `rejectInvite`, `getGroupMessages`, `reportUser`, `blockUser`, `addUpdateEmoji`, `removeUserFromGroup`, `compareUsersInGroup`, `getGroupWishlisted` |
+| Groups | `getGroups`, `getGroupList`, `shareActivityWithGroups`, `getGroupDetails`, `sendInvitation`, `getInvitations`, `acceptInvite`, `rejectInvite`, `getGroupMessages`, `reportUser`, `blockUser`, `getUserInfo`, `addUpdateEmoji`, `removeUserFromGroup`, `compareUsersInGroup`, `getGroupWishlisted` |
 | Notifications | `getNotifications`, `markNotificationRead`, `getNotificationSettings`, `updateNotificationSettings` |
 | Profile / Stripe / AI | `updateProfile`, `addCard`, `getClientSecret`, `getStripeCardList`, `chatbot`, `chatbotHistoryList`, `chatbotHistory` |
 

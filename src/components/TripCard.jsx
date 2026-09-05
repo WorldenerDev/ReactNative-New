@@ -157,7 +157,9 @@ const TripCard = ({
           </View>
         </View>
       </TouchableOpacity>
-      <View style={styles.bottomShadow} pointerEvents="none" />
+      {Platform.OS === "ios" ? (
+        <View style={styles.bottomShadow} pointerEvents="none" />
+      ) : null}
     </View>
   );
 };
@@ -178,6 +180,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: "rgba(0, 0, 0, 0.06)",
+    ...Platform.select({
+      android: {
+        elevation: 0,
+      },
+    }),
   },
   bottomShadow: {
     position: "absolute",
@@ -186,28 +193,31 @@ const styles = StyleSheet.create({
     bottom: -getHeight(4),
     height: getHeight(1),
     backgroundColor: colors.white,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.14,
-        shadowRadius: 2,
-      },
-      android: {
-        height: getHeight(4),
-        backgroundColor: "rgba(0, 0, 0, 0.1)",
-        borderBottomLeftRadius: getRadius(2),
-        borderBottomRightRadius: getRadius(2),
-      },
-    }),
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 2,
   },
   hero: {
     height: getHeight(96),
     position: "relative",
+    ...Platform.select({
+      android: {
+        overflow: "hidden",
+        borderTopLeftRadius: getRadius(16),
+        borderTopRightRadius: getRadius(16),
+      },
+    }),
   },
   heroImage: {
     width: "100%",
     height: "100%",
+    ...Platform.select({
+      android: {
+        borderTopLeftRadius: getRadius(16),
+        borderTopRightRadius: getRadius(16),
+      },
+    }),
   },
   dimmedImage: {
     opacity: 0.55,

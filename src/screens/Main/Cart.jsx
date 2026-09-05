@@ -9,6 +9,7 @@ import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import OptimizedImage from "@components/OptimizedImage";
 import navigationStrings from "@navigation/navigationStrings";
+import { resetToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import { useRoute } from "@react-navigation/native";
 import {
   getFontSize,
@@ -103,6 +104,18 @@ const Cart = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    if (tripId) {
+      resetToTripDetails(navigation, { tripId });
+      return;
+    }
+    navigation.navigate(navigationStrings.BOTTOM_TAB);
   };
 
   useEffect(() => {
@@ -227,7 +240,7 @@ const Cart = ({ navigation }) => {
 
   return (
     <MainContainer loader={loading}>
-      <Header title="Cart" />
+      <Header title="Cart" onBackPress={handleBack} />
       <FlatList
         data={cartList}
         keyExtractor={(item, index) => `${item?.id || item?._id || index}`}

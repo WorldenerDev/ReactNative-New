@@ -73,6 +73,7 @@ export const endpoints = {
     getGroupMessages: "/getGroupMessages",
     reportUser: "/report-user",
     blockUser: "/block-user",
+    getUserInfo: "/user-info",
     addUpdateEmoji: "/add-update-emoji",
     removeUserFromGroup: "/remove-user-from-group",
     getCityActivities: "/getCityActivities",

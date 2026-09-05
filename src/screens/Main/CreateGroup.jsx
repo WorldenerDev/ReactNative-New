@@ -82,7 +82,7 @@ const CreateGroup = ({ navigation }) => {
       />
 
       <TouchableOpacity style={styles.inviteHint} activeOpacity={0.7}>
-        <Text style={styles.inviteText}>Invite members after creating →</Text>
+        <Text style={styles.inviteText}>You can invite members after creating your crew!</Text>
       </TouchableOpacity>
 
       <ButtonComp

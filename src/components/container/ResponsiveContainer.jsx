@@ -37,6 +37,13 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
     contentWrapper: {
-        flex: 1,
+        ...Platform.select({
+            ios: {
+                flex: 1,
+            },
+            android: {
+                flexGrow: 1,
+            },
+        }),
     },
 });

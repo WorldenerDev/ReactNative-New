@@ -2,6 +2,7 @@ import { chatbot, getChatbotHistory, getGroups } from "@api/services/mainService
 import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
@@ -18,6 +19,7 @@ import {
 } from "@utils/responsive";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -304,7 +306,16 @@ const AiChat = ({ navigation }) => {
         }}
         disabled={!hasText}
       >
-        <Text style={styles.sendButtonIcon}>{isLoading ? "..." : "→"}</Text>
+        {isLoading ? (
+          <Text style={styles.sendButtonIcon}>...</Text>
+        ) : (
+          <Image
+            source={imagePath.RIGHT_ICON}
+            style={styles.sendIcon}
+            tintColor={colors.black}
+            resizeMode="contain"
+          />
+        )}
       </TouchableOpacity>
     );
   };
@@ -569,6 +580,12 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: { opacity: 0.5 },
   sendButtonIcon: { fontSize: 20, color: "#000", fontWeight: "bold" },
+  sendIcon: {
+    width: 18,
+    height: 18,
+    tintColor: colors.black,
+    resizeMode: "contain",
+  },
   loadMoreContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",

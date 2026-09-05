@@ -41,6 +41,48 @@ import { setUser } from "@redux/slices/authSlice";
 import { setItem } from "@utils/storage";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 
+const LEAD_BOOKER_FIELD_NAMES = new Set([
+  "email",
+  "firstname",
+  "first_name",
+  "lastname",
+  "last_name",
+  "surname",
+]);
+
+const normalizeExtraFieldName = (field) =>
+  String(field?.fieldName || field?.key || "")
+    .split(".")
+    .pop()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const isLeadBookerDuplicateField = (field) => {
+  const name = normalizeExtraFieldName(field);
+  const title = String(field?.title || "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+  return (
+    LEAD_BOOKER_FIELD_NAMES.has(name) ||
+    ["email", "firstname", "lastname", "surname"].includes(title)
+  );
+};
+
+const getSharedExtraFieldKey = (field) =>
+  `extra_shared.${normalizeExtraFieldName(field)}`;
+
+const getLeadBookerValueForField = (field, userData) => {
+  const name = normalizeExtraFieldName(field);
+  if (name === "email") return userData?.email;
+  if (name === "firstname" || name === "first_name") {
+    return userData?.firstName;
+  }
+  if (name === "lastname" || name === "last_name" || name === "surname") {
+    return userData?.lastName;
+  }
+  return null;
+};
+
 
 const CartCustomerInfo = ({ navigation, route }) => {
   useGuestScreenGuard();
@@ -50,6 +92,7 @@ const CartCustomerInfo = ({ navigation, route }) => {
   const { cart_id, trip_id, amount_minor, currency } = route.params || {};
   const [userData, setUserData] = useState({});
   const [formFields, setFormFields] = useState([]);
+  const [visibleFormFields, setVisibleFormFields] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [participantData, setParticipantData] = useState({});
@@ -71,40 +114,27 @@ const CartCustomerInfo = ({ navigation, route }) => {
   }, [user]);
 
   const processCartSchema = (schema) => {
-    if (!schema?.properties?.extra_customer_data?.properties) return [];
+    const extraCustomerData = schema?.properties?.extra_customer_data;
+    if (!extraCustomerData?.properties || Array.isArray(extraCustomerData.properties)) {
+      return [];
+    }
 
     const fields = [];
-    const extraCustomerData = schema.properties.extra_customer_data;
-
-    // Check if extra customer data exists and get the key
-    if (extraCustomerData.title && extraCustomerData.properties) {
-      setHasExtraCustomerData(true);
-      setExtraCustomerDataKey(extraCustomerData.title);
-    }
+    const activityKeys = [];
 
     Object.keys(extraCustomerData.properties).forEach((extraKey) => {
       const extraProperty = extraCustomerData.properties[extraKey];
+      const looksLikeActivityUuid =
+        extraProperty?.type === "object" || extraProperty?.properties;
 
-      if (extraProperty.type && extraProperty.type !== "object") {
-        fields.push({
-          key: `extra_customer_data.${extraKey}`,
-          title:
-            (extraProperty.title || extraKey).charAt(0).toUpperCase() +
-            (extraProperty.title || extraKey).slice(1),
-          type: extraProperty.type,
-          propertyOrder: extraProperty.propertyOrder || 999,
-          format: extraProperty.format,
-          enum: extraProperty.enum,
-          enum_titles: extraProperty.enum_titles,
-        });
-      }
-
-      if (extraProperty.properties) {
+      if (looksLikeActivityUuid && extraProperty.properties) {
+        activityKeys.push(extraKey);
         Object.keys(extraProperty.properties).forEach((nestedKey) => {
           const nestedProperty = extraProperty.properties[nestedKey];
-
           fields.push({
             key: `extra_customer_data.${extraKey}.${nestedKey}`,
+            activityUuid: extraKey,
+            fieldName: nestedKey,
             title:
               (nestedProperty.title || nestedKey).charAt(0).toUpperCase() +
               (nestedProperty.title || nestedKey).slice(1),
@@ -115,8 +145,34 @@ const CartCustomerInfo = ({ navigation, route }) => {
             enum_titles: nestedProperty.enum_titles,
           });
         });
+        return;
+      }
+
+      if (extraProperty?.type && extraProperty.type !== "object") {
+        fields.push({
+          key: `extra_customer_data.${extraKey}`,
+          fieldName: extraKey,
+          title:
+            (extraProperty.title || extraKey).charAt(0).toUpperCase() +
+            (extraProperty.title || extraKey).slice(1),
+          type: extraProperty.type,
+          propertyOrder: extraProperty.propertyOrder || 999,
+          format: extraProperty.format,
+          enum: extraProperty.enum,
+          enum_titles: extraProperty.enum_titles,
+        });
       }
     });
+
+    if (fields.length > 0) {
+      setHasExtraCustomerData(true);
+      setExtraCustomerDataKey(
+        extraCustomerData.activity_uuid ||
+          activityKeys[0] ||
+          extraCustomerData.title ||
+          null
+      );
+    }
 
     return fields.sort((a, b) => a.propertyOrder - b.propertyOrder);
   };
@@ -128,10 +184,27 @@ const CartCustomerInfo = ({ navigation, route }) => {
         const response = await getCartSchema({ cart_id });
         if (response?.data?.cartSchema) {
           const processedFields = processCartSchema(response.data.cartSchema);
+          const seenFieldNames = new Set();
+          const uniqueVisibleFields = [];
+          processedFields.forEach((field) => {
+            if (isLeadBookerDuplicateField(field)) {
+              return;
+            }
+            const sharedName = normalizeExtraFieldName(field);
+            if (!sharedName || seenFieldNames.has(sharedName)) {
+              return;
+            }
+            seenFieldNames.add(sharedName);
+            uniqueVisibleFields.push({
+              ...field,
+              key: getSharedExtraFieldKey(field),
+            });
+          });
 
           setFormFields(processedFields);
+          setVisibleFormFields(uniqueVisibleFields);
           const initialData = {};
-          processedFields.forEach((field) => {
+          uniqueVisibleFields.forEach((field) => {
             initialData[field.key] = "";
           });
           setUserData((prev) => ({ ...prev, ...initialData }));
@@ -243,38 +316,20 @@ const CartCustomerInfo = ({ navigation, route }) => {
     }
   };
 
-  // Create individual participants from items
-  const createIndividualParticipants = () => {
-    if (!participantSchemaData?.items) return [];
-
-    const participants = [];
-    participantSchemaData.items.forEach((item) => {
-      for (let i = 0; i < item.quantity; i++) {
-        participants.push({
-          ...item,
-          participantIndex: i,
-        });
-      }
-    });
-    return participants;
-  };
-
   // Group products by activity_uuid for display
   const groupProductsForDisplay = () => {
     if (!participantSchemaData?.items) return {};
 
     return participantSchemaData.items.reduce((groups, item) => {
-      const activityUuid = item.product?.activity_uuid;
-      if (activityUuid) {
-        if (!groups[activityUuid]) {
-          groups[activityUuid] = {
-            title: item.product?.title,
-            coverImage: item.product?.cover_image_url,
-            items: [],
-          };
-        }
-        groups[activityUuid].items.push(item);
+      const activityUuid = item.product?.activity_uuid || item.uuid || "other";
+      if (!groups[activityUuid]) {
+        groups[activityUuid] = {
+          title: item.product?.title,
+          coverImage: item.product?.cover_image_url,
+          items: [],
+        };
       }
+      groups[activityUuid].items.push(item);
       return groups;
     }, {});
   };
@@ -335,8 +390,8 @@ const CartCustomerInfo = ({ navigation, route }) => {
       }
     });
 
-    // Validate extra customer data fields
-    formFields.forEach((field) => {
+    // Validate extra customer data fields that are actually shown
+    visibleFormFields.forEach((field) => {
       const error = validateField(field, userData[field.key]);
       if (error) {
         newErrors[field.key] = error;
@@ -416,48 +471,64 @@ const CartCustomerInfo = ({ navigation, route }) => {
         allow_profiling: "NO",
         email: userData.email,
         events_related_newsletter: "NO",
-        firstname: userData.firstName,
-        lastname: userData.lastName,
+        firstname: String(userData.firstName || "").trim(),
+        lastname: String(userData.lastName || "").trim(),
         musement_newsletter: "NO",
         thirdparty_newsletter: "NO",
       };
 
-      // Conditionally add extra_customer_data if it exists
-      if (hasExtraCustomerData && extraCustomerDataKey) {
-        const extraCustomerData = {};
+      if (
+        apiPayload.lastname &&
+        apiPayload.firstname
+          .toLowerCase()
+          .endsWith(` ${apiPayload.lastname.toLowerCase()}`)
+      ) {
+        const stripped = apiPayload.firstname
+          .slice(0, apiPayload.firstname.length - apiPayload.lastname.length)
+          .trim();
+        if (stripped) apiPayload.firstname = stripped;
+      }
 
-        // Group form fields by their parent key (the extra customer data key)
+      // Conditionally add extra_customer_data if it exists
+      if (hasExtraCustomerData) {
+        const extraCustomerData = {};
         const extraFields = formFields.filter((field) =>
           field.key.startsWith("extra_customer_data.")
         );
 
-        if (extraFields.length > 0) {
-          // Create the nested structure for extra customer data
-          extraCustomerData[extraCustomerDataKey] = {};
+        extraFields.forEach((field) => {
+          const rawValue = isLeadBookerDuplicateField(field)
+            ? getLeadBookerValueForField(field, {
+                ...userData,
+                firstName: apiPayload.firstname,
+                lastName: apiPayload.lastname,
+                email: apiPayload.email,
+              })
+            : userData[getSharedExtraFieldKey(field)] ?? userData[field.key];
+          if (rawValue == null || String(rawValue).trim() === "") {
+            return;
+          }
 
-          extraFields.forEach((field) => {
-            const fieldPath = field.key.split(".");
-            if (fieldPath.length === 3) {
-              // This is a nested field like extra_customer_data.165fcd0d-2046-11e7-9cc9-06a7e332783f.phone_number
-              const parentKey = fieldPath[1];
-              const fieldName = fieldPath[2];
+          let value = String(rawValue).trim();
+          if (field.type === "integer") {
+            value = Number.parseInt(value, 10);
+          } else if (field.type === "number") {
+            value = Number(value);
+          }
 
-              if (!extraCustomerData[extraCustomerDataKey][parentKey]) {
-                extraCustomerData[extraCustomerDataKey][parentKey] = {};
-              }
+          const activityUuid = field.activityUuid || extraCustomerDataKey;
+          const fieldName = field.fieldName || field.key.split(".").pop();
+          if (!activityUuid || !fieldName) {
+            return;
+          }
 
-              extraCustomerData[extraCustomerDataKey][parentKey][fieldName] =
-                userData[field.key];
-            } else if (fieldPath.length === 2) {
-              // This is a direct field like extra_customer_data.phone_number
-              const fieldName = fieldPath[1];
-              extraCustomerData[extraCustomerDataKey][fieldName] =
-                userData[field.key];
-            }
-          });
+          extraCustomerData[activityUuid] = extraCustomerData[activityUuid] || {};
+          extraCustomerData[activityUuid][fieldName] = value;
+        });
+
+        if (Object.keys(extraCustomerData).length > 0) {
+          apiPayload.extra_customer_data = extraCustomerData;
         }
-
-        apiPayload.extra_customer_data = extraCustomerData;
       }
 
       const response = await cartCustomerInfo(apiPayload);
@@ -680,7 +751,12 @@ const CartCustomerInfo = ({ navigation, route }) => {
             inputStyle={{ color: colors.black }}
             error={errors.email}
           />
-          {formFields.map((field) => renderFormField(field))}
+          {visibleFormFields.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Additional details</Text>
+              {visibleFormFields.map((field) => renderFormField(field))}
+            </>
+          )}
 
           {/* Participant Information Section */}
           {participantSchemaData?.items &&
@@ -689,7 +765,6 @@ const CartCustomerInfo = ({ navigation, route }) => {
               <View style={styles.participantSection}>
                 <Text style={styles.sectionTitle}>Participant Information</Text>
 
-                {/* Product Information - Above each participant group */}
                 {Object.entries(groupProductsForDisplay()).map(
                   ([activityUuid, productGroup]) => (
                     <View key={activityUuid}>
@@ -708,21 +783,26 @@ const CartCustomerInfo = ({ navigation, route }) => {
                           </Text>
                         </View>
                       </View>
+                      {productGroup.items.map((item) =>
+                        Array.from({ length: item.quantity || 0 }, (_, index) => (
+                          <ParticipantAccordion
+                            key={`${item.uuid}-${index}`}
+                            participant={{ ...item, participantIndex: index }}
+                            participantIndex={index}
+                            title={
+                              (item.quantity || 0) > 1
+                                ? `${item.product?.name || "Participant"} ${index + 1}`
+                                : item.product?.name || "Participant"
+                            }
+                            participantData={participantData}
+                            participantErrors={participantErrors}
+                            onParticipantDataChange={handleParticipantDataChange}
+                          />
+                        ))
+                      )}
                     </View>
                   )
                 )}
-
-                {/* Individual Participants */}
-                {createIndividualParticipants().map((participant, index) => (
-                  <ParticipantAccordion
-                    key={`${participant.uuid}-${participant.participantIndex}`}
-                    participant={participant}
-                    participantIndex={index}
-                    participantData={participantData}
-                    participantErrors={participantErrors}
-                    onParticipantDataChange={handleParticipantDataChange}
-                  />
-                ))}
               </View>
             )}
         </View>

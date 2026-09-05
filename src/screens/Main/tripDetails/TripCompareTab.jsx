@@ -5,9 +5,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
+import imagePath from "@assets/icons";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import {
@@ -256,8 +258,18 @@ const TripCompareTab = ({ groupId, tripId, selectedTrip, cityId }) => {
     return (
       <View style={styles.center}>
         <Text style={styles.empty}>No comparison data</Text>
-        <TouchableOpacity onPress={handleBackToPicker} style={styles.backLink}>
-          <Text style={styles.backLinkText}>Choose another member</Text>
+        <TouchableOpacity
+          onPress={handleBackToPicker}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Compare someone else"
+        >
+          <Image
+            tintColor={colors.black}
+            source={imagePath.BACK_ICON}
+            style={styles.backIcon}
+          />
+          <Text style={styles.backBtnText}>Compare someone else</Text>
         </TouchableOpacity>
       </View>
     );
@@ -265,8 +277,18 @@ const TripCompareTab = ({ groupId, tripId, selectedTrip, cityId }) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={handleBackToPicker} style={styles.backLink}>
-        <Text style={styles.backLinkText}>← Compare someone else</Text>
+      <TouchableOpacity
+        onPress={handleBackToPicker}
+        style={styles.backBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Compare someone else"
+      >
+        <Image
+          tintColor={colors.black}
+          source={imagePath.BACK_ICON}
+          style={styles.backIcon}
+        />
+        <Text style={styles.backBtnText}>Compare someone else</Text>
       </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>
@@ -365,14 +387,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
   },
-  backLink: {
+  backBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
     marginBottom: getHeight(12),
   },
-  backLinkText: {
+  backIcon: {
+    height: getHeight(18),
+    width: getWidth(18),
+    resizeMode: "contain",
+    marginRight: getWidth(6),
+  },
+  backBtnText: {
     fontSize: getHeight(13),
     fontFamily: fonts.RobotoMedium,
-    color: colors.lightText,
-    textDecorationLine: "underline",
+    color: colors.black,
   },
   sectionTitle: {
     fontSize: getHeight(14),

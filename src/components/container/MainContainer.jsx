@@ -8,7 +8,7 @@ import {
 } from "@utils/responsive";
 import React from "react";
 import { View, StatusBar, StyleSheet, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
 const MainContainer = React.memo(
@@ -16,14 +16,21 @@ const MainContainer = React.memo(
     const { loading: reduxLoading } = useSelector((state) => state.auth);
     const { loading: cityTripLoading } = useSelector((state) => state.cityTrip);
     const showLoader = loader || reduxLoading || cityTripLoading;
+    const insets = useSafeAreaInsets();
+    const topInset =
+      Platform.OS === "android" ? Math.max(insets.top, androidbar) : iosbar;
 
     return (
       <View style={styles.root}>
-        <StatusBar backgroundColor={colors.white} barStyle="dark-content" />
+        <StatusBar
+          translucent={Platform.OS === "android"}
+          backgroundColor={
+            Platform.OS === "android" ? "transparent" : colors.white
+          }
+          barStyle="dark-content"
+        />
         <View style={styles.safe}>
-          <View
-            style={{ height: Platform.OS === "android" ? androidbar : iosbar }}
-          />
+          <View style={{ height: topInset }} />
           <View style={styles.innerContainer}>
             {children}
             {showLoader && <Loader />}

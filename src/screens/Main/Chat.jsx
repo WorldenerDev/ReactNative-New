@@ -6,6 +6,7 @@ import {
   reportUser,
 } from "@api/services/mainServices";
 import imagePath from "@assets/icons";
+import colors from "@assets/colors";
 import { showToast } from "@components/AppToast";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
@@ -608,7 +609,12 @@ const Chat = ({ navigation, route }) => {
         }}
         disabled={!hasText}
       >
-        <Text style={styles.sendButtonIcon}>→</Text>
+        <Image
+          source={imagePath.RIGHT_ICON}
+          style={styles.sendIcon}
+          tintColor={colors.black}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
     );
   };
@@ -727,6 +733,7 @@ const Chat = ({ navigation, route }) => {
                 if (selectedMessage?.user) {
                   setShowUserActions(false);
                   navigation.navigate(navigationStrings.MEMBER_PROFILE, {
+                    userId: selectedMessage.user._id,
                     userData: selectedMessage.user,
                   });
                 }
@@ -890,7 +897,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sendButtonDisabled: { opacity: 0.5 },
-  sendButtonIcon: { fontSize: 20, color: "#000", fontWeight: "bold" },
+  sendIcon: {
+    width: 18,
+    height: 18,
+    tintColor: colors.black,
+    resizeMode: "contain",
+  },
   reactionsLeft: { flexDirection: "row", marginTop: 4, marginLeft: 60 },
   reactionsRight: {
     flexDirection: "row",

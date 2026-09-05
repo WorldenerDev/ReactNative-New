@@ -1,4 +1,5 @@
 import React from "react";
+import { Platform, StatusBar } from "react-native";
 import Routes from "@navigation/Routes";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppToast } from "@components/AppToast";
@@ -13,6 +14,13 @@ const App = () => {
     <Provider store={store}>
       <StripeAppBridge>
         <SafeAreaProvider>
+          {Platform.OS === "android" ? (
+            <StatusBar
+              translucent
+              backgroundColor="transparent"
+              barStyle="dark-content"
+            />
+          ) : null}
           <PushNotificationHandler />
           <AppStateHandler />
           <Routes />

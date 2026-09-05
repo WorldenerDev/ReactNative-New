@@ -18,15 +18,26 @@ const Header = ({
   rightIconImage = null,
   onRightIconPress = null,
   rightIconSize,
+  onBackPress,
 }) => {
   const navigation = useNavigation();
+
+  const handleBack = () => {
+    if (onBackPress) {
+      onBackPress();
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.sideSlot}>
         {showBack ? (
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={handleBack}
             style={styles.iconBtn}
           >
             <Image

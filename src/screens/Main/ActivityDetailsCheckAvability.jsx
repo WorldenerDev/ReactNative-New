@@ -15,6 +15,12 @@ import Header from "@components/Header";
 import { navigateToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import navigationStrings from "@navigation/navigationStrings";
 import { toYmd } from "@utils/formatDate";
+import {
+  canIncrementTicket,
+  effectiveProductMinBuy,
+  getPartySizeError,
+  nextTicketQuantity,
+} from "@utils/musementPartySize";
 import { getFontSize, getHeight, getRadius, getWidth } from "@utils/responsive";
 import { getTripId, normalizeTripDetails } from "@utils/tripHelpers";
 import { useEffect, useMemo, useState } from "react";
@@ -204,16 +210,20 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
   };
 
   // Get products for selected time slot
-  const getProductsForSelectedTime = () => {
-    if (!selectedOption || !selectedTime || !dateDetails) return [];
+  const getSelectedSlot = () => {
+    if (!selectedOption || !selectedTime || !dateDetails) return null;
     const selectedGroup = dateDetails.find(
       (group) => group.name === selectedOption,
     );
-    if (!selectedGroup || !selectedGroup.slots) return [];
-
-    const selectedSlot = selectedGroup.slots.find(
-      (slot) => slot.time === selectedTime.value,
+    if (!selectedGroup || !selectedGroup.slots) return null;
+    return (
+      selectedGroup.slots.find((slot) => slot.time === selectedTime.value) ||
+      null
     );
+  };
+
+  const getProductsForSelectedTime = () => {
+    const selectedSlot = getSelectedSlot();
     if (!selectedSlot) return [];
     const products = selectedSlot.products || [];
 
@@ -232,7 +242,8 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           price: fallbackPrice,
           formatted_price: fallbackFormatted,
           max: 10,
-          min: 0,
+          min: 1,
+          type: "musement",
         },
       ];
     }
@@ -240,6 +251,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     return products.map((product) => ({
       id: product.product_id,
       name: product.name,
+      type: product.type || "musement",
       price: product.retail_price?.value ?? fallbackPrice,
       formatted_price:
         product.retail_price?.formatted_value ||
@@ -256,10 +268,11 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
   // Products from API
   const ticketTypes = getProductsForSelectedTime();
+  const selectedSlot = getSelectedSlot();
 
   const handleDateSelect = async (date) => {
     setSelectedDate(date);
-    // Call the new API when a date is selected
+    setTicketQuantities({});
     await fetchEventDatesDetails(date);
   };
 
@@ -273,16 +286,40 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
   const handleTimeSelect = (time) => {
     setSelectedTime(time);
+    setTicketQuantities({});
   };
 
   const handleQuantityChange = (ticketId, change) => {
+    const ticket = ticketTypes.find((item) => item.id === ticketId);
+    if (!ticket) return;
+
     setTicketQuantities((prev) => {
       const currentQuantity = prev[ticketId] || 0;
-      const newQuantity = currentQuantity + change;
+      const nextQuantity = nextTicketQuantity(
+        currentQuantity,
+        change,
+        ticket.min,
+        ticket.max,
+      );
+
+      if (change > 0) {
+        const othersTotal = ticketTypes.reduce((sum, item) => {
+          if (item.id === ticketId) return sum;
+          return sum + (prev[item.id] || 0);
+        }, 0);
+        const slotMax = selectedSlot?.max_buy;
+        const maxAllowed =
+          slotMax == null || Number(slotMax) < 0
+            ? Number.POSITIVE_INFINITY
+            : Number(slotMax);
+        if (Number.isFinite(maxAllowed) && othersTotal + nextQuantity > maxAllowed) {
+          return prev;
+        }
+      }
 
       return {
         ...prev,
-        [ticketId]: Math.max(0, newQuantity),
+        [ticketId]: nextQuantity,
       };
     });
   };
@@ -298,6 +335,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
 
     if (isAvailable) {
       setSelectedDate(day.dateString);
+      setTicketQuantities({});
       setShowCalendar(false);
       await fetchEventDatesDetails(day.dateString);
     } else {
@@ -345,6 +383,11 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
       return;
     }
     try {
+      if (!selectedDate || !selectedOption || !selectedTime) {
+        showToast("error", "Please complete all selections");
+        return;
+      }
+
       // Collect selected data for booking
       const selectedProducts = ticketTypes
         .filter((ticket) => (ticketQuantities[ticket.id] || 0) > 0)
@@ -352,10 +395,14 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           const baseProduct = {
             product_id: ticket.id,
             product_name: ticket.name,
-            type: ticket?.type || "musement", // Based on the API example
+            type: ticket?.type || "musement",
             quantity: ticketQuantities[ticket.id] || 0,
             retail_price: ticket.price,
             total_price: ticket.price * (ticketQuantities[ticket.id] || 0),
+            min_buy: ticket.min,
+            max_buy: ticket.max,
+            slot_min_buy: selectedSlot?.min_buy,
+            slot_max_buy: selectedSlot?.max_buy,
           };
 
           // Only add id field (cart_id) when coming from cart (for updateCart API)
@@ -373,9 +420,14 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         return;
       }
 
-      // Check if required fields are present
-      if (!selectedDate || !selectedOption || !selectedTime) {
-        showToast("error", "Please complete all selections");
+      const partySizeError = getPartySizeError({
+        tickets: ticketTypes,
+        quantities: ticketQuantities,
+        slotMinBuy: selectedSlot?.min_buy,
+        slotMaxBuy: selectedSlot?.max_buy,
+      });
+      if (partySizeError) {
+        showToast("error", partySizeError);
         return;
       }
 
@@ -411,6 +463,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
           city_id: String(eventData?.cityId || ""),
           event_id: eventData?.activityUuid,
           start_date: formattedDate,
+          trip_id: String(eventData?.tripId || eventData?.trip_id || ""),
           products: selectedProducts,
         };
 
@@ -429,8 +482,9 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         const response = await updateCart(updateCartData);
         showToast("success", response?.message || "Cart updated successfully");
         navigation.reset({
-          index: 0,
+          index: 1,
           routes: [
+            { name: navigationStrings.BOTTOM_TAB },
             {
               name: navigationStrings.CART,
               params: {
@@ -584,53 +638,57 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                   </View>
 
                   {/* Ticket Quantity Selectors */}
-                  {ticketTypes.map((ticket) => (
+                  {ticketTypes.map((ticket) => {
+                    const quantity = ticketQuantities[ticket.id] || 0;
+                    const minBuy = effectiveProductMinBuy(ticket.min);
+                    const canIncrement = canIncrementTicket({
+                      ticket,
+                      quantities: ticketQuantities,
+                      ticketTypes,
+                      slotMaxBuy: selectedSlot?.max_buy,
+                    });
+                    return (
                     <View key={ticket.id} style={styles.ticketRow}>
                       <View style={styles.ticketInfo}>
                         <Text style={styles.ticketLabel}>{ticket.name}</Text>
                         <Text style={styles.ticketPrice}>
                           {ticket.formatted_price}
+                          {minBuy > 1 ? ` · min ${minBuy}` : ""}
                         </Text>
                       </View>
                       <View style={styles.quantitySelector}>
                         <TouchableOpacity
                           style={[
                             styles.quantityButton,
-                            (ticketQuantities[ticket.id] || 0) === 0 &&
-                            styles.disabledButton,
+                            quantity === 0 && styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, -1)}
-                          disabled={(ticketQuantities[ticket.id] || 0) === 0}
+                          disabled={quantity === 0}
                         >
                           <Text
                             style={[
                               styles.quantityButtonText,
-                              (ticketQuantities[ticket.id] || 0) === 0 &&
-                              styles.disabledButtonText,
+                              quantity === 0 && styles.disabledButtonText,
                             ]}
                           >
                             -
                           </Text>
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>
-                          {ticketQuantities[ticket.id] || 0}
+                          {quantity}
                         </Text>
                         <TouchableOpacity
                           style={[
                             styles.quantityButton,
-                            (ticketQuantities[ticket.id] || 0) === ticket.max &&
-                            styles.disabledButton,
+                            !canIncrement && styles.disabledButton,
                           ]}
                           onPress={() => handleQuantityChange(ticket.id, 1)}
-                          disabled={
-                            (ticketQuantities[ticket.id] || 0) === ticket.max
-                          }
+                          disabled={!canIncrement}
                         >
                           <Text
                             style={[
                               styles.quantityButtonText,
-                              (ticketQuantities[ticket.id] || 0) ===
-                              ticket.max && styles.disabledButtonText,
+                              !canIncrement && styles.disabledButtonText,
                             ]}
                           >
                             +
@@ -638,7 +696,8 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
                         </TouchableOpacity>
                       </View>
                     </View>
-                  ))}
+                    );
+                  })}
                 </View>
               )}
             </View>

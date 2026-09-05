@@ -6,6 +6,8 @@ import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import OptimizedImage from "@components/OptimizedImage";
 import ProfileButton from "@components/ProfileButton";
 import { useStickyScrollPadding } from "@hooks/useStickyBottomInset";
+import { TAB_BAR_HEIGHT } from "@navigation/constants/tabBar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import navigationStrings from "@navigation/navigationStrings";
 import { logoutUser, exitGuestMode, exitGuestForSignIn } from "@redux/slices/authSlice";
 import ButtonComp from "@components/ButtonComp";
@@ -21,6 +23,7 @@ import { STORAGE_KEYS } from "@utils/storageKeys";
 import {
   Alert,
   Image,
+  Platform,
   StatusBar,
   StyleSheet,
   Text,
@@ -33,6 +36,11 @@ const Account = ({ navigation }) => {
   const dispatch = useDispatch();
   const { user, isGuest } = useAuth();
   const scrollPadding = useStickyScrollPadding();
+  const insets = useSafeAreaInsets();
+  const androidTabClearance =
+    Platform.OS === "android"
+      ? TAB_BAR_HEIGHT + insets.bottom + getVertiPadding(24)
+      : 0;
 
   // Get user profile image URI
   const getUserImageUri = () => {
@@ -149,7 +157,9 @@ const Account = ({ navigation }) => {
   if (isGuest) {
     return (
       <ResponsiveContainer
-        contentContainerStyle={{ paddingBottom: scrollPadding }}
+        contentContainerStyle={{
+          paddingBottom: Platform.OS === "android" ? 0 : scrollPadding,
+        }}
       >
         <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
         <View style={styles.header}>
@@ -194,13 +204,18 @@ const Account = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Guest</Text>
           <ProfileButton title="Exit Guest Mode" onPress={handleExitGuestMode} />
         </View>
+        {androidTabClearance > 0 ? (
+          <View style={{ height: androidTabClearance }} />
+        ) : null}
       </ResponsiveContainer>
     );
   }
 
   return (
     <ResponsiveContainer
-      contentContainerStyle={{ paddingBottom: scrollPadding }}
+      contentContainerStyle={{
+        paddingBottom: Platform.OS === "android" ? 0 : scrollPadding,
+      }}
     >
       <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
       {/* Header */}
@@ -294,6 +309,9 @@ const Account = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Account</Text>
         <ProfileButton title="Delete Account" onPress={handleDeleteAccount} />
       </View>
+      {androidTabClearance > 0 ? (
+        <View style={{ height: androidTabClearance }} />
+      ) : null}
     </ResponsiveContainer>
   );
 };

@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   ScrollView,
+  Platform,
 } from "react-native";
 import React, { useState } from "react";
 import { Calendar } from "react-native-calendars";
@@ -16,6 +17,7 @@ import Header from "@components/Header";
 import ButtonComp from "@components/ButtonComp";
 import OptimizedImage from "@components/OptimizedImage";
 import {
+  getFontSize,
   getHeight,
   getWidth,
   getRadius,
@@ -234,6 +236,7 @@ const EditTrip = ({ navigation, route }) => {
               onChangeText={setTripName}
               placeholder="Enter trip name"
               placeholderTextColor={colors.lightText}
+              underlineColorAndroid="transparent"
             />
           </View>
         </View>
@@ -387,14 +390,33 @@ const styles = StyleSheet.create({
   inputContainer: {
     backgroundColor: colors.secondary,
     borderRadius: getRadius(10),
-    paddingVertical: getHeight(14),
     paddingHorizontal: getWidth(12),
     justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        paddingVertical: getHeight(14),
+      },
+      android: {
+        height: getHeight(48),
+        paddingVertical: 0,
+      },
+    }),
   },
   textInput: {
-    fontSize: getHeight(16),
     fontFamily: fonts.RobotoRegular,
     color: colors.black,
+    ...Platform.select({
+      ios: {
+        fontSize: getHeight(16),
+      },
+      android: {
+        fontSize: getFontSize(14),
+        paddingVertical: 0,
+        margin: 0,
+        includeFontPadding: false,
+        textAlignVertical: "center",
+      },
+    }),
   },
   dateRow: {
     flexDirection: "row",
@@ -405,9 +427,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dateText: {
-    fontSize: getHeight(16),
     fontFamily: fonts.RobotoRegular,
     color: colors.black,
+    ...Platform.select({
+      ios: {
+        fontSize: getHeight(16),
+      },
+      android: {
+        fontSize: getFontSize(14),
+        includeFontPadding: false,
+      },
+    }),
   },
   coverPhotoContainer: {
     height: getHeight(120),

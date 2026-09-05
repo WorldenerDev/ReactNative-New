@@ -6,6 +6,7 @@ import {
   Dimensions,
   Image,
   Text,
+  Platform,
 } from "react-native";
 import {
   createBottomTabNavigator,
@@ -27,6 +28,7 @@ import BookingStack from "./stacks/BookingStack";
 import GroupStack from "./stacks/GroupStack";
 import HomeStack from "./stacks/HomeStack";
 import TripsStack from "./stacks/TripsStack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Tab = createBottomTabNavigator();
 
@@ -43,10 +45,13 @@ const tabMeta = {
 
 const CustomTabBar = ({ state, navigation }) => {
   const onHeightChange = React.useContext(BottomTabBarHeightCallbackContext);
+  const insets = useSafeAreaInsets();
+  const bottomInset = Platform.OS === "android" ? insets.bottom : 0;
+  const barHeight = TAB_BAR_HEIGHT + bottomInset;
 
   return (
     <View
-      style={styles.tabBarContainer}
+      style={[styles.tabBarContainer, { height: barHeight }]}
       onLayout={(event) => onHeightChange?.(event.nativeEvent.layout.height)}
       pointerEvents="box-none"
     >

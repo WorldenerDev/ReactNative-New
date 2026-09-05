@@ -123,7 +123,12 @@ const Payment = ({ navigation, route }) => {
           onPress={() => navigation.navigate(navigationStrings.PAYMENT_METHODS)}
         >
           <Text style={styles.manageText}>Manage payment methods</Text>
-          <Text style={styles.chevron}>›</Text>
+          <Image
+            source={imagePath.RIGHT_ICON}
+            style={styles.chevron}
+            tintColor={colors.black}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Select a payment method</Text>
@@ -220,8 +225,9 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   chevron: {
-    fontSize: 22,
-    color: colors.black,
+    width: 16,
+    height: 16,
+    tintColor: colors.black,
     opacity: 0.45,
   },
   sectionTitle: {

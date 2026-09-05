@@ -106,6 +106,8 @@ export const getGroupMessages = (groupId, params, config = {}) =>
   apiGet(`${endpoints?.main?.getGroupMessages}/${groupId}`, params, config);
 export const reportUser = (data) => apiPost(endpoints?.main?.reportUser, data);
 export const blockUser = (data) => apiPost(endpoints?.main?.blockUser, data);
+export const getUserInfo = (userId) =>
+  apiGet(`${endpoints?.main?.getUserInfo}/${userId}`);
 export const addUpdateEmoji = (data) => apiPost(endpoints?.main?.addUpdateEmoji, data);
 export const removeUserFromGroup = (data) => apiPost(endpoints?.main?.removeUserFromGroup, data);
 export const getCityActivities = (params) => apiGet(endpoints?.main?.getCityActivities, params);

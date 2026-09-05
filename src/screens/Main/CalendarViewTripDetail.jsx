@@ -5,6 +5,7 @@ import {
   FlatList,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Calendar } from "react-native-calendars";
@@ -340,11 +341,20 @@ const styles = StyleSheet.create({
   },
   calendar: {
     borderRadius: getRadius(8),
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 0,
+        overflow: "hidden",
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+      },
+    }),
   },
   activitiesContainer: {
     flex: 1,

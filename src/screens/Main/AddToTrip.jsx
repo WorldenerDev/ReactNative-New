@@ -7,6 +7,7 @@ import {
   TextInput,
   Image,
   FlatList,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useMemo } from "react";
 import MainContainer from "@components/container/MainContainer";
@@ -435,28 +436,32 @@ const AddToTrip = ({ navigation, route }) => {
           data={filteredData}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps={
+            Platform.OS === "android" ? "handled" : "never"
+          }
+          removeClippedSubviews={Platform.OS === "android" ? false : undefined}
           contentContainerStyle={[
             styles.flatListContent,
             { paddingBottom: scrollPadding },
           ]}
-          ListHeaderComponent={() => (
+          ListHeaderComponent={
             <View style={styles.searchContainer}>
               <TextInput
                 style={styles.searchInput}
-                placeholder="Where are you going?"
+                placeholder=""
                 placeholderTextColor={colors.gray}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
               <Image source={imagePath.SEARCH_ICON} style={styles.searchIcon} />
             </View>
-          )}
+          }
           renderItem={renderListItem}
-          ListEmptyComponent={() => (
+          ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No contacts found</Text>
             </View>
-          )}
+          }
         />
         {/* Floating Done Button */}
         <View style={[styles.floatingButtonContainer, { bottom: bottomInset }]}>
@@ -465,6 +470,7 @@ const AddToTrip = ({ navigation, route }) => {
             disabled={!hasSelections || isSendingInvitations}
             onPress={handleDone}
             containerStyle={styles.doneButton}
+            textStyle={styles.doneButtonText}
           />
         </View>
       </View>
@@ -581,6 +587,10 @@ const styles = StyleSheet.create({
   },
   doneButton: {
     width: "100%",
+  },
+  doneButtonText: {
+    color: colors.black,
+    opacity: 1,
   },
   emptyContainer: {
     paddingVertical: getHeight(40),

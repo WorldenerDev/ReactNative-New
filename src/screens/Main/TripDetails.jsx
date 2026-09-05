@@ -33,6 +33,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -580,26 +581,47 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: getRadius(12),
     width: "100%",
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
     overflow: "hidden",
     marginTop: getVertiPadding(15),
     marginBottom: getHeight(4),
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.black,
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      },
+      android: {
+        elevation: 0,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+      },
+    }),
   },
   imageContainer: {
     height: getHeight(120),
+    ...Platform.select({
+      android: {
+        overflow: "hidden",
+        borderTopLeftRadius: getRadius(12),
+        borderTopRightRadius: getRadius(12),
+      },
+    }),
   },
   cardImage: {
     width: "100%",
     height: "100%",
+    ...Platform.select({
+      android: {
+        borderTopLeftRadius: getRadius(12),
+        borderTopRightRadius: getRadius(12),
+      },
+    }),
   },
   cardContent: {
     padding: getHeight(16),
@@ -865,16 +887,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     zIndex: 20,
-    elevation: 4,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 0,
+      },
+    }),
   },
   detailTabs: {
     marginHorizontal: 0,
     marginTop: getHeight(4),
     marginBottom: 0,
+    ...Platform.select({
+      android: {
+        elevation: 0,
+        overflow: "hidden",
+      },
+    }),
   },
   tabBody: {
     paddingTop: getHeight(8),
