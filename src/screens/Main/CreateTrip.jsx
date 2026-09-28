@@ -115,14 +115,15 @@ const CreateTrip = ({ navigation, route }) => {
         return;
       }
 
-      // Prepare API payload
+      // Prepare API payload — name/image must be sent; cities often aren't in the DB.
       const tripData = {
         city_id: String(city?.city_id),
         start_at: fromDate,
         end_at: toDate,
         groups: selectedBuddyPhones,
-        isGroupTrip: selectedBuddyPhones.length > 0 ? true : false
-
+        isGroupTrip: selectedBuddyPhones.length > 0 ? true : false,
+        name: city?.name || "",
+        image: city?.image || "",
       };
 
       console.log("Creating trip with data:", tripData);

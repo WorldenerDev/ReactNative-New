@@ -26,17 +26,47 @@ export const getTripCityId = (trip) => {
   return null;
 };
 
-export const getTripName = (trip) =>
-  trip?.name ||
-  trip?.destination ||
-  trip?.city?.name ||
-  trip?.city_id?.name ||
-  "Trip";
+const asDisplayName = (value) => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed || null;
+};
+
+/** Resolve the city / destination label from any trip payload shape. */
+export const getTripCityName = (trip) => {
+  if (!trip) return null;
+
+  const cityField = trip.city;
+  const fromCity =
+    typeof cityField === "string"
+      ? cityField
+      : cityField && typeof cityField === "object"
+        ? cityField.name
+        : null;
+
+  return (
+    asDisplayName(fromCity) ||
+    asDisplayName(trip.cityName) ||
+    asDisplayName(trip.city_name) ||
+    asDisplayName(trip.destination) ||
+    asDisplayName(
+      trip.city_id && typeof trip.city_id === "object"
+        ? trip.city_id.name
+        : null
+    ) ||
+    asDisplayName(trip.name) ||
+    null
+  );
+};
+
+export const getTripName = (trip) => getTripCityName(trip) || "Trip";
 
 export const getTripImage = (trip) =>
   trip?.image ||
-  (typeof trip?.city === "object" ? trip?.city?.image : null) ||
-  trip?.city_id?.image ||
+  (trip?.city && typeof trip.city === "object" ? trip.city.image : null) ||
+  (trip?.city_id && typeof trip.city_id === "object"
+    ? trip.city_id.image
+    : null) ||
   trip?.cityImage ||
   null;
 
@@ -62,6 +92,7 @@ export const normalizeTripDetails = (payload) => {
 
   const activities = normalizeActivities(trip, raw);
   const cityId = getTripCityId(trip);
+  const cityName = getTripCityName(trip);
   const participantsList = Array.isArray(trip?.participantsList)
     ? trip.participantsList
     : Array.isArray(trip?.participants)
@@ -73,12 +104,17 @@ export const normalizeTripDetails = (payload) => {
       ? trip.participants
       : participantsList.length;
 
+  const cityFromObject =
+    trip?.city && typeof trip.city === "object" ? trip.city : {};
+  const cityFromIdObject =
+    trip?.city_id && typeof trip.city_id === "object" ? trip.city_id : {};
+
   return {
     ...trip,
     _id: id,
     id,
-    name: getTripName(trip),
-    destination: trip?.destination || getTripName(trip),
+    name: cityName || getTripName(trip),
+    destination: cityName || asDisplayName(trip?.destination) || getTripName(trip),
     start_at: trip?.start_at || trip?.startDate || null,
     end_at: trip?.end_at || trip?.endDate || null,
     startDate: trip?.startDate || trip?.start_at?.slice?.(0, 10) || null,
@@ -86,9 +122,9 @@ export const normalizeTripDetails = (payload) => {
     image: getTripImage(trip),
     city_id: cityId,
     city: {
-      ...(typeof trip?.city === "object" ? trip.city : {}),
-      ...(typeof trip?.city_id === "object" ? trip.city_id : {}),
-      name: getTripName(trip),
+      ...cityFromObject,
+      ...cityFromIdObject,
+      name: cityName || getTripName(trip),
       image: getTripImage(trip),
       city_id: cityId,
       _id: cityId,

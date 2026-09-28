@@ -22,7 +22,12 @@ import { useDispatch } from "react-redux";
 import { deleteUserTrip } from "@redux/slices/cityTripSlice";
 import GuestPrompt from "@components/GuestPrompt";
 import useAuth from "@hooks/useAuth";
-import { canDeleteTrip, isTripPast, getTripImage } from "@utils/tripHelpers";
+import {
+  canDeleteTrip,
+  isTripPast,
+  getTripImage,
+  getTripCityName,
+} from "@utils/tripHelpers";
 import {
   fetchMyTripsWithMock,
   isReusableGroupsMockEnabled,
@@ -167,7 +172,7 @@ const Trips = ({ navigation }) => {
     return (
       <TripCard
         image={getImageUrl(getTripImage(item)) || getTripImage(item)}
-        city={item?.name || item?.city?.name}
+        city={getTripCityName(item) || "Trip"}
         startDate={item?.start_at}
         endDate={item?.end_at}
         memberCount={members}

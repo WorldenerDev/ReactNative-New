@@ -23,6 +23,7 @@ import {
 import {
   getActivityDateKey,
   getTripCityId,
+  getTripCityName,
   getTripId,
   getTripImage,
   normalizeTripDetails,
@@ -143,11 +144,7 @@ const TripDetails = ({ navigation, route }) => {
       navigation.navigate(navigationStrings.CITY_DETAIL, {
         cityData: {
           city_id: cityId,
-          name:
-            tripData?.city?.name ||
-            tripData?.name ||
-            tripData?.destination ||
-            "City",
+          name: getTripCityName(tripData) || "City",
           image: tripData?.image || tripData?.city?.image || null,
         },
         selectedTripId: currentTripId,
@@ -363,11 +360,7 @@ const TripDetails = ({ navigation, route }) => {
             <View style={styles.destinationInfo}>
               <Image source={imagePath.LOCATION_PIN} style={styles.pinIcon} />
               <Text style={styles.destinationText}>
-                {tripData?.destination ||
-                  tripData?.name ||
-                  tripData?.city?.name ||
-                  tripData?.city_id?.name ||
-                  "Unknown Destination"}
+                {getTripCityName(tripData) || "Unknown Destination"}
               </Text>
             </View>
             <View style={styles.statusContainer}>

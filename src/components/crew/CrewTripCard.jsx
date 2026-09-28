@@ -18,7 +18,7 @@ import { formatCompactDateRange } from "@utils/formatDate";
 import imagePath from "@assets/icons";
 import OptimizedImage from "@components/OptimizedImage";
 import { getImageUrl } from "@api/apiClient";
-import { getTripImage } from "@utils/tripHelpers";
+import { getTripImage, getTripCityName } from "@utils/tripHelpers";
 
 const DUMMY_USER_IMAGE =
   "https://ui-avatars.com/api/?name=User&background=random&size=200";
@@ -55,8 +55,7 @@ const CrewTripCard = ({ trip, onPress }) => {
   const activityCount = trip.activityCount || 0;
   const coverRaw = getTripImage(trip);
   const coverUri = getImageUrl(coverRaw) || coverRaw || null;
-  const cityName =
-    typeof trip.city === "string" ? trip.city : trip.city?.name || "";
+  const cityName = getTripCityName(trip) || "";
 
   return (
     <TouchableOpacity

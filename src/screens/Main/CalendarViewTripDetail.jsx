@@ -16,7 +16,7 @@ import fonts from "@assets/fonts";
 import { getHeight, getWidth, getRadius } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { getTripDetails } from "@api/services/mainServices";
-import { getTripId, normalizeTripDetails } from "@utils/tripHelpers";
+import { getTripId, getTripCityName, normalizeTripDetails } from "@utils/tripHelpers";
 
 const CalendarViewTripDetail = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
@@ -188,7 +188,7 @@ const CalendarViewTripDetail = ({ navigation, route }) => {
   return (
     <MainContainer loader={loading}>
       <Header
-        title={tripData?.destination || tripData?.city?.name || "Trip Details"}
+        title={getTripCityName(tripData) || "Trip Details"}
         showBack={true}
       />
 

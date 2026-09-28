@@ -151,6 +151,8 @@ export const createTripForCrew = async (payload) => {
     groupId: payload.groupId,
     isGroupTrip: false,
     groups: [],
+    name: payload.city || payload.name || "",
+    image: payload.image || "",
   });
 };
 
@@ -162,6 +164,8 @@ export const createSoloTripWithMock = async (payload) => {
     end_at: payload.end_at,
     groups: [],
     isGroupTrip: false,
+    name: payload.city || payload.name || "",
+    image: payload.image || "",
   });
 };
 
