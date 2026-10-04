@@ -67,7 +67,6 @@ const ActivityDetails = ({ navigation, route }) => {
   const bottomInset = useStickyBottomInset();
   const { eventData, selectedTrip: selectedTripFromRoute } =
     route?.params || {};
-  console.log("eventData", eventData);
   const dispatch = useDispatch();
   const { tripsByCity } = useSelector((state) => state.cityTrip);
 
@@ -174,7 +173,6 @@ const ActivityDetails = ({ navigation, route }) => {
       const response = await getEventDetails({
         activityUuid: activityId,
       });
-      console.log("GetEventDetails response:", response);
       setEventDetail(response?.data);
     } catch (error) {
       console.error("Error fetching event details:", error);

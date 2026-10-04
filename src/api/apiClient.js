@@ -80,9 +80,13 @@ apiClient.interceptors.response.use(
 
     const status = error?.response?.status;
     const responseData = error?.response?.data;
-    const isSessionExpired =
-      status === 401 || responseData?.isSessionExpired === true;
+    const message = responseData?.message || error?.message || "";
+    // Real session expiry sets isSessionExpired. A bare 401 is often Musement
+    // forwarding "The access token provided is invalid." and must not log the user out.
+    const isSessionExpired = responseData?.isSessionExpired === true;
     const isLogoutRequest = String(error?.config?.url || "").includes("/logout");
+    const isProviderTokenError =
+      status === 401 && /access token provided is invalid/i.test(String(message));
 
     if (isSessionExpired && !error?.config?.skipSessionExpiry && !isLogoutRequest) {
       if (!error?.config?.skipErrorToast) {
@@ -100,7 +104,12 @@ apiClient.interceptors.response.use(
       /timeout of \d+ms exceeded/i.test(error?.message || "");
 
     if (!error?.config?.skipErrorToast && !isTimeout) {
-      showToast("error", responseData?.message || error.message);
+      showToast(
+        "error",
+        isProviderTokenError
+          ? "This activity couldn't be loaded right now. Please try again."
+          : responseData?.message || error.message
+      );
     }
     throw responseData || { message: "Network error" };
   }
