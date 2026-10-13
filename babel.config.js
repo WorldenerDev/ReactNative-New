@@ -6,11 +6,14 @@ const envPath = path.resolve(__dirname, ".env");
 module.exports = function (api) {
   // Re-transform when `.env` changes. Metro also keys its cache on this file via metro.config.js.
   api.cache.using(() => {
+    let file = "";
     try {
-      return fs.readFileSync(envPath, "utf8");
+      file = fs.readFileSync(envPath, "utf8");
     } catch (e) {
-      return "";
+      file = "";
     }
+    // Release bundling sets NODE_ENV=production. Debug does not.
+    return file + "\0" + (process.env.NODE_ENV || "");
   });
 
   return {
@@ -45,6 +48,12 @@ module.exports = function (api) {
           unsafe: true,
           // `.env` wins over a leftover shell API_ENV.
           systemVar: "disable",
+          // NODE_ENV is not in .env. Leaving it unset makes unsafe mode replace
+          // process.env.NODE_ENV with undefined, so release bundles ship React's
+          // development JSX runtime and the first render throws.
+          env: process.env.NODE_ENV
+            ? { NODE_ENV: process.env.NODE_ENV }
+            : undefined,
         },
       ],
       "react-native-worklets/plugin",
