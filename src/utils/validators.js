@@ -7,13 +7,7 @@ export const validateEmail = (email) => {
   return null;
 };
 
-export const validateMobileNumber = (mobile) => {
-  if (!mobile) return "Mobile number is required";
-  const mobileRegex = /^[6-9]\d{7,10}$/;
-  if (!mobileRegex.test(mobile))
-    return "Please enter a valid mobile number (8-11 digits)";
-  return null;
-};
+export { validateNationalMobile as validateMobileNumber } from "./phoneNumber";
 
 export const validateOtp = (otp) => {
   if (!otp) return "OTP is required";

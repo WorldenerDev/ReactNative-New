@@ -15,8 +15,29 @@ import { getHeight, getWidth } from "@utils/responsive";
 import imagePath from "@assets/icons";
 import { getImageUrl } from "@api/apiClient";
 
-const isLocalUri = (uri) =>
-  uri?.startsWith("file://") || uri?.startsWith("content://");
+const isLocalUri = (uri) => {
+  if (!uri || typeof uri !== "string") return false;
+  return (
+    uri.startsWith("file://") ||
+    uri.startsWith("content://") ||
+    uri.startsWith("ph://") ||
+    uri.startsWith("assets-library://") ||
+    // Absolute device paths from image resizer (without scheme)
+    /^\/(var|private|data|storage|Users)\//.test(uri)
+  );
+};
+
+const resolveDisplayUri = (uri) => {
+  if (!uri) return null;
+  if (isLocalUri(uri)) {
+    // RN Image needs a scheme for bare filesystem paths
+    if (uri.startsWith("/") && !uri.startsWith("file://")) {
+      return `file://${uri}`;
+    }
+    return uri;
+  }
+  return getImageUrl(uri) || uri;
+};
 
 const CrewPhotoPicker = ({
   imageUri,
@@ -46,14 +67,15 @@ const CrewPhotoPicker = ({
     }
   };
 
-  const displayUri = imageUri ? getImageUrl(imageUri) || imageUri : null;
+  const displayUri = resolveDisplayUri(imageUri);
+  const isLocal = isLocalUri(imageUri);
 
   const renderImage = (style) => {
     if (!displayUri) {
       return null;
     }
 
-    if (isLocalUri(displayUri)) {
+    if (isLocal) {
       return (
         <Image source={{ uri: displayUri }} style={style} resizeMode="cover" />
       );

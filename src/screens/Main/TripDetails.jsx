@@ -155,8 +155,42 @@ const TripDetails = ({ navigation, route }) => {
     }
   };
 
-  const handleActivityPress = () => {
-    // TODO: Navigate to activity details
+  const handleActivityPress = (activity) => {
+    const activityId =
+      activity?.event_id ||
+      activity?.activity_id ||
+      activity?.activityUuid ||
+      activity?.uuid ||
+      activity?.id ||
+      activity?._id;
+
+    if (!activityId) {
+      showToast("error", "Activity information not available");
+      return;
+    }
+
+    const image =
+      activity?.image || activity?.product_image || activity?.thumbnail;
+    const processedImage =
+      image && String(image).startsWith("/")
+        ? getImageUrl(image)
+        : image || undefined;
+
+    navigation.push(navigationStrings.ACTIVITY_DETAILS, {
+      eventData: {
+        ...activity,
+        id: activityId,
+        activity_id: activityId,
+        name:
+          activity?.name ||
+          activity?.title ||
+          activity?.product_name ||
+          "Activity",
+        image: processedImage,
+        city_id: activity?.city_id || getTripCityId(tripData),
+      },
+      selectedTrip: toSelectedTripOption(tripData),
+    });
   };
 
   const handleCheckout = async () => {
@@ -244,7 +278,15 @@ const TripDetails = ({ navigation, route }) => {
           <TouchableOpacity
             key={`activity-${dateIndex}-${index}-${activity.product_id || activity.id || activity._id || index}`}
             style={styles.activityCard}
-            onPress={handleActivityPress}
+            activeOpacity={0.8}
+            onPress={() => handleActivityPress(activity)}
+            accessibilityRole="button"
+            accessibilityLabel={
+              activity.title ||
+              activity.name ||
+              activity.product_name ||
+              "Open activity"
+            }
           >
             <OptimizedImage
               source={{

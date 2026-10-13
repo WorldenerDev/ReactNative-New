@@ -12,7 +12,6 @@ import ButtonComp from "@components/ButtonComp";
 import MainContainer from "@components/container/MainContainer";
 import CustomDropdown from "@components/CustomDropdown";
 import Header from "@components/Header";
-import { navigateToTripDetails } from "@navigation/helpers/nestedTabNavigation";
 import navigationStrings from "@navigation/navigationStrings";
 import { toYmd } from "@utils/formatDate";
 import {
@@ -22,7 +21,6 @@ import {
   nextTicketQuantity,
 } from "@utils/musementPartySize";
 import { getFontSize, getHeight, getRadius, getWidth } from "@utils/responsive";
-import { getTripId, normalizeTripDetails } from "@utils/tripHelpers";
 import { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
@@ -179,6 +177,36 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     return `${month} ${day} ${weekday}`;
   };
 
+  // Convert "HH:mm" / "H:mm" (24h) to "h:mm AM/PM"
+  const formatTimeToAmPm = (timeString) => {
+    if (!timeString || typeof timeString !== "string") return timeString;
+
+    const match = timeString.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (!match) return timeString;
+
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    if (Number.isNaN(hours) || hours < 0 || hours > 23) return timeString;
+
+    const period = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+
+    return `${hours}:${minutes} ${period}`;
+  };
+
+  const timeToMinutes = (timeString) => {
+    if (!timeString || typeof timeString !== "string") return Number.MAX_SAFE_INTEGER;
+    const match = timeString.trim().match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return Number.MAX_SAFE_INTEGER;
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+    return hours * 60 + minutes;
+  };
+
   // Call API to get event dates
   useEffect(() => {
     fetchEventDates();
@@ -194,7 +222,7 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     }
   }, [from, eventData?.selectedDate]);
 
-  // Get time slots from selected group
+  // Get time slots from selected group (sorted chronologically, shown in AM/PM)
   const getTimeSlotsForSelectedGroup = () => {
     if (!selectedOption || !dateDetails) return [];
     const selectedGroup = dateDetails.find(
@@ -202,11 +230,13 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
     );
     if (!selectedGroup || !selectedGroup.slots) return [];
 
-    return selectedGroup.slots.map((slot) => ({
-      label: slot.time,
-      value: slot.time,
-      slot: slot,
-    }));
+    return [...selectedGroup.slots]
+      .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time))
+      .map((slot) => ({
+        label: formatTimeToAmPm(slot.time),
+        value: slot.time,
+        slot: slot,
+      }));
   };
 
   // Get products for selected time slot
@@ -517,12 +547,19 @@ const ActivityDetailsCheckAvability = ({ navigation, route }) => {
         console.log("addEventInTrip requestData", requestData);
         const response = await addEventInTrip(requestData);
         showToast("success", response?.message);
-        const addedTrip = normalizeTripDetails(response?.data ?? response);
-        const addedTripId = getTripId(addedTrip) || String(eventData.tripId);
-        navigateToTripDetails(navigation, {
-          trip: addedTrip,
-          tripId: addedTripId,
-        });
+
+        // Stay on discovery: leave Check Availability + Activity Details
+        // so the user can keep browsing (CityDetail / category / surprises).
+        const routes = navigation.getState()?.routes || [];
+        const activityDetailsIndex = routes
+          .map((routeItem) => routeItem.name)
+          .lastIndexOf(navigationStrings.ACTIVITY_DETAILS);
+
+        if (activityDetailsIndex >= 0) {
+          navigation.pop(Math.max(routes.length - activityDetailsIndex, 1));
+        } else if (navigation.canGoBack()) {
+          navigation.goBack();
+        }
       }
     } catch (error) {
       console.error("❌ Error:", error);

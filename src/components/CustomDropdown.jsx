@@ -23,8 +23,10 @@ import {
 import imagePath from "@assets/icons";
 
 const SHEET_HEADER_HEIGHT = 72;
+const SHEET_HEADER_WITH_SUBTITLE_HEIGHT = 92;
 const SHEET_ITEM_HEIGHT = 56;
 const SHEET_HANDLE_HEIGHT = 20;
+const SHEET_LIST_PADDING = 16;
 
 const CustomDropdown = React.memo(
   ({
@@ -56,15 +58,25 @@ const CustomDropdown = React.memo(
     const sheetHeight = useMemo(() => {
       const screenHeight = Dimensions.get("window").height;
       const optionCount = Math.max(options.length, 1);
+      const headerHeight = modalSubtitle
+        ? SHEET_HEADER_WITH_SUBTITLE_HEIGHT
+        : SHEET_HEADER_HEIGHT;
       const calculated =
         SHEET_HANDLE_HEIGHT +
-        SHEET_HEADER_HEIGHT +
+        headerHeight +
+        SHEET_LIST_PADDING +
         optionCount * SHEET_ITEM_HEIGHT +
         insets.bottom;
+
+      // Short lists: exact content height. Longer lists: keep prior sheet bounds.
+      if (optionCount <= 4) {
+        return calculated;
+      }
+
       const minHeight = screenHeight * 0.28;
       const maxHeight = screenHeight * 0.55;
       return Math.min(Math.max(calculated, minHeight), maxHeight);
-    }, [options.length, insets.bottom]);
+    }, [options.length, insets.bottom, modalSubtitle]);
 
     const handleOpen = () => {
       if (disabled || options.length === 0) {
@@ -180,6 +192,7 @@ const CustomDropdown = React.memo(
                 keyExtractor={(item, index) =>
                   item.value?.toString() || index.toString()
                 }
+                scrollEnabled={options.length > 5}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.sheetListContent}
                 renderItem={({ item }) => {

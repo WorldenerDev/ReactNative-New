@@ -21,6 +21,7 @@ import {
   getVertiPadding,
 } from "@utils/responsive";
 import { validateMobileNumber } from "@utils/validators";
+import { buildFullPhoneNumber } from "@utils/phoneNumber";
 
 const OTP_LENGTH = 6;
 
@@ -53,13 +54,13 @@ const SocialPhonePromptModal = ({
   }, [visible]);
 
   const handleSendOtp = async () => {
-    const validationError = validateMobileNumber(phoneNumber);
+    const validationError = validateMobileNumber(phoneNumber, countryCode);
     if (validationError) {
       setError(validationError);
       return;
     }
     setError("");
-    const nextFullPhone = `${countryCode}${phoneNumber}`;
+    const nextFullPhone = buildFullPhoneNumber(countryCode, phoneNumber);
     const sent = await onSendOtp?.(nextFullPhone);
     if (sent) {
       setFullPhone(nextFullPhone);

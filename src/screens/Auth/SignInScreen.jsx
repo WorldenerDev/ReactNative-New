@@ -14,6 +14,7 @@ import {
 import navigationStrings from "@navigation/navigationStrings";
 import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import { validateForm, validateMobileNumber } from "@utils/validators";
+import { buildFullPhoneNumber } from "@utils/phoneNumber";
 import { showToast } from "@components/AppToast";
 import { useDispatch } from "react-redux";
 import { guestLoginUser, loginUser } from "@redux/slices/authSlice";
@@ -71,15 +72,23 @@ const SignInScreen = ({ navigation }) => {
       const fcmToken = await getFCMTokenForAuth();
       console.log("fcmToken", fcmToken);
       const error = validateForm([
-        { validator: validateMobileNumber, values: [data?.phoneNumber] },
+        {
+          validator: validateMobileNumber,
+          values: [data?.phoneNumber, data?.countryCode],
+        },
       ]);
       if (error) {
         showToast("error", error);
         return;
       }
 
+      const fullPhoneNumber = buildFullPhoneNumber(
+        data?.countryCode,
+        data?.phoneNumber,
+      );
+
       const sendData = {
-        phone_number: data?.countryCode + data?.phoneNumber,
+        phone_number: fullPhoneNumber,
         device_type: Platform.OS,
         device_id: deviceId,
         fcm_token: fcmToken || "not_available",
@@ -93,7 +102,7 @@ const SignInScreen = ({ navigation }) => {
         );
         navigation.navigate(navigationStrings.OTPSCREEN, {
           fromScreen: "signin",
-          phoneNumber: data?.countryCode + data?.phoneNumber,
+          phoneNumber: fullPhoneNumber,
           fcm_Token: fcmToken,
           deviceId,
           deviceType: Platform.OS,

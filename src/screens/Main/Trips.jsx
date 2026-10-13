@@ -2,16 +2,17 @@ import {
   StyleSheet,
   Text,
   View,
-  SectionList,
+  FlatList,
   Alert,
   RefreshControl,
+  TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import TripCard from "@components/TripCard";
-import { getFontSize, getHeight, getWidth } from "@utils/responsive";
+import { getFontSize, getHeight, getRadius, getWidth } from "@utils/responsive";
 import { typography } from "@utils/theme";
 import colors from "@assets/colors";
 import fonts from "@assets/fonts";
@@ -37,6 +38,14 @@ import {
 import { showToast } from "@components/AppToast";
 import { getImageUrl } from "@api/apiClient";
 
+const FILTER_OPTIONS = [
+  { label: "Current", value: "current" },
+  { label: "Opt-out", value: "optout" },
+  { label: "Past Trips", value: "past" },
+];
+
+const isOptedOutTrip = (trip) => trip?.participationStatus === "opted_out";
+
 const Trips = ({ navigation }) => {
   const scrollPadding = useStickyScrollPadding();
   const { isGuest, user } = useAuth();
@@ -45,6 +54,7 @@ const Trips = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState(FILTER_OPTIONS[0]);
 
   const getAllTrips = useCallback(async () => {
     try {
@@ -151,18 +161,39 @@ const Trips = ({ navigation }) => {
     return { members, activities };
   };
 
-  const tripSections = useMemo(() => {
-    const upcoming = [];
-    const past = [];
-    for (const trip of tripList) {
-      if (isTripPast(trip)) past.push(trip);
-      else upcoming.push(trip);
+  const filteredTrips = useMemo(() => {
+    const filterValue = selectedFilter?.value || "current";
+
+    return tripList.filter((trip) => {
+      const optedOut = isOptedOutTrip(trip);
+      const past = isTripPast(trip);
+
+      if (filterValue === "optout") return optedOut;
+      if (filterValue === "past") return past && !optedOut;
+      // Current: active/upcoming trips the user has not opted out of
+      return !past && !optedOut;
+    });
+  }, [tripList, selectedFilter]);
+
+  const emptyCopy = useMemo(() => {
+    switch (selectedFilter?.value) {
+      case "optout":
+        return {
+          title: "No opted-out trips",
+          subtitle: "Trips you leave will show up here.",
+        };
+      case "past":
+        return {
+          title: "No past trips",
+          subtitle: "Completed trips will appear here.",
+        };
+      default:
+        return {
+          title: "No current trips",
+          subtitle: "Start planning your next adventure!",
+        };
     }
-    const sections = [];
-    if (upcoming.length) sections.push({ title: "Upcoming", data: upcoming });
-    if (past.length) sections.push({ title: "Past", data: past });
-    return sections;
-  }, [tripList]);
+  }, [selectedFilter]);
 
   const renderTrip = ({ item }) => {
     const { members, activities } = getTripMeta(item);
@@ -243,19 +274,37 @@ const Trips = ({ navigation }) => {
         onRightIconPress={handleAddTrip}
       />
 
-      <SectionList
-        sections={tripSections}
+      <View style={styles.filterRow}>
+        {FILTER_OPTIONS.map((option) => {
+          const isActive = selectedFilter?.value === option.value;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              onPress={() => setSelectedFilter(option)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[styles.filterChipText, isActive && styles.filterChipTextActive]}
+                numberOfLines={1}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <FlatList
+        data={filteredTrips}
         renderItem={renderTrip}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={styles.sectionTitle}>{title}</Text>
-        )}
-        keyExtractor={(item) => item?._id.toString()}
+        keyExtractor={(item) => item?._id?.toString()}
         contentContainerStyle={[
           styles.flatListContent,
           { paddingBottom: scrollPadding },
         ]}
         showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -268,10 +317,8 @@ const Trips = ({ navigation }) => {
         }
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No trips found</Text>
-            <Text style={styles.emptySubText}>
-              Start planning your next adventure!
-            </Text>
+            <Text style={styles.emptyText}>{emptyCopy.title}</Text>
+            <Text style={styles.emptySubText}>{emptyCopy.subtitle}</Text>
           </View>
         )}
       />
@@ -282,16 +329,39 @@ const Trips = ({ navigation }) => {
 export default Trips;
 
 const styles = StyleSheet.create({
+  filterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: getWidth(8),
+    marginBottom: getHeight(12),
+  },
+  filterChip: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: getHeight(10),
+    paddingHorizontal: getWidth(8),
+    borderRadius: getRadius(20),
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  filterChipActive: {
+    backgroundColor: colors.secondary,
+    borderColor: colors.secondary,
+  },
+  filterChipText: {
+    fontSize: getFontSize(13),
+    fontFamily: fonts.RobotoMedium,
+    color: colors.lightText,
+  },
+  filterChipTextActive: {
+    color: colors.black,
+  },
   flatListContent: {
     paddingTop: getHeight(4),
     paddingBottom: getHeight(16),
-  },
-  sectionTitle: {
-    fontSize: getFontSize(16),
-    fontFamily: fonts.RobotoBold,
-    color: colors.black,
-    marginTop: getHeight(8),
-    marginBottom: getHeight(10),
+    flexGrow: 1,
   },
   emptyContainer: {
     flex: 1,

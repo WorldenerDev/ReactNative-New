@@ -38,6 +38,7 @@ const imagePath = {
   SUCCESS_ICON: require("./source/success.png"),
   CARD_ICON: require("./source/pay.png"),
   INVITATION_ICON: require("./source/invite.png"),
+  INVITATION_INBOX_ICON: require("./source/envelope.png"),
   AI_ICON: require("./source/aiIcon.png"),
   MAGIC_ICON: require("./source/magicWand.png"),
   SHARE_ICON: require("./source/share.png"),

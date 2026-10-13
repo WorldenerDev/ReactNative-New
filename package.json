@@ -3,15 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
+    "android": "node scripts/writeEnvConfig.js && react-native run-android",
+    "ios": "node scripts/run-ios.js",
     "lint": "eslint .",
-    "start": "react-native start --host 0.0.0.0",
+    "start": "node scripts/writeEnvConfig.js && react-native start --host 0.0.0.0",
     "ios:proxy": "iproxy 8081 8081",
-    "ios:device": "react-native run-ios --device \"00008150-001A34DA0AF2401C\" --no-packager",
+    "ios:device": "node scripts/run-ios.js --device 00008150-001A34DA0AF2401C --no-packager",
     "test": "jest",
     "postinstall": "patch-package",
-    "androidapk": "cd android && ./gradlew clean && ./gradlew assembleRelease && cd ..",
+    "androidapk": "node scripts/writeEnvConfig.js && cd android && ./gradlew clean && ./gradlew assembleRelease && cd ..",
     "stripe-server": "node scripts/stripe-dev-server.js"
   },
   "dependencies": {

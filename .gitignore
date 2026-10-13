@@ -41,6 +41,7 @@ npm-debug.log
 yarn-error.log
 .env
 .env.*.local
+src/config/env.generated.js
 
 # fastlane
 #

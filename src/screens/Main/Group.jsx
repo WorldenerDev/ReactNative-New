@@ -247,9 +247,9 @@ const Group = ({ navigation }) => {
       <Header
         title={useCrewUi ? "My Crews" : "My Groups"}
         showBack={false}
-        rightIconImage={imagePath.NOTIFICATION_ICON}
+        rightIconImage={imagePath.INVITATION_INBOX_ICON}
         onRightIconPress={handleNotificationIcon}
-        rightIconSize={38}
+        rightIconSize={28}
       />
 
       {useCrewUi ? (

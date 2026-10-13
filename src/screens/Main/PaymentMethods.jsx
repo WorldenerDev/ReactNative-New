@@ -8,6 +8,7 @@ import Header from "@components/Header";
 import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
 import { usePayments } from "@hooks/usePayments";
 import navigationStrings from "@navigation/navigationStrings";
+import { formatCardBrand } from "@utils/cardBrand";
 import { getHeight, getHoriPadding } from "@utils/responsive";
 import useStickyBottomInset from "@hooks/useStickyBottomInset";
 import { useFocusEffect } from "@react-navigation/native";
@@ -105,7 +106,9 @@ const PaymentMethods = ({ navigation }) => {
                   resizeMode="contain"
                 />
                 <View style={styles.cardMeta}>
-                  <Text style={styles.brandText}>{item.brand || "Card"}</Text>
+                  <Text style={styles.brandText}>
+                    {formatCardBrand(item.brand)}
+                  </Text>
                   <Text style={styles.last4}>{`•••• ${item.last4}`}</Text>
                   {item.isDefault ? (
                     <Text style={styles.defaultPill}>Default</Text>

@@ -40,7 +40,12 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { GiftedChat, Message, MessageText } from "react-native-gifted-chat";
+import {
+  Bubble,
+  GiftedChat,
+  Message,
+  MessageText,
+} from "react-native-gifted-chat";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import io from "socket.io-client";
@@ -537,57 +542,87 @@ const Chat = ({ navigation, route }) => {
 
     const hasActivity = !!currentMessage.activityImage;
 
+    const openActivity = () => {
+      if (!hasActivity || !currentMessage.activityUuid) return;
+      handleActivityPress(
+        currentMessage.activityUuid,
+        currentMessage.activityName,
+        currentMessage.activityImage
+      );
+    };
+
+    const openEmojiPicker = () => {
+      setSelectedMessage(currentMessage);
+      setShowEmojiPicker(true);
+    };
+
     return (
       <View style={{ marginVertical: 2 }}>
         <Message
           {...props}
-          onLongPress={() =>
-            setSelectedMessage(currentMessage) || setShowEmojiPicker(true)
-          }
+          onLongPress={openEmojiPicker}
           onPressAvatar={() => onUserAvatarPress(currentMessage.user)}
+          renderBubble={
+            hasActivity
+              ? (bubbleProps) => (
+                  <View
+                    style={[
+                      styles.activityMessageColumn,
+                      position === "right" && styles.activityMessageColumnRight,
+                    ]}
+                  >
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={openActivity}
+                      onLongPress={openEmojiPicker}
+                      delayLongPress={300}
+                    >
+                      <Image
+                        source={{ uri: currentMessage.activityImage }}
+                        style={styles.activityImageOutside}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                    <Bubble
+                      {...bubbleProps}
+                      containerStyle={{
+                        left: styles.activityTextBubble,
+                        right: styles.activityTextBubble,
+                      }}
+                      wrapperStyle={{
+                        left: styles.activityTextWrapper,
+                        right: styles.activityTextWrapper,
+                      }}
+                      textStyle={{
+                        left: styles.activityBubbleText,
+                        right: styles.activityBubbleText,
+                      }}
+                    />
+                  </View>
+                )
+              : undefined
+          }
           renderMessageText={(msgProps) => (
             <TouchableOpacity
               activeOpacity={hasActivity ? 0.8 : 1}
-              onPress={() => {
-                if (hasActivity && currentMessage.activityUuid) {
-                  handleActivityPress(
-                    currentMessage.activityUuid,
-                    currentMessage.activityName,
-                    currentMessage.activityImage
-                  );
-                }
-              }}
-              onLongPress={() => {
-                setSelectedMessage(currentMessage);
-                setShowEmojiPicker(true);
-              }}
+              onPress={openActivity}
+              onLongPress={openEmojiPicker}
               delayLongPress={300}
             >
-              <View style={styles.messageContentContainer}>
-                {currentMessage.activityImage && (
-                  <View style={styles.activityImageWrapper}>
-                    <Image
-                      source={{ uri: currentMessage.activityImage }}
-                      style={styles.activityImageInBubble}
-                      resizeMode="cover"
-                    />
-                  </View>
-                )}
-                {currentMessage.text && (
-                  <MessageText
-                    {...msgProps}
-                    parsePatterns={(linkStyle) => [
-                      {
-                        pattern: /@[\w\s]+/g,
-                        style: {
-                          color: isCurrentUser ? "#fff" : "#0b93f6",
-                          fontWeight: "bold",
-                        },
+              {currentMessage.text ? (
+                <MessageText
+                  {...msgProps}
+                  parsePatterns={() => [
+                    {
+                      pattern: /@[\w\s]+/g,
+                      style: {
+                        color: isCurrentUser ? "#fff" : "#0b93f6",
+                        fontWeight: "bold",
                       },
-                    ]}
-                  />
-                )}
-              </View>
+                    },
+                  ]}
+                />
+              ) : null}
             </TouchableOpacity>
           )}
         />
@@ -1046,23 +1081,35 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#000",
   },
-  messageContentContainer: {
-    overflow: "hidden",
-    maxWidth: 220,
-    borderRadius: 16,
+  activityMessageColumn: {
+    alignItems: "flex-start",
+    maxWidth: "78%",
   },
-  activityImageWrapper: {
-    marginBottom: 8,
-    marginHorizontal: -6,
-    marginTop: -6,
-    overflow: "hidden",
+  activityMessageColumnRight: {
+    alignItems: "flex-end",
+    marginLeft: "auto",
+  },
+  activityImageOutside: {
+    width: 220,
+    height: 140,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
+    backgroundColor: "#E8E8E8",
   },
-  activityImageInBubble: {
-    width: "100%",
-    maxWidth: 220,
-    height: 120,
+  activityTextBubble: {
+    flex: 0,
+    marginTop: -1,
+  },
+  activityTextWrapper: {
+    width: 220,
+    marginLeft: 0,
+    marginRight: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
+  activityBubbleText: {
+    marginTop: 6,
+    marginBottom: 6,
   },
   avatar: {
     width: 36,

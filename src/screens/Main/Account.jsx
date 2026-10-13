@@ -250,7 +250,7 @@ const Account = ({ navigation }) => {
           onPress={handleNotificationIcon}
         >
           <Image
-            source={imagePath.NOTIFICATION_ICON}
+            source={imagePath.INVITATION_INBOX_ICON}
             style={styles.notificationIcon}
             resizeMode="contain"
           />
@@ -376,8 +376,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   notificationIcon: {
-    width: getWidth(50),
-    height: getHeight(50),
+    width: getWidth(28),
+    height: getHeight(28),
   },
   section: {
     marginBottom: getVertiPadding(8),

@@ -131,6 +131,8 @@ export const getClientSecret = () =>
   apiGet(endpoints?.main?.getClientSecret);
 export const getStripeCardList = () =>
   apiGet(endpoints?.main?.getStripeCardList);
+export const deleteStripeCard = (data) =>
+  apiPost(endpoints?.main?.deleteStripeCard, data);
 export const chatbot = (data) => apiPost(endpoints?.main?.chatbot, data);
 export const getChatbotHistoryList = (params) =>
   apiGet(endpoints?.main?.chatbotHistoryList, params);

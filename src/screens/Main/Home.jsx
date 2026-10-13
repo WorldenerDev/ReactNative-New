@@ -131,12 +131,12 @@ const Home = ({ navigation }) => {
           <TouchableOpacity
             style={styles.bellWrap}
             onPress={() => {
-              if (!requireAuth("Sign in to view notifications")) return;
+              if (!requireAuth("Sign in to view invitations")) return;
               navigation.navigate(navigationStrings.NOTIFICATION_SCREEN);
             }}
           >
             <Image
-              source={imagePath.NOTIFICATION_ICON}
+              source={imagePath.INVITATION_INBOX_ICON}
               style={styles.bell}
               resizeMode="contain"
             />

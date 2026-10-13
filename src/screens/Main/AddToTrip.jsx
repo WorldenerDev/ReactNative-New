@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   doneButtonText: {
-    color: colors.black,
+    color: colors.white,
     opacity: 1,
   },
   emptyContainer: {

@@ -31,6 +31,7 @@ import {
   validateLetter,
   validateMobileNumber,
 } from "@utils/validators";
+import { buildFullPhoneNumber } from "@utils/phoneNumber";
 import { objectToFormData } from "@utils/formDataHelper";
 import { getDeviceId } from "@utils/uiUtils";
 import { getFCMToken } from "@utils/fcmToken";
@@ -71,7 +72,10 @@ const SignUp = ({ navigation }) => {
       const deviceId = await getDeviceId();
       const error = validateForm([
         { validator: validateLetter, values: [data?.name, "Name", 4] },
-        { validator: validateMobileNumber, values: [data?.phoneNumber] },
+        {
+          validator: validateMobileNumber,
+          values: [data?.phoneNumber, data?.countryCode],
+        },
       ]);
 
       if (error) {
@@ -79,9 +83,14 @@ const SignUp = ({ navigation }) => {
         return;
       }
 
+      const fullPhoneNumber = buildFullPhoneNumber(
+        data?.countryCode,
+        data?.phoneNumber,
+      );
+
       const newData = {
         name: data?.name,
-        phone_number: data?.countryCode + data?.phoneNumber,
+        phone_number: fullPhoneNumber,
         device_type: Platform.OS,
         device_id: deviceId,
       };
@@ -91,7 +100,7 @@ const SignUp = ({ navigation }) => {
       if (result?.payload?.success) {
         navigation.navigate(navigationStrings.OTPSCREEN, {
           fromScreen: "signup",
-          phoneNumber: data?.countryCode + data?.phoneNumber,
+          phoneNumber: fullPhoneNumber,
         });
       }
     } catch (error) {

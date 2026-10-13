@@ -1,31 +1,65 @@
 import { saveStripePaymentMethod } from "@api/services/mainServices";
 import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
 import colors from "@assets/colors";
+import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
 import MainContainer from "@components/container/MainContainer";
 import Header from "@components/Header";
 import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
 import { usePayments } from "@hooks/usePayments";
-import { clearSetupClientSecret } from "@redux/slices/paymentSlice";
+import {
+  addLocalCard,
+  addOneTimeCard,
+  clearSetupClientSecret,
+  setSelectedCard,
+} from "@redux/slices/paymentSlice";
 import { CardField, useStripe } from "@stripe/stripe-react-native";
 import { getHeight, getHoriPadding } from "@utils/responsive";
 import useStickyBottomInset from "@hooks/useStickyBottomInset";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 
-const AddCard = ({ navigation }) => {
+const AddCard = ({ navigation, route }) => {
   useGuestScreenGuard();
   const bottomInset = useStickyBottomInset();
   const dispatch = useDispatch();
+  const forCheckout = Boolean(route?.params?.forCheckout);
   const [loading, setLoading] = useState(false);
+  const [saveCard, setSaveCard] = useState(true);
   const [cardDetails, setCardDetails] = useState(null);
   const { addDevelopmentCard, prepareAddCard, getCards, payment } =
     usePayments();
   const { createPaymentMethod, confirmSetupIntent } = useStripe();
   const stripeCustomerId = useSelector((s) => s.payment.stripeCustomerId);
+  const shouldSaveCard = !forCheckout || saveCard;
+
+  const mapCardFromDetails = (paymentMethodId, extras = {}) => {
+    const stripeCard = extras.Card || extras.card || {};
+    return {
+      id: paymentMethodId,
+      brand:
+        stripeCard.brand ||
+        cardDetails?.brand ||
+        extras.brand ||
+        "Card",
+      last4:
+        stripeCard.last4 ||
+        cardDetails?.last4 ||
+        extras.last4 ||
+        "0000",
+      expMonth:
+        stripeCard.expMonth ??
+        cardDetails?.expiryMonth ??
+        extras.expMonth,
+      expYear:
+        stripeCard.expYear ??
+        cardDetails?.expiryYear ??
+        extras.expYear,
+    };
+  };
 
   useEffect(() => {
     if (!STRIPE_PUBLISHABLE_KEY || payment.setupClientSecret) {
@@ -66,7 +100,6 @@ const AddCard = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const clientSecret = await resolveClientSecret();
 
       const { error: pmError, paymentMethod } = await createPaymentMethod({
         paymentMethodType: "Card",
@@ -77,31 +110,48 @@ const AddCard = ({ navigation }) => {
         return;
       }
 
-      const { error, setupIntent } = await confirmSetupIntent(clientSecret, {
-        paymentMethodType: "Card",
-        paymentMethodData: {
-          paymentMethodId: paymentMethod.id,
-        },
-      });
+      if (shouldSaveCard) {
+        const clientSecret = await resolveClientSecret();
+        const { error, setupIntent } = await confirmSetupIntent(clientSecret, {
+          paymentMethodType: "Card",
+          paymentMethodData: {
+            paymentMethodId: paymentMethod.id,
+          },
+        });
 
-      if (error) {
-        showToast("error", error.message || "Could not add card.");
-        return;
+        if (error) {
+          showToast("error", error.message || "Could not add card.");
+          return;
+        }
+
+        const status = String(setupIntent?.status || "").toLowerCase();
+        if (status !== "succeeded") {
+          showToast(
+            "error",
+            `Card setup incomplete (${setupIntent?.status || "unknown"}).`
+          );
+          return;
+        }
       }
 
-      const status = String(setupIntent?.status || "").toLowerCase();
-      if (status !== "succeeded") {
-        showToast(
-          "error",
-          `Card setup incomplete (${setupIntent?.status || "unknown"}).`
-        );
-        return;
+      const mappedCard = mapCardFromDetails(paymentMethod.id, paymentMethod);
+
+      if (shouldSaveCard) {
+        await persistPaymentMethod(paymentMethod.id);
+        dispatch(addLocalCard(mappedCard));
+        const result = await getCards();
+        const fetched = result?.payload?.items || [];
+        if (!fetched.some((item) => item.id === paymentMethod.id)) {
+          dispatch(addOneTimeCard(mappedCard));
+        }
+        dispatch(setSelectedCard(paymentMethod.id));
+        showToast("success", "Card added.");
+      } else {
+        dispatch(addOneTimeCard(mappedCard));
+        showToast("success", "Card added for this payment.");
       }
 
-      await persistPaymentMethod(paymentMethod.id);
-      await getCards();
       dispatch(clearSetupClientSecret());
-      showToast("success", "Card added.");
       navigation.goBack();
     } catch (err) {
       console.log("AddCard handleContinue error", err);
@@ -114,6 +164,21 @@ const AddCard = ({ navigation }) => {
   const handleMockOnly = async () => {
     try {
       setLoading(true);
+      if (!shouldSaveCard) {
+        dispatch(
+          addOneTimeCard(
+            mapCardFromDetails(`mock_pm_once_${Date.now()}`, {
+              brand: "Visa",
+              last4: "4242",
+              expMonth: 12,
+              expYear: 2030,
+            })
+          )
+        );
+        showToast("success", "Card added for this payment.");
+        navigation.goBack();
+        return;
+      }
       const res = await addDevelopmentCard();
       if (res?.ok) {
         navigation.goBack();
@@ -121,6 +186,34 @@ const AddCard = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderSaveCheckbox = () => {
+    if (!forCheckout) {
+      return null;
+    }
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={styles.saveRow}
+        onPress={() => setSaveCard((value) => !value)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: saveCard }}
+        accessibilityLabel="Save card"
+      >
+        <View style={[styles.checkbox, saveCard && styles.checkboxChecked]}>
+          {saveCard ? (
+            <Image
+              source={imagePath.CHECK_ICON}
+              style={styles.checkIcon}
+              resizeMode="contain"
+            />
+          ) : null}
+        </View>
+        <Text style={styles.saveLabel}>Save card</Text>
+      </TouchableOpacity>
+    );
   };
 
   if (!STRIPE_PUBLISHABLE_KEY) {
@@ -133,6 +226,7 @@ const AddCard = ({ navigation }) => {
             in-memory mock card for local testing (no CardField / no native
             Stripe UI without a key).
           </Text>
+          {renderSaveCheckbox()}
           <ButtonComp title="Add mock test card" onPress={handleMockOnly} />
         </View>
       </MainContainer>
@@ -160,9 +254,18 @@ const AddCard = ({ navigation }) => {
         </View>
 
         <View style={[styles.footer, { paddingBottom: bottomInset + getHeight(16) }]}>
+          {renderSaveCheckbox()}
           <ButtonComp
             disabled={loading}
-            title={loading ? "Saving…" : "Save card"}
+            title={
+              loading
+                ? shouldSaveCard
+                  ? "Saving…"
+                  : "Adding…"
+                : shouldSaveCard
+                  ? "Save card"
+                  : "Continue"
+            }
             onPress={handleContinue}
           />
         </View>
@@ -197,5 +300,35 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: "center",
     paddingBottom: getHeight(40),
+  },
+  saveRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "stretch",
+    marginBottom: getHeight(16),
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1.5,
+    borderColor: colors.black,
+    borderRadius: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.white,
+  },
+  checkboxChecked: {
+    backgroundColor: colors.black,
+  },
+  checkIcon: {
+    width: 12,
+    height: 12,
+    tintColor: colors.white,
+  },
+  saveLabel: {
+    marginLeft: getHoriPadding(10),
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.black,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,8 +16,11 @@ import {
   getRadius,
   getHoriPadding,
   getVertiPadding,
-  getWidth,
 } from "@utils/responsive";
+import {
+  formatNationalNumber,
+  getNationalMaxLength,
+} from "@utils/phoneNumber";
 
 const countryCodes = [
   { code: "+1", country: "US", flag: "🇺🇸" },
@@ -54,11 +57,34 @@ const PhoneInput = ({
     countryCodes.find((c) => c.code === countryCode) || countryCodes[0]
   );
 
+  useEffect(() => {
+    const match =
+      countryCodes.find((c) => c.code === countryCode) || countryCodes[0];
+    setSelectedCountry(match);
+  }, [countryCode]);
+
+  const activeCode = selectedCountry?.code || countryCode || "+91";
+
   const handleCountrySelect = (country) => {
     setSelectedCountry(country);
     onCountryCodeChange?.(country.code);
+    // Re-format current number for the newly selected country
+    if (value) {
+      onChangeText?.(formatNationalNumber(value, country.code));
+    }
     setIsModalVisible(false);
   };
+
+  const handleChangeText = (text) => {
+    onChangeText?.(formatNationalNumber(text, activeCode));
+  };
+
+  const placeholderByCountry =
+    activeCode === "+41"
+      ? "00 000 00 00"
+      : activeCode === "+61"
+        ? "000 000 000"
+        : placeholder;
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -78,11 +104,12 @@ const PhoneInput = ({
 
         <TextInput
           style={[styles.input, inputStyle]}
-          placeholder={placeholder}
+          placeholder={placeholderByCountry || placeholder}
           placeholderTextColor={colors.lightText}
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={handleChangeText}
           keyboardType="phone-pad"
+          maxLength={getNationalMaxLength(activeCode) + 4}
           {...rest}
         />
       </View>

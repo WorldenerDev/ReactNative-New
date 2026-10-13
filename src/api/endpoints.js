@@ -81,6 +81,7 @@ export const endpoints = {
     addCard: "/add-card",
     getClientSecret: "/get-client-secret",
     getStripeCardList: "/get-stripe-card-list",
+    deleteStripeCard: "/delete-stripe-card",
     updateProfile: "/updateProfile",
     getGroupWishlisted: "/group",
     getMyWishlisted: "/city",

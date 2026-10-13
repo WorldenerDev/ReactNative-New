@@ -10,6 +10,8 @@ import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
 import { usePayments } from "@hooks/usePayments";
 import navigationStrings from "@navigation/navigationStrings";
 import { setCheckoutContext } from "@redux/slices/paymentSlice";
+import CardBrandIcon from "@components/CardBrandIcon";
+import { formatCardBrand } from "@utils/cardBrand";
 import { getHeight, getHoriPadding } from "@utils/responsive";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
@@ -29,7 +31,15 @@ const Payment = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [addingCard, setAddingCard] = useState(false);
-  const { items, selectedId, status } = useSelector((s) => s.payment);
+  const { items, oneTimeItems, selectedId, status } = useSelector(
+    (s) => s.payment
+  );
+  const paymentItems = [
+    ...items,
+    ...(oneTimeItems || []).filter(
+      (card) => !items.some((item) => item.id === card.id)
+    ),
+  ];
   const { trip_id, cart_id, orderUuid, amount_minor, currency } =
     route?.params || {};
   const { getCards, selectCard, addDevelopmentCard, prepareAddCard } =
@@ -66,12 +76,16 @@ const Payment = ({ navigation, route }) => {
     }
     try {
       setLoading(true);
+      const isOneTimeCard = (oneTimeItems || []).some(
+        (card) => card.id === selectedId
+      );
       const paymentIntentResponse = await createStripePaymentIntent({
         amount: amount_minor,
         currency,
         paymentMethodId: selectedId,
         orderUuid,
         description: "Musement booking payment",
+        saveCard: !isOneTimeCard,
       });
 
       if (paymentIntentResponse?.success === true) {
@@ -97,7 +111,7 @@ const Payment = ({ navigation, route }) => {
 
   const handleAddCard = async () => {
     if (!STRIPE_PUBLISHABLE_KEY) {
-      navigation.navigate(navigationStrings.ADD_CARD);
+      navigation.navigate(navigationStrings.ADD_CARD, { forCheckout: true });
       return;
     }
 
@@ -105,7 +119,7 @@ const Payment = ({ navigation, route }) => {
       setAddingCard(true);
       const res = await prepareAddCard();
       if (res?.ok) {
-        navigation.navigate(navigationStrings.ADD_CARD);
+        navigation.navigate(navigationStrings.ADD_CARD, { forCheckout: true });
       }
     } finally {
       setAddingCard(false);
@@ -135,7 +149,7 @@ const Payment = ({ navigation, route }) => {
 
         <FlatList
           style={styles.cardList}
-          data={items}
+          data={paymentItems}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
@@ -161,13 +175,11 @@ const Payment = ({ navigation, route }) => {
               <View style={styles.cardInfo}>
                 <View style={styles.cardTextCol}>
                   <Text style={styles.cardNumber}>{`•••• ${item.last4}`}</Text>
-                  <Text style={styles.brandSmall}>{item.brand || "Card"}</Text>
+                  <Text style={styles.brandSmall}>
+                    {formatCardBrand(item.brand)}
+                  </Text>
                 </View>
-                <Image
-                  source={imagePath.CARD_ICON}
-                  style={styles.brandIcon}
-                  resizeMode="contain"
-                />
+                <CardBrandIcon brand={item.brand} />
               </View>
               <View style={styles.radioOuter}>
                 {selectedId === item.id && <View style={styles.radioInner} />}
@@ -283,10 +295,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     opacity: 0.55,
     marginTop: 4,
-  },
-  brandIcon: {
-    width: 22,
-    height: 22,
   },
   radioOuter: {
     width: 22,

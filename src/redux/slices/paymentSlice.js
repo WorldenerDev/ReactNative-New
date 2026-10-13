@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getStripeCardList } from "@api/services/mainServices";
-import * as paymentApi from "../../services/payment";
+import { deleteStripeCard, getStripeCardList } from "@api/services/mainServices";
 import { expireSession, logoutUser } from "@redux/slices/authSlice";
 
 const mapStripeCardList = (cards) =>
@@ -22,8 +21,16 @@ const mapStripeCardList = (cards) =>
         card.last_four ||
         card.card?.last4 ||
         "0000",
-      expMonth: card.expMonth ?? card.exp_month ?? card.card?.expMonth,
-      expYear: card.expYear ?? card.exp_year ?? card.card?.expYear,
+      expMonth:
+        card.expMonth ??
+        card.exp_month ??
+        card.card?.expMonth ??
+        card.card?.exp_month,
+      expYear:
+        card.expYear ??
+        card.exp_year ??
+        card.card?.expYear ??
+        card.card?.exp_year,
     }))
     .filter((card) => Boolean(card.id));
 
@@ -46,9 +53,13 @@ export const removePaymentMethod = createAsyncThunk(
   "payment/removePaymentMethod",
   async (paymentMethodId, { rejectWithValue }) => {
     try {
-      await paymentApi.runPaymentApi(() =>
-        paymentApi.deletePaymentMethod({ paymentMethodId })
-      );
+      const res = await deleteStripeCard({
+        paymentMethodId,
+        payment_method_id: paymentMethodId,
+      });
+      if (res?.success !== true) {
+        return rejectWithValue(res?.message || "Failed to delete card");
+      }
       return paymentMethodId;
     } catch (e) {
       return rejectWithValue(e?.message || "Failed to delete card");
@@ -58,6 +69,7 @@ export const removePaymentMethod = createAsyncThunk(
 
 const initialState = {
   items: [],
+  oneTimeItems: [],
   selectedId: null,
   status: "idle",
   error: null,
@@ -100,7 +112,22 @@ const paymentSlice = createSlice({
     },
     addLocalCard: (state, action) => {
       const card = action.payload;
-      state.items.push(card);
+      const idx = state.items.findIndex((i) => i.id === card.id);
+      if (idx >= 0) {
+        state.items[idx] = { ...state.items[idx], ...card };
+      } else {
+        state.items.push(card);
+      }
+      state.selectedId = card.id;
+    },
+    addOneTimeCard: (state, action) => {
+      const card = action.payload;
+      const idx = state.oneTimeItems.findIndex((i) => i.id === card.id);
+      if (idx >= 0) {
+        state.oneTimeItems[idx] = { ...state.oneTimeItems[idx], ...card };
+      } else {
+        state.oneTimeItems.push(card);
+      }
       state.selectedId = card.id;
     },
     clearPaymentError: (state) => {
@@ -124,16 +151,20 @@ const paymentSlice = createSlice({
       })
       .addCase(fetchPaymentMethods.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.items = action.payload?.items || [];
-        if (
-          state.selectedId &&
-          !state.items.some((i) => i.id === state.selectedId)
-        ) {
+        const fetched = action.payload?.items || [];
+        state.items = fetched;
+        state.oneTimeItems = state.oneTimeItems.filter(
+          (card) => !fetched.some((item) => item.id === card.id)
+        );
+        const selectedExists =
+          fetched.some((i) => i.id === state.selectedId) ||
+          state.oneTimeItems.some((i) => i.id === state.selectedId);
+        if (state.selectedId && !selectedExists) {
           state.selectedId = null;
         }
-        if (!state.selectedId && state.items.length > 0) {
+        if (!state.selectedId && fetched.length > 0) {
           const def =
-            state.items.find((i) => i.isDefault) || state.items[0];
+            fetched.find((i) => i.isDefault) || fetched[0];
           state.selectedId = def.id;
         }
       })
@@ -144,6 +175,7 @@ const paymentSlice = createSlice({
       .addCase(removePaymentMethod.fulfilled, (state, action) => {
         const id = action.payload;
         state.items = state.items.filter((i) => i.id !== id);
+        state.oneTimeItems = state.oneTimeItems.filter((i) => i.id !== id);
         if (state.selectedId === id) {
           state.selectedId = state.items[0]?.id ?? null;
         }
@@ -161,6 +193,7 @@ export const {
   setCheckoutContext,
   setStripeCustomerId,
   addLocalCard,
+  addOneTimeCard,
   clearPaymentError,
   setLastClientSecret,
   setSetupClientSecret,

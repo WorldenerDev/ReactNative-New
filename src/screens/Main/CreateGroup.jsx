@@ -5,9 +5,10 @@ import {
   View,
   TextInput,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
 import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
-import MainContainer from "@components/container/MainContainer";
+import ResponsiveContainer from "@components/container/ResponsiveContainer";
 import Header from "@components/Header";
 import StepTitle from "@components/StepTitle";
 import ButtonComp from "@components/ButtonComp";
@@ -26,6 +27,7 @@ const CreateGroup = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
+    Keyboard.dismiss();
     const name = groupName.trim();
     if (!name) {
       showToast("error", "Please enter a crew name");
@@ -56,7 +58,10 @@ const CreateGroup = ({ navigation }) => {
   };
 
   return (
-    <MainContainer loader={loading}>
+    <ResponsiveContainer
+      loader={loading}
+      contentContainerStyle={styles.scrollContent}
+    >
       <Header />
       <StepTitle
         title="Create your crew"
@@ -72,17 +77,25 @@ const CreateGroup = ({ navigation }) => {
           value={groupName}
           onChangeText={setGroupName}
           maxLength={50}
+          returnKeyType="done"
+          onSubmitEditing={Keyboard.dismiss}
+          blurOnSubmit
         />
       </View>
 
       <CrewPhotoPicker
         imageUri={groupImage?.uri}
-        onImageSelected={setGroupImage}
+        onImageSelected={(image) => {
+          Keyboard.dismiss();
+          setGroupImage(image);
+        }}
         containerStyle={styles.photoPicker}
       />
 
       <TouchableOpacity style={styles.inviteHint} activeOpacity={0.7}>
-        <Text style={styles.inviteText}>You can invite members after creating your crew!</Text>
+        <Text style={styles.inviteText}>
+          You can invite members after creating your crew!
+        </Text>
       </TouchableOpacity>
 
       <ButtonComp
@@ -91,13 +104,16 @@ const CreateGroup = ({ navigation }) => {
         disabled={loading}
         containerStyle={styles.createButton}
       />
-    </MainContainer>
+    </ResponsiveContainer>
   );
 };
 
 export default CreateGroup;
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    paddingBottom: getHeight(40),
+  },
   section: {
     marginBottom: getHeight(24),
   },

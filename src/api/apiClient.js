@@ -48,7 +48,15 @@ apiClient.interceptors.request.use(async (config) => {
   }
 
   if (config.data instanceof FormData) {
-    delete config.headers["Content-Type"];
+    // Axios 1.16 sets a missing POST Content-Type to
+    // application/x-www-form-urlencoded after this interceptor. Android's
+    // OkHttp rejects that on a multipart body. `false` is left unset so the
+    // native client can add the multipart boundary. iOS already did that.
+    if (typeof config.headers.set === "function") {
+      config.headers.set("Content-Type", false);
+    } else {
+      config.headers["Content-Type"] = false;
+    }
   } else {
     config.headers["Content-Type"] = "application/json";
   }

@@ -138,3 +138,20 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-firestore")
 }
+
+// `.env` is not a JS input, so Gradle would reuse a production bundle after API_ENV changes.
+def repoRoot = rootProject.projectDir.parentFile
+
+tasks.register("writeEnvConfig", Exec) {
+    description = "Write src/config/env.generated.js from .env"
+    workingDir repoRoot
+    commandLine "node", "scripts/writeEnvConfig.js"
+    inputs.file(new File(repoRoot, ".env"))
+    outputs.file(new File(repoRoot, "src/config/env.generated.js"))
+}
+
+tasks.configureEach { task ->
+    if (task.name == "preBuild" || (task.name.startsWith("createBundle") && task.name.endsWith("JsAndAssets"))) {
+        task.dependsOn("writeEnvConfig")
+    }
+}

@@ -1,6 +1,5 @@
 import colors from "@assets/colors";
 import useGuestScreenGuard from "@hooks/useGuestScreenGuard";
-import imagePath from "@assets/icons";
 import { showToast } from "@components/AppToast";
 import ButtonComp from "@components/ButtonComp";
 import MainContainer from "@components/container/MainContainer";
@@ -9,13 +8,15 @@ import { STRIPE_PUBLISHABLE_KEY } from "@config/stripe";
 import { usePayments } from "@hooks/usePayments";
 import navigationStrings from "@navigation/navigationStrings";
 import useStickyBottomInset from "@hooks/useStickyBottomInset";
+import CardBrandIcon from "@components/CardBrandIcon";
+import { formatCardBrand } from "@utils/cardBrand";
 import { getHeight, getHoriPadding } from "@utils/responsive";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import {
+  Alert,
   FlatList,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -28,7 +29,8 @@ const SavedCards = ({ navigation }) => {
   const bottomInset = useStickyBottomInset();
   const [addingCard, setAddingCard] = useState(false);
   const { items, status } = useSelector((s) => s.payment);
-  const { getCards, addDevelopmentCard, prepareAddCard } = usePayments();
+  const { getCards, deleteCard, addDevelopmentCard, prepareAddCard } =
+    usePayments();
 
   useFocusEffect(
     useCallback(() => {
@@ -37,6 +39,29 @@ const SavedCards = ({ navigation }) => {
       });
     }, [getCards])
   );
+
+  const formatExpiry = (month, year) => {
+    if (month == null || year == null) return null;
+    const mm = String(month).padStart(2, "0");
+    const yy = String(year).slice(-2);
+    return `${mm}/${yy}`;
+  };
+
+  const onDelete = (item) => {
+    Alert.alert(
+      "Remove card",
+      `Remove card ending in ${item.last4}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => deleteCard(item.id),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const handleAddCard = async () => {
     if (!STRIPE_PUBLISHABLE_KEY) {
@@ -77,21 +102,35 @@ const SavedCards = ({ navigation }) => {
               ) : null}
             </View>
           }
-          renderItem={({ item }) => (
-            <View style={styles.cardRow}>
-              <View style={styles.cardInfo}>
-                <View style={styles.cardTextCol}>
-                  <Text style={styles.cardNumber}>{`•••• ${item.last4}`}</Text>
-                  <Text style={styles.brandSmall}>{item.brand || "Card"}</Text>
+          renderItem={({ item }) => {
+            const expiry = formatExpiry(item.expMonth, item.expYear);
+            return (
+              <View style={styles.cardRow}>
+                <View style={styles.cardInfo}>
+                  <View style={styles.cardTextCol}>
+                    <Text style={styles.cardNumber}>{`•••• ${item.last4}`}</Text>
+                    <Text style={styles.expiryText}>
+                      {expiry ? `Expires ${expiry}` : "Expiry unavailable"}
+                    </Text>
+                    <Text style={styles.brandSmall}>
+                      {formatCardBrand(item.brand)}
+                    </Text>
+                  </View>
+                  <View style={styles.cardActions}>
+                    <CardBrandIcon brand={item.brand} />
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove card ending in ${item.last4}`}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      onPress={() => onDelete(item)}
+                    >
+                      <Text style={styles.removeText}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <Image
-                  source={imagePath.CARD_ICON}
-                  style={styles.brandIcon}
-                  resizeMode="contain"
-                />
               </View>
-            </View>
-          )}
+            );
+          }}
           ItemSeparatorComponent={() => (
             <View style={{ height: getHeight(12) }} />
           )}
@@ -141,8 +180,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    minHeight: getHeight(88),
     paddingHorizontal: getHoriPadding(16),
-    paddingVertical: getHeight(14),
+    paddingVertical: getHeight(18),
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
   },
@@ -160,14 +200,28 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: colors.black,
   },
+  expiryText: {
+    fontSize: 13,
+    color: colors.black,
+    opacity: 0.7,
+    marginTop: 6,
+  },
   brandSmall: {
     fontSize: 11,
     opacity: 0.55,
     marginTop: 4,
   },
-  brandIcon: {
-    width: 22,
-    height: 22,
+  cardActions: {
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    alignSelf: "stretch",
+    paddingVertical: 2,
+  },
+  removeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.black,
+    marginTop: getHeight(16),
   },
   addCardRow: {
     flexDirection: "row",

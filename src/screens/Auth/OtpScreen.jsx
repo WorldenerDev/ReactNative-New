@@ -26,6 +26,7 @@ import { loginUser, onOtp, setUser } from "@redux/slices/authSlice";
 import { STORAGE_KEYS } from "@utils/storageKeys";
 import { setItem } from "@utils/storage";
 import { logAuthToken } from "@utils/devAuthTokenLog";
+import { formatInternationalPhone } from "@utils/phoneNumber";
 
 const OTP_LENGTH = 6;
 
@@ -122,20 +123,6 @@ const OtpScreen = ({ navigation, route }) => {
     }
   };
 
-  const formatPhoneNumber = (phone) => {
-    if (!phone) return "";
-    const cleaned = phone.replace(/\D/g, "");
-    if (cleaned.length >= 10) {
-      const countryCode = cleaned.substring(0, cleaned.length - 10);
-      const number = cleaned.substring(cleaned.length - 10);
-      return `+${countryCode} ${number.substring(0, 3)} ${number.substring(
-        3,
-        6
-      )} ${number.substring(6)}`;
-    }
-    return phone;
-  };
-
   const formatTimer = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -152,7 +139,7 @@ const OtpScreen = ({ navigation, route }) => {
     return "Verify your phone number";
   };
 
-  const formattedPhone = formatPhoneNumber(phoneNumber);
+  const formattedPhone = formatInternationalPhone(phoneNumber);
   const isCodeComplete = otp.length === OTP_LENGTH;
   const cells = Array.from({ length: OTP_LENGTH }, (_, index) => otp[index] || "");
 

@@ -1,12 +1,20 @@
 /**
  * Stripe publishable key for `@stripe/stripe-react-native`.
  *
- * Values come from the project root `.env` via `babel-plugin-inline-dotenv`
- * (see `babel.config.js`). Metro also loads `.env` in `metro.config.js` for tooling.
+ * Values come from `src/config/env.generated.js`, written from `.env`
+ * before Metro starts and before the Android Gradle build.
  *
  * Active key follows `API_ENV`: production → live key, uat → test key.
  */
-const API_ENV = String(process.env.API_ENV || "production")
+import {
+  API_ENV as API_ENV_RAW,
+  STRIPE_PAYMENT_BACKEND_URL as STRIPE_PAYMENT_BACKEND_URL_RAW,
+  STRIPE_PUBLISHABLE_KEY_PRODUCTION as STRIPE_PUBLISHABLE_KEY_PRODUCTION_RAW,
+  STRIPE_PUBLISHABLE_KEY_UAT as STRIPE_PUBLISHABLE_KEY_UAT_RAW,
+  STRIPE_TEST_CUSTOMER_ID as STRIPE_TEST_CUSTOMER_ID_RAW,
+} from "./env.generated";
+
+const API_ENV = String(API_ENV_RAW || "production")
   .trim()
   .toLowerCase();
 
@@ -19,12 +27,10 @@ const normalizeKey = (key) => {
 };
 
 const STRIPE_PUBLISHABLE_KEY_PRODUCTION = normalizeKey(
-  process.env.STRIPE_PUBLISHABLE_KEY_PRODUCTION
+  STRIPE_PUBLISHABLE_KEY_PRODUCTION_RAW
 );
 
-const STRIPE_PUBLISHABLE_KEY_UAT = normalizeKey(
-  process.env.STRIPE_PUBLISHABLE_KEY_UAT
-);
+const STRIPE_PUBLISHABLE_KEY_UAT = normalizeKey(STRIPE_PUBLISHABLE_KEY_UAT_RAW);
 
 export const STRIPE_PUBLISHABLE_KEY =
   API_ENV === "uat"
@@ -33,7 +39,7 @@ export const STRIPE_PUBLISHABLE_KEY =
 
 /** Test Customer id (`cus_...`) for SetupIntent / PaymentIntent when using the dev backend. */
 export const STRIPE_TEST_CUSTOMER_ID = String(
-  process.env.STRIPE_TEST_CUSTOMER_ID || ""
+  STRIPE_TEST_CUSTOMER_ID_RAW || ""
 ).trim();
 
 /**
@@ -41,7 +47,7 @@ export const STRIPE_TEST_CUSTOMER_ID = String(
  * When set, payment API modules call this instead of returning mock client secrets.
  */
 export const STRIPE_PAYMENT_BACKEND_URL = String(
-  process.env.STRIPE_PAYMENT_BACKEND_URL || ""
+  STRIPE_PAYMENT_BACKEND_URL_RAW || ""
 )
   .trim()
   .replace(/\/$/, "");
