@@ -25,6 +25,12 @@
 		D8A94A379514A7A4A5A6DDBC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		F46349582EA7C2C40048B96C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F46349572EA7C2C40048B96C /* GoogleService-Info.plist */; };
 		FC6C9F081EFC5E6B26C4A238 /* Pods_WApp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 879C3E99252505B7A54D20C2 /* Pods_WApp.framework */; };
+		A1A07F8D2CA45674006654E2 /* SharedAuth.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A07F8C2CA45674006654E1 /* SharedAuth.m */; };
+		A1A07F8E2CA45674006654E3 /* SharedAuth.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A07F8C2CA45674006654E1 /* SharedAuth.m */; };
+		B1B07F912CA45674006654E6 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B07F8C2CA45674006654E1 /* ShareViewController.swift */; };
+		B1B07F922CA45674006654E7 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B07F8C2CA45674006654E1 /* ShareViewController.swift */; };
+		B1B07F932CA45674006654E8 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B1B07F8F2CA45674006654E4 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B1B07F942CA45674006654E9 /* ShareExtensionUAT.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B1B07F902CA45674006654E5 /* ShareExtensionUAT.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +54,12 @@
 		BBCE7890ED155A1A0E032D48 /* Pods-WApp-WApp UAT.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WApp-WApp UAT.debug.xcconfig"; path = "Target Support Files/Pods-WApp-WApp UAT/Pods-WApp-WApp UAT.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F46349572EA7C2C40048B96C /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		A1A07F8C2CA45674006654E1 /* SharedAuth.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = SharedAuth.m; path = WApp/SharedAuth.m; sourceTree = "<group>"; };
+		B1B07F8C2CA45674006654E1 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		B1B07F8D2CA45674006654E2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B1B07F8E2CA45674006654E3 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
+		B1B07F8F2CA45674006654E4 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1B07F902CA45674006654E5 /* ShareExtensionUAT.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtensionUAT.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +88,7 @@
 				81CD214A2E64441900F5A387 /* WApp.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				A1A07F8C2CA45674006654E1 /* SharedAuth.m */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -115,6 +128,7 @@
 			children = (
 				F46349572EA7C2C40048B96C /* GoogleService-Info.plist */,
 				13B07FAE1A68108700A75B9A /* WApp */,
+				B1B07FAA2CA45674006654FE /* ShareExtension */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
@@ -132,8 +146,20 @@
 			children = (
 				13B07F961A680F5B00A75B9A /* WApp.app */,
 				9B87F32D2FF11F7C0082D61A /* WApp UAT.app */,
+				B1B07F8F2CA45674006654E4 /* ShareExtension.appex */,
+				B1B07F902CA45674006654E5 /* ShareExtensionUAT.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B1B07FAA2CA45674006654FE /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				B1B07F8C2CA45674006654E1 /* ShareViewController.swift */,
+				B1B07F8D2CA45674006654E2 /* Info.plist */,
+				B1B07F8E2CA45674006654E3 /* ShareExtension.entitlements */,
+			);
+			path = ShareExtension;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -158,6 +184,7 @@
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
+				B1B07F9D2CA45674006654F2 /* Embed Foundation Extensions */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				7CCAB0B631C714018DC5B4FB /* [CP] Embed Pods Frameworks */,
 				67ABC101A47294ABDD36EB53 /* [CP] Copy Pods Resources */,
@@ -166,6 +193,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				B1B07FA02CA45674006654F4 /* PBXTargetDependency */,
 			);
 			name = WApp;
 			productName = WApp;
@@ -180,6 +208,7 @@
 				9B87F31A2FF11F7C0082D61A /* Sources */,
 				9B87F31C2FF11F7C0082D61A /* Frameworks */,
 				9B87F31E2FF11F7C0082D61A /* Resources */,
+				B1B07F9E2CA45674006654F3 /* Embed Foundation Extensions */,
 				9B87F3262FF11F7C0082D61A /* Bundle React Native code and images */,
 				FF1A378EDC0739EBDCEDB477 /* [CP] Embed Pods Frameworks */,
 				B59E030D710FD9CAD89C53FA /* [CP] Copy Pods Resources */,
@@ -187,11 +216,46 @@
 			buildRules = (
 			);
 			dependencies = (
+				B1B07FA22CA45674006654F6 /* PBXTargetDependency */,
 			);
 			name = "WApp UAT";
 			productName = WApp;
 			productReference = 9B87F32D2FF11F7C0082D61A /* WApp UAT.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B1B07F952CA45674006654EA /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1B07FA62CA45674006654FA /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				B1B07F972CA45674006654EC /* Sources */,
+				B1B07F982CA45674006654ED /* Frameworks */,
+				B1B07F992CA45674006654EE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtension;
+			productName = ShareExtension;
+			productReference = B1B07F8F2CA45674006654E4 /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B1B07F962CA45674006654EB /* ShareExtensionUAT */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1B07FA92CA45674006654FD /* Build configuration list for PBXNativeTarget "ShareExtensionUAT" */;
+			buildPhases = (
+				B1B07F9A2CA45674006654EF /* Sources */,
+				B1B07F9B2CA45674006654F0 /* Frameworks */,
+				B1B07F9C2CA45674006654F1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareExtensionUAT;
+			productName = ShareExtensionUAT;
+			productReference = B1B07F902CA45674006654E5 /* ShareExtensionUAT.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -221,6 +285,8 @@
 			targets = (
 				13B07F861A680F5B00A75B9A /* WApp */,
 				9B87F3182FF11F7C0082D61A /* WApp UAT */,
+				B1B07F952CA45674006654EA /* ShareExtension */,
+				B1B07F962CA45674006654EB /* ShareExtensionUAT */,
 			);
 		};
 /* End PBXProject section */
@@ -440,6 +506,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				A1A07F8D2CA45674006654E2 /* SharedAuth.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,10 +515,119 @@
 			buildActionMask = 2147483647;
 			files = (
 				9B87F31B2FF11F7C0082D61A /* AppDelegate.swift in Sources */,
+				A1A07F8E2CA45674006654E3 /* SharedAuth.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		B1B07FA12CA45674006654F5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B1B07F952CA45674006654EA;
+			remoteInfo = ShareExtension;
+		};
+		B1B07FA32CA45674006654F7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B1B07F962CA45674006654EB;
+			remoteInfo = ShareExtensionUAT;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B1B07F9D2CA45674006654F2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B1B07F932CA45674006654E8 /* ShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1B07F9E2CA45674006654F3 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B1B07F942CA45674006654E9 /* ShareExtensionUAT.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase extension section */
+		B1B07F982CA45674006654ED /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1B07F9B2CA45674006654F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase extension section */
+
+/* Begin PBXResourcesBuildPhase extension section */
+		B1B07F992CA45674006654EE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1B07F9C2CA45674006654F1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase extension section */
+
+/* Begin PBXSourcesBuildPhase extension section */
+		B1B07F972CA45674006654EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1B07F912CA45674006654E6 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1B07F9A2CA45674006654EF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1B07F922CA45674006654E7 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase extension section */
+
+/* Begin PBXTargetDependency section */
+		B1B07FA02CA45674006654F4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B1B07F952CA45674006654EA /* ShareExtension */;
+			targetProxy = B1B07FA12CA45674006654F5 /* PBXContainerItemProxy */;
+		};
+		B1B07FA22CA45674006654F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B1B07F962CA45674006654EB /* ShareExtensionUAT */;
+			targetProxy = B1B07FA32CA45674006654F7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -462,7 +638,7 @@
 				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = WApp/WApp.entitlements;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 98;
 				DEVELOPMENT_TEAM = S97YTUR98S;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = WApp/Info.plist;
@@ -500,7 +676,7 @@
 				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = WApp/WApp.entitlements;
-				CURRENT_PROJECT_VERSION = 97;
+				CURRENT_PROJECT_VERSION = 98;
 				DEVELOPMENT_TEAM = S97YTUR98S;
 				INFOPLIST_FILE = WApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Worldener;
@@ -706,7 +882,7 @@
 				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = WApp/WApp.entitlements;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = S97YTUR98S;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = "WApp copy-Info.plist";
@@ -744,7 +920,7 @@
 				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = WApp/WApp.entitlements;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = S97YTUR98S;
 				INFOPLIST_FILE = "WApp copy-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Worldener UAT";
@@ -772,6 +948,106 @@
 			};
 			name = Release;
 		};
+		B1B07FA42CA45674006654F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 98;
+				DEVELOPMENT_TEAM = S97YTUR98S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = live.worldener.app.ShareExtension;
+				PRODUCT_NAME = ShareExtension;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B1B07FA52CA45674006654F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 98;
+				DEVELOPMENT_TEAM = S97YTUR98S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = live.worldener.app.ShareExtension;
+				PRODUCT_NAME = ShareExtension;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		B1B07FA72CA45674006654FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 98;
+				DEVELOPMENT_TEAM = S97YTUR98S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.worldener.app.uat.ShareExtension;
+				PRODUCT_NAME = ShareExtensionUAT;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B1B07FA82CA45674006654FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 98;
+				DEVELOPMENT_TEAM = S97YTUR98S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.worldener.app.uat.ShareExtension;
+				PRODUCT_NAME = ShareExtensionUAT;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -789,6 +1065,24 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B1B07FA62CA45674006654FA /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1B07FA42CA45674006654F8 /* Debug */,
+				B1B07FA52CA45674006654F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B1B07FA92CA45674006654FD /* Build configuration list for PBXNativeTarget "ShareExtensionUAT" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1B07FA72CA45674006654FB /* Debug */,
+				B1B07FA82CA45674006654FC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

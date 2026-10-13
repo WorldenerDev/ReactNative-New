@@ -92,6 +92,8 @@ export const endpoints = {
     home: "/home",
     search: "/search",
     inspiration: "/inspiration",
+    savedIdeas: "/saved-ideas",
+    savedIdeasPreview: "/saved-ideas/preview",
   },
 
 };

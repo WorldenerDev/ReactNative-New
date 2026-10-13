@@ -1,5 +1,7 @@
 package com.worldener
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.core.view.WindowCompat
@@ -11,6 +13,7 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
+    rewriteShareIntent(intent)
     super.onCreate(null)
     WindowCompat.setDecorFitsSystemWindows(window, false)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -21,6 +24,21 @@ class MainActivity : ReactActivity() {
       isAppearanceLightStatusBars = true
       isAppearanceLightNavigationBars = true
     }
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    rewriteShareIntent(intent)
+    setIntent(intent)
+    super.onNewIntent(intent)
+  }
+
+  private fun rewriteShareIntent(intent: Intent?) {
+    if (intent?.action != Intent.ACTION_SEND) return
+    val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
+    intent.action = Intent.ACTION_VIEW
+    intent.data = Uri.parse(
+      "live.worldener.app://save?url=" + Uri.encode(text) + "&t=" + System.currentTimeMillis()
+    )
   }
 
   /**

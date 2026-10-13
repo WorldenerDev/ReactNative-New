@@ -15,6 +15,8 @@ import {
   PaymentMethods,
   PaymentSuccess,
   SaveCard,
+  SaveIdea,
+  SavedIdeaDetail,
   SearchCity,
   ViewAiChat,
 } from "@screens/index";
@@ -36,6 +38,8 @@ export const rootStackScreens = [
   { name: navigationStrings.PAYMENT_METHODS, component: PaymentMethods },
   { name: navigationStrings.ADD_CARD, component: AddCard },
   { name: navigationStrings.SAVE_CARD, component: SaveCard },
+  { name: navigationStrings.SAVE_IDEA, component: SaveIdea },
+  { name: navigationStrings.SAVED_IDEA_DETAIL, component: SavedIdeaDetail },
   { name: navigationStrings.CART, component: Cart },
   { name: navigationStrings.CART_CUSTOMER_INFO, component: CartCustomerInfo },
   {

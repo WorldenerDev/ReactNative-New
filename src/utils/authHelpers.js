@@ -11,6 +11,8 @@ export const GUEST_RESTRICTED_SCREENS = new Set([
   navigationStrings.CREATE_TRIP,
   navigationStrings.ADD_TO_TRIP,
   navigationStrings.TRIP_DETAILS,
+  navigationStrings.SAVE_IDEA,
+  navigationStrings.SAVED_IDEA_DETAIL,
   navigationStrings.EDIT_TRIP,
   navigationStrings.CALENDAR_VIEW_TRIP_DETAIL,
   navigationStrings.GROUP_DETAILS,

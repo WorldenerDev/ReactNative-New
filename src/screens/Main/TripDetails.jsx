@@ -58,6 +58,11 @@ const TripDetails = ({ navigation, route }) => {
   const detailTabs = isCrewTrip
     ? ["Itinerary", "Compare", "Wishlist"]
     : ["Itinerary", "My Wishlist"];
+  const wishlistTabName = isCrewTrip ? "Wishlist" : "My Wishlist";
+  const resolvedInitialTab =
+    initialTab === "Wishlist" || initialTab === "My Wishlist"
+      ? wishlistTabName
+      : initialTab;
   const insets = useSafeAreaInsets();
   const scrollContentBottomPadding =
     insets.bottom + getHeight(BOTTOM_MARGIN) + CHECKOUT_BUTTON_HEIGHT + getHeight(EXTRA_SCROLL_PADDING);
@@ -92,10 +97,10 @@ const TripDetails = ({ navigation, route }) => {
   }, [currentTripId]);
 
   useEffect(() => {
-    if (initialTab) {
-      setDetailTab(initialTab);
+    if (resolvedInitialTab) {
+      setDetailTab(resolvedInitialTab);
     }
-  }, [initialTab]);
+  }, [resolvedInitialTab]);
 
   useFocusEffect(
     useCallback(() => {
@@ -156,6 +161,12 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const handleActivityPress = (activity) => {
+    if (activity?.is_saved_idea && activity?.saved_idea_id) {
+      navigation.navigate(navigationStrings.SAVED_IDEA_DETAIL, {
+        ideaId: activity.saved_idea_id,
+      });
+      return;
+    }
     const activityId =
       activity?.event_id ||
       activity?.activity_id ||
@@ -229,6 +240,7 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const formatGroupDate = (dateString) => {
+    if (dateString === "Unscheduled") return "Unscheduled";
     const date = new Date(dateString);
     const day = date.getDate();
     const month = date.toLocaleDateString("en-US", { month: "short" });
@@ -251,7 +263,10 @@ const TripDetails = ({ navigation, route }) => {
     const grouped = {};
 
     activities.forEach((activity) => {
-      const activityDate = getActivityDateKey(activity);
+      const activityDate =
+        activity?.is_saved_idea && !activity?.date
+          ? "Unscheduled"
+          : getActivityDateKey(activity);
       if (!grouped[activityDate]) {
         grouped[activityDate] = [];
       }
@@ -261,9 +276,10 @@ const TripDetails = ({ navigation, route }) => {
   };
 
   const groupedActivities = groupActivitiesByDate();
-  const activityDates = Object.keys(groupedActivities).sort((a, b) => {
-    return new Date(a) - new Date(b);
-  });
+  const activityDates = Object.keys(groupedActivities)
+    .filter((date) => date !== "Unscheduled")
+    .sort((a, b) => new Date(a) - new Date(b));
+  if (groupedActivities.Unscheduled) activityDates.push("Unscheduled");
 
   const activeDetailTab = detailTabs.includes(detailTab)
     ? detailTab
@@ -290,11 +306,15 @@ const TripDetails = ({ navigation, route }) => {
           >
             <OptimizedImage
               source={{
-                uri:
-                  activity.image ||
-                  activity.product_image ||
-                  activity.thumbnail ||
-                  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
+                uri: (() => {
+                  const image =
+                    activity.image || activity.product_image || activity.thumbnail;
+                  if (image && String(image).startsWith("/")) return getImageUrl(image);
+                  return (
+                    image ||
+                    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80"
+                  );
+                })(),
               }}
               style={styles.activityImage}
               resizeMode="cover"
@@ -307,12 +327,9 @@ const TripDetails = ({ navigation, route }) => {
                   "Activity"}
               </Text>
               <Text style={styles.activityDetails}>
-                {formatActivityDate(activity.date || activity.time || "TBD")} •
-                Qty: {activity.quantity || 1} • $
-                {activity.total_price ||
-                  activity.price ||
-                  activity.retail_price ||
-                  0}
+                {activity.is_saved_idea
+                  ? activity.source || activity.host || "Saved link"
+                  : `${formatActivityDate(activity.date || activity.time || "TBD")} • Qty: ${activity.quantity || 1} • $${activity.total_price || activity.price || activity.retail_price || 0}`}
               </Text>
             </View>
           </TouchableOpacity>

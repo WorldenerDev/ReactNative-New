@@ -74,7 +74,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    return GIDSignIn.sharedInstance.handle(url)
+    if GIDSignIn.sharedInstance.handle(url) {
+      return true
+    }
+    if url.scheme == "live.worldener.app" {
+      UserDefaults.standard.set(url.absoluteString, forKey: "worldenerInboundURL")
+      return true
+    }
+    return false
   }
 }
 

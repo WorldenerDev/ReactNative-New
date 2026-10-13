@@ -16,7 +16,9 @@ import fonts from "@assets/fonts";
 import { getHeight, getWidth, getRadius } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { getTripDetails } from "@api/services/mainServices";
+import { getImageUrl } from "@api/apiClient";
 import { getTripId, getTripCityName, normalizeTripDetails } from "@utils/tripHelpers";
+import navigationStrings from "@navigation/navigationStrings";
 
 const CalendarViewTripDetail = ({ navigation, route }) => {
   const { trip, tripId } = route?.params || {};
@@ -166,8 +168,12 @@ const CalendarViewTripDetail = ({ navigation, route }) => {
     setActivitiesForSelectedDate(activitiesForDate);
   };
 
-  const handleActivityPress = () => {
-    // TODO: Navigate to activity details
+  const handleActivityPress = (activity) => {
+    if (activity?.is_saved_idea && activity?.saved_idea_id) {
+      navigation.navigate(navigationStrings.SAVED_IDEA_DETAIL, {
+        ideaId: activity.saved_idea_id,
+      });
+    }
   };
 
   const formatSelectedDate = (date) => {
@@ -270,15 +276,23 @@ const CalendarViewTripDetail = ({ navigation, route }) => {
                 renderItem={({ item: activity }) => (
                   <TouchableOpacity
                     style={styles.activityCard}
-                    onPress={handleActivityPress}
+                    onPress={() => handleActivityPress(activity)}
                   >
                     <OptimizedImage
                       source={{
-                        uri:
-                          activity.image ||
-                          activity.product_image ||
-                          activity.thumbnail ||
-                          "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80",
+                        uri: (() => {
+                          const image =
+                            activity.image ||
+                            activity.product_image ||
+                            activity.thumbnail;
+                          if (image && String(image).startsWith("/")) {
+                            return getImageUrl(image);
+                          }
+                          return (
+                            image ||
+                            "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&w=150&q=80"
+                          );
+                        })(),
                       }}
                       style={styles.activityImage}
                       resizeMode="cover"
@@ -291,10 +305,11 @@ const CalendarViewTripDetail = ({ navigation, route }) => {
                           "Activity"}
                       </Text>
                       <Text style={styles.activityDetails}>
-                        {formatActivityDate(
-                          activity.date || activity.time || selectedDate
-                        )}{" "}
-                        • ${activity.price || activity.retail_price || 0}
+                        {activity.is_saved_idea
+                          ? activity.source || "Saved link"
+                          : `${formatActivityDate(
+                              activity.date || activity.time || selectedDate
+                            )} • $${activity.price || activity.retail_price || 0}`}
                       </Text>
                     </View>
                   </TouchableOpacity>

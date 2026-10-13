@@ -5,5 +5,6 @@ export const STORAGE_KEYS = {
     LOCATION_GRANTED: 'locationGranted',
     USER_DATA: 'userData',
     TOKEN: 'token',
+    PENDING_SHARE: 'pendingShare',
     FREELANCE_PROFILE_STATUS: 'freelanceProfileStatus'
 };

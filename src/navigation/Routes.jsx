@@ -14,6 +14,8 @@ import { navigationRef } from "./navigationRef";
 import { GUEST_RESTRICTED_SCREENS } from "@utils/authHelpers";
 import navigationStrings from "./navigationStrings";
 import { store } from "@redux/store";
+import ShareInbound from "./ShareInbound";
+import { clearSharedSession, syncSharedSession } from "@utils/sharedAuth";
 
 const Routes = () => {
   const { user, pendingAuthRedirect, pendingAuthRoute } = useSelector(
@@ -21,6 +23,14 @@ const Routes = () => {
   );
   const dispatch = useDispatch();
   const [bootstrapped, setBootstrapped] = useState(false);
+
+  useEffect(() => {
+    if (user?.accessToken && !user?.isGuest) {
+      syncSharedSession(user.accessToken);
+    } else if (bootstrapped) {
+      clearSharedSession();
+    }
+  }, [bootstrapped, user?.accessToken, user?.isGuest]);
 
   useEffect(() => {
     const loadUserFromStorage = async () => {
@@ -64,16 +74,19 @@ const Routes = () => {
     : navigationStrings.SPLASHSCREEN;
 
   return (
-    <NavigationContainer ref={navigationRef} onStateChange={handleNavStateChange}>
-      {user?.accessToken ? (
-        <MainNavigator />
-      ) : (
-        <AuthNavigator
-          initialRouteName={authInitialRoute}
-          onReady={handleAuthReady}
-        />
-      )}
-    </NavigationContainer>
+    <>
+      <NavigationContainer ref={navigationRef} onStateChange={handleNavStateChange}>
+        {user?.accessToken ? (
+          <MainNavigator />
+        ) : (
+          <AuthNavigator
+            initialRouteName={authInitialRoute}
+            onReady={handleAuthReady}
+          />
+        )}
+      </NavigationContainer>
+      <ShareInbound />
+    </>
   );
 };
 

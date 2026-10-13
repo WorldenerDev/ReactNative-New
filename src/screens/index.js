@@ -41,6 +41,8 @@ export { default as PaymentMethods } from "./Main/PaymentMethods";
 export { default as SavedCards } from "./Main/SavedCards";
 export { default as PaymentSuccess } from "./Main/PaymentSuccess";
 export { default as SaveCard } from "./Main/SaveCard";
+export { default as SaveIdea } from "./Main/SaveIdea";
+export { default as SavedIdeaDetail } from "./Main/SavedIdeaDetail";
 export { default as SearchCity } from "./Main/SearchCity";
 export { default as Surprises } from "./Main/Surprises";
 export { default as TripBrief } from "./Main/TripBrief";

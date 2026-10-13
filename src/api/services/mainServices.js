@@ -17,6 +17,18 @@ export const getCityCategories = (cityId) =>
 export const getCategoriesTree = (params) =>
   apiGet(endpoints?.main?.getCategoriesTree, params);
 export const getTrip = (params) => apiGet(endpoints?.main?.getTrips, params);
+export const previewSavedIdea = (url) =>
+  apiPost(endpoints?.main?.savedIdeasPreview, { url });
+export const createSavedIdea = (data) =>
+  apiPost(endpoints?.main?.savedIdeas, data);
+export const getSavedIdeas = (tripId) =>
+  apiGet(endpoints?.main?.savedIdeas, { tripId });
+export const getSavedIdea = (ideaId) =>
+  apiGet(`${endpoints?.main?.savedIdeas}/${ideaId}`);
+export const reactToSavedIdea = (ideaId) =>
+  apiPost(`${endpoints?.main?.savedIdeas}/${ideaId}/react`, {});
+export const addSavedIdeaToItinerary = (ideaId, data) =>
+  apiPost(`${endpoints?.main?.savedIdeas}/${ideaId}/itinerary`, data);
 export const getTripDetails = (tripId) =>
   apiGet(`${endpoints?.main?.getTripDetails}/${tripId}`);
 export const createTrip = (data) => apiPost(endpoints?.main?.createTrip, data);

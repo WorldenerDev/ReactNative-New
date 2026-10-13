@@ -53,6 +53,19 @@ const CreateTrip = ({ navigation, route }) => {
   const groupName = route?.params?.groupName;
   const isCrewMode = Boolean(groupId);
   const isSoloMode = !groupId;
+  const pendingShareUrl = route?.params?.pendingShareUrl;
+
+  const finishCreatedTrip = (tripId) => {
+    if (pendingShareUrl && tripId) {
+      navigation.navigate(navigationStrings.SAVE_IDEA, {
+        url: pendingShareUrl,
+        selectedTripId: tripId,
+        fromShare: true,
+      });
+      return;
+    }
+    resetToTripDetails(navigation, { tripId });
+  };
 
   // Sync state with route params when navigating back from AddToTrip
   useEffect(() => {
@@ -96,9 +109,7 @@ const CreateTrip = ({ navigation, route }) => {
           return;
         }
         showToast("success", "Trip created for your crew!");
-        resetToTripDetails(navigation, {
-          tripId: response?.data?.memberTripId || response?.data?._id,
-        });
+        finishCreatedTrip(response?.data?.memberTripId || response?.data?._id);
         return;
       }
 
@@ -111,7 +122,7 @@ const CreateTrip = ({ navigation, route }) => {
           end_at: toDate,
         });
         showToast("success", "Solo trip created!");
-        resetToTripDetails(navigation, { tripId: response?.data?._id });
+        finishCreatedTrip(response?.data?._id);
         return;
       }
 
@@ -131,7 +142,7 @@ const CreateTrip = ({ navigation, route }) => {
       // Call the API
       const response = await createTrip(tripData);
       showToast("success", "Trip created successfully!");
-      resetToTripDetails(navigation, { tripId: response?.data?._id });
+      finishCreatedTrip(response?.data?._id);
     } catch (error) {
       console.error("Error creating trip:", error);
       showToast("error", error?.message || "Failed to create trip");

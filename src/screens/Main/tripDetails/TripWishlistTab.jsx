@@ -12,6 +12,7 @@ import fonts from "@assets/fonts";
 import { getHeight, getRadius, getWidth } from "@utils/responsive";
 import OptimizedImage from "@components/OptimizedImage";
 import { fetchTripWishlist } from "@api/services/crewGroupsService";
+import { getSavedIdeas } from "@api/services/mainServices";
 import { getImageUrl } from "@api/apiClient";
 import navigationStrings from "@navigation/navigationStrings";
 
@@ -37,9 +38,20 @@ const TripWishlistTab = ({
         }
         try {
           setLoading(true);
-          const res = await fetchTripWishlist(canonicalTripId, groupId, cityId);
+          const [res, savedRes] = await Promise.all([
+            fetchTripWishlist(canonicalTripId, groupId, cityId),
+            canonicalTripId
+              ? getSavedIdeas(canonicalTripId).catch(() => null)
+              : Promise.resolve(null),
+          ]);
           if (!cancelled && res?.success) {
-            setItems(res.data?.wishlisted_items || []);
+            const activities = res.data?.wishlisted_items || [];
+            const saved = (savedRes?.data?.saved_ideas || []).map((idea) => ({
+              ...idea,
+              kind: "saved",
+              name: idea.title,
+            }));
+            setItems([...saved, ...activities]);
           }
         } finally {
           if (!cancelled) setLoading(false);
@@ -53,6 +65,13 @@ const TripWishlistTab = ({
   );
 
   const openActivity = (item) => {
+    if (item?.kind === "saved") {
+      navigation.navigate(navigationStrings.SAVED_IDEA_DETAIL, {
+        ideaId: item._id,
+        idea: item,
+      });
+      return;
+    }
     const activityId = item?.activity_id || item?.id;
     if (!activityId) return;
 
@@ -86,7 +105,7 @@ const TripWishlistTab = ({
   if (!items.length) {
     return (
       <View style={styles.center}>
-        <Text style={styles.empty}>No wishlisted activities yet</Text>
+        <Text style={styles.empty}>No wishlisted ideas yet</Text>
       </View>
     );
   }
@@ -110,7 +129,7 @@ const TripWishlistTab = ({
             return (
               <TouchableOpacity
                 style={styles.card}
-                key={String(item.activity_id || item.id)}
+                key={String(item._id || item.activity_id || item.id)}
                 activeOpacity={0.8}
                 onPress={() => openActivity(item)}
                 accessibilityRole="button"
@@ -124,7 +143,12 @@ const TripWishlistTab = ({
                 <Text style={styles.name} numberOfLines={2}>
                   {item.name}
                 </Text>
-                {!personal ? (
+                {item.kind === "saved" && (item.host || item.source) ? (
+                  <Text style={styles.source} numberOfLines={1}>
+                    {item.host || item.source}
+                  </Text>
+                ) : null}
+                {!personal || item.kind === "saved" ? (
                   <Text style={styles.likes}>
                     {item.like_count} liked
                     {item.liked_by_members?.length
@@ -183,6 +207,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.RobotoMedium,
     color: colors.black,
     padding: getWidth(8),
+  },
+  source: {
+    fontSize: getHeight(10),
+    fontFamily: fonts.RobotoRegular,
+    color: colors.lightText,
+    paddingHorizontal: getWidth(8),
   },
   likes: {
     fontSize: getHeight(10),

@@ -52,4 +52,6 @@ export default {
   TRANSACTION_HISTORY: "TransactionHistory",
   TRANSACTION_DETAIL: "TransactionDetail",
   INSPIRATION_LIST: "InspirationList",
+  SAVE_IDEA: "SaveIdea",
+  SAVED_IDEA_DETAIL: "SavedIdeaDetail",
 };
