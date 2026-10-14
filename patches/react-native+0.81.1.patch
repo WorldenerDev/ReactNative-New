@@ -1,3 +1,31 @@
+diff --git a/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm b/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+index 2a67797..f35d1ac 100644
+--- a/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
++++ b/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+@@ -10,6 +10,7 @@
+ #import <React/RCTBridgeModule.h>
+ #import <React/RCTConvert.h>
+ #import <React/RCTCxxConvert.h>
++#import <React/RCTLog.h>
+ #import <React/RCTManagedPointer.h>
+ #import <React/RCTModuleMethod.h>
+ #import <React/RCTUtils.h>
+@@ -435,7 +436,14 @@ TraceSection s(
+     @try {
+       [inv invokeWithTarget:strongModule];
+     } @catch (NSException *exception) {
+-      throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);
++      if (shouldVoidMethodsExecuteSync_) {
++        throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);
++      }
++      // Async void methods have no JS caller. convertNSExceptionToJSError touches
++      // the Hermes runtime from this queue and aborts on iOS 26.
++      // https://github.com/facebook/react-native/issues/54859
++      RCTLogError(
++          @"Exception in TurboModule void method %s.%s: %@", moduleName, methodName, exception);
+     } @finally {
+       [retainedObjectsForInvocation removeAllObjects];
+     }
 diff --git a/node_modules/react-native/sdks/hermes-engine/utils/replace_hermes_version.js b/node_modules/react-native/sdks/hermes-engine/utils/replace_hermes_version.js
 index 3dc9964..f9bad87 100644
 --- a/node_modules/react-native/sdks/hermes-engine/utils/replace_hermes_version.js
